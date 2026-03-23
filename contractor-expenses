@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contractor Expense Submission</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --green: #00A651;
+      --green-dark: #007a3d;
+      --green-light: #e8f5ee;
+      --green-mid: #c8e6d4;
+      --navy: #1a3a5c;
+      --navy-light: #2a4a6c;
+      --grey-footer: #6D6E71;
+      --grey-border: #d8dde3;
+      --grey-bg: #f5f7fa;
+      --white: #ffffff;
+      --text: #2c3e50;
+      --text-muted: #6b7c93;
+      --error: #cc2936;
+      --error-bg: #fdf0f0;
+      --warn-bg: #fffbeb;
+      --warn-border: #f59e0b;
+      --warn-text: #92400e;
+      --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--grey-bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 10%, rgba(0,166,81,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(26,58,92,0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container { max-width: 820px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* HEADER */
+    .header {
+      background: var(--navy);
+      border-radius: 12px 12px 0 0;
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .header-left h1 { color: var(--white); font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-left p { color: rgba(255,255,255,0.55); font-size: 13px; margin-top: 4px; }
+    .header-badge {
+      background: var(--green);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    /* CARD */
+    .card { background: var(--white); box-shadow: var(--shadow-card); }
+    .card-section { padding: 32px 36px; border-bottom: 1px solid #eef0f3; }
+    .card-section:last-of-type { border-bottom: none; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--green-mid); }
+
+    /* FIELDS */
+    .field-grid { display: grid; gap: 16px; }
+    .field-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+
+    label { font-size: 12px; font-weight: 600; color: var(--navy); letter-spacing: 0.2px; }
+    label .req { color: var(--green); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    input[type="email"],
+    select {
+      border: 1.5px solid var(--grey-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      width: 100%;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    input[type="number"] { font-family: 'DM Mono', monospace; }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,166,81,0.12);
+    }
+    input::placeholder { color: #bcc5ce; }
+    input.invalid, select.invalid {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(204,41,54,0.08);
+    }
+    .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* SITE NOTICE */
+    .site-notice {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: var(--warn-bg);
+      border: 1.5px solid var(--warn-border);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--warn-text);
+      line-height: 1.5;
+    }
+    .site-notice strong { display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* EXPENSE ROWS */
+    .expense-rows { display: flex; flex-direction: column; gap: 12px; }
+
+    .expense-row {
+      border: 1.5px solid var(--grey-border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .expense-row:focus-within { border-color: #a8c5da; }
+
+    .row-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      background: #f8f9fb;
+      border-bottom: 1px solid #eef0f3;
+      flex-wrap: wrap;
+    }
+    .row-num {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-muted);
+      min-width: 22px;
+    }
+    .row-type-select {
+      border: 1.5px solid var(--grey-border) !important;
+      border-radius: 6px !important;
+      padding: 7px 12px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      background: white !important;
+      color: var(--navy) !important;
+      width: auto;
+      min-width: 160px;
+    }
+
+    .type-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: none;
+    }
+    .badge-hotel   { background: #dbeafe; color: #1e40af; }
+    .badge-meal    { background: #fce7f3; color: #9d174d; }
+    .badge-mileage { background: #d1fae5; color: #065f46; }
+    .badge-rental  { background: #ede9fe; color: #5b21b6; }
+    .badge-misc    { background: #f3f4f6; color: #374151; }
+
+    .row-remove-btn {
+      background: none;
+      border: none;
+      color: #c0c8d0;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background 0.15s;
+      margin-left: auto;
+    }
+    .row-remove-btn:hover { color: var(--error); background: var(--error-bg); }
+
+    .row-fields {
+      padding: 14px 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .fields-standard { grid-template-columns: 150px 1fr 140px; }
+    .fields-meal     { grid-template-columns: 150px 160px 130px 130px auto; }
+    .fields-mileage  { grid-template-columns: 150px 1fr 120px 130px; }
+
+    .auto-field {
+      background: #f0fdf4 !important;
+      border-color: var(--green-mid) !important;
+      color: var(--green-dark) !important;
+      font-weight: 600;
+      font-family: 'DM Mono', monospace;
+      cursor: default;
+    }
+
+    .exceeded-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .exceeded-wrap label { font-size: 12px; font-weight: 600; color: var(--navy); }
+    .exceeded-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1.5px solid;
+      white-space: nowrap;
+    }
+    .exceeded-yes { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+    .exceeded-no  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+    .exceeded-na  { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
+
+    /* RECEIPTS */
+    .row-receipts { padding: 0 16px 14px; }
+    .receipt-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+    input[type="file"].receipt-input {
+      padding: 8px 12px;
+      border: 1.5px dashed var(--grey-border);
+      border-radius: 8px;
+      background: #fafbfc;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      width: 100%;
+    }
+    input[type="file"].receipt-input:focus { border-color: var(--green); outline: none; }
+
+    /* ADD ROW */
+    .add-expense-btn {
+      width: 100%;
+      padding: 14px;
+      background: none;
+      border: 1.5px dashed var(--grey-border);
+      border-radius: 10px;
+      color: var(--green);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .add-expense-btn:hover { background: var(--green-light); border-color: var(--green-mid); }
+
+    /* ALLOWANCE REF */
+    .allowance-ref { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+    .allowance-pill {
+      background: var(--green-light);
+      border: 1px solid var(--green-mid);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--green-dark);
+      font-weight: 600;
+    }
+    .allowance-ref-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* TOTALS */
+    .totals-bar {
+      background: var(--navy);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+    }
+    .totals-bar .t-label { color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; }
+    .totals-bar .t-value { color: white; font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: -0.5px; }
+    .totals-bar .t-value span { font-size: 14px; color: rgba(255,255,255,0.5); font-weight: 400; margin-left: 4px; }
+
+    /* SIGNATURE */
+    .sig-container {
+      border: 1.5px solid var(--grey-border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: white;
+      position: relative;
+    }
+    #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+    .sig-clear-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: white;
+      border: 1.5px solid var(--grey-border);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .sig-clear-btn:hover { border-color: var(--error); color: var(--error); }
+    .sig-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+    /* ATTESTATION */
+    .attestation {
+      background: var(--green-light);
+      border: 1.5px solid var(--green-mid);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--navy);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .attestation strong { color: var(--green-dark); }
+
+    /* FOOTER */
+    .form-footer {
+      padding: 24px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-top: 1px solid #eef0f3;
+    }
+    .status-msg {
+      font-size: 13.5px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      display: none;
+      flex: 1;
+      line-height: 1.5;
+    }
+    .status-msg.success { background: var(--green-light); color: var(--green-dark); border: 1.5px solid var(--green-mid); display: block; }
+    .status-msg.error   { background: var(--error-bg); color: var(--error); border: 1.5px solid rgba(204,41,54,0.2); display: block; }
+
+    .submit-btn {
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 32px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+      letter-spacing: -0.2px;
+      flex-shrink: 0;
+    }
+    .submit-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { background: #a0adb8; cursor: not-allowed; transform: none; }
+
+    .page-footer { background: var(--grey-footer); border-radius: 0 0 12px 12px; padding: 14px 36px; text-align: center; }
+    .page-footer p { color: rgba(255,255,255,0.7); font-size: 12px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 640px) {
+      body { padding: 0 0 48px; }
+      .header { padding: 20px; border-radius: 0; }
+      .card { border-radius: 0; }
+      .card-section { padding: 24px 20px; }
+      .page-footer { border-radius: 0; padding: 14px 20px; }
+      .form-footer { padding: 20px; flex-direction: column; align-items: stretch; }
+      .submit-btn { width: 100%; text-align: center; }
+      .field-grid.cols-2, .field-grid.cols-3 { grid-template-columns: 1fr; }
+      .row-fields { grid-template-columns: 1fr !important; }
+      .header { flex-wrap: wrap; }
+    }
+
+    @media (min-width: 641px) and (max-width: 900px) {
+      .fields-meal     { grid-template-columns: 1fr 1fr 1fr; }
+      .fields-mileage  { grid-template-columns: 1fr 1fr; }
+      .fields-standard { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Contractor Expense Report</h1>
+      <p>The Loomex Group -- EOC Submission Portal</p>
+    </div>
+    <div class="header-badge">Expense Claim</div>
+  </div>
+
+  <div class="card">
+
+    <!-- SECTION 1: Contractor Info -->
+    <div class="card-section">
+      <div class="section-label">Contractor Information</div>
+      <div class="field-grid cols-2">
+        <div class="field-group">
+          <label for="contractorName">Full Name <span class="req">*</span></label>
+          <input type="text" id="contractorName" placeholder="First and last name" autocomplete="name">
+        </div>
+        <div class="field-group">
+          <label for="contractorEmail">Email Address <span class="req">*</span></label>
+          <input type="email" id="contractorEmail" placeholder="your@email.com" autocomplete="email">
+        </div>
+      </div>
+      <div class="field-grid cols-3" style="margin-top:16px">
+        <div class="field-group">
+          <label for="activation">Activation <span class="req">*</span></label>
+          <select id="activation">
+            <option value="">Select...</option>
+            <option value="Kash-2026">Kash-2026</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="site">Site <span class="req">*</span></label>
+          <select id="site" onchange="handleSiteChange()">
+            <option value="">Select...</option>
+            <option value="Kingston">Kingston</option>
+            <option value="Kapuskasing">Kapuskasing</option>
+            <option value="Timmins">Timmins</option>
+            <option value="EOC">EOC</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="jobNumber">Job Number</label>
+          <input type="text" id="jobNumber" placeholder="e.g. LMX-2026-001" style="font-family:'DM Mono',monospace">
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="field-group">
+          <label>Submission Period <span class="req">*</span></label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="date" id="periodStart" style="flex:1;max-width:200px">
+            <span style="font-size:12px;color:var(--text-muted)">to</span>
+            <input type="date" id="periodEnd" style="flex:1;max-width:200px">
+          </div>
+        </div>
+      </div>
+
+      <div id="notice-kingston" class="site-notice">
+        <strong>Kingston Site</strong>
+        Breakfast and lunch are provided by catering and are not eligible for reimbursement. Only Dinner claims will be accepted.
+      </div>
+      <div id="notice-timmins" class="site-notice">
+        <strong>Timmins Site</strong>
+        Breakfast is provided by the Holiday Inn and is not eligible for reimbursement at this location.
+      </div>
+    </div>
+
+    <!-- SECTION 2: Expense Items -->
+    <div class="card-section">
+      <div class="section-label">Expense Items</div>
+
+      <div class="expense-rows" id="expenseRows"></div>
+
+      <button class="add-expense-btn" onclick="addRow()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Add Expense Item
+      </button>
+
+      <div class="allowance-ref">
+        <span class="allowance-ref-label">Allowances:</span>
+        <span class="allowance-pill">Breakfast $15</span>
+        <span class="allowance-pill">Lunch $20</span>
+        <span class="allowance-pill">Dinner $45</span>
+        <span class="allowance-pill">Mileage $0.59 / km</span>
+      </div>
+
+      <div class="totals-bar">
+        <div class="t-label">Total Claimed</div>
+        <div class="t-value" id="totalDisplay">$0.00<span>CAD</span></div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: Signature -->
+    <div class="card-section">
+      <div class="section-label">Certification &amp; Signature</div>
+      <div class="attestation">
+        By signing below, <strong>I certify that all expenses listed are accurate, were incurred in the course of my contracted duties, and comply with the reimbursement conditions in my contract</strong> with The Loomex Group Ltd.
+      </div>
+      <div class="sig-container">
+        <canvas id="sig-canvas"></canvas>
+        <button class="sig-clear-btn" onclick="clearSig()">Clear</button>
+      </div>
+      <p class="sig-hint">Draw your signature above using your mouse or finger</p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="form-footer">
+      <div class="status-msg" id="statusMsg"></div>
+      <button class="submit-btn" id="submitBtn" onclick="submitForm()">Submit Expense Report</button>
+    </div>
+
+  </div>
+
+  <div class="page-footer">
+    <p>Submitted reports are reviewed by EOC Admin before being forwarded to Finance. Questions? Contact eocadmin@loomex.ca</p>
+  </div>
+
+</div>
+
+<script>
+  const WORKER_URL = 'https://loomex-expense.YOUR_ACCOUNT.workers.dev';
+  const MEAL_ALLOWANCES = { Breakfast: 15, Lunch: 20, Dinner: 45 };
+
+  let rowCount = 0;
+
+  // ---- SITE NOTICES ----
+  function handleSiteChange() {
+    const site = document.getElementById('site').value;
+    document.getElementById('notice-kingston').style.display = site === 'Kingston' ? 'block' : 'none';
+    document.getElementById('notice-timmins').style.display  = site === 'Timmins'  ? 'block' : 'none';
+  }
+
+  const TYPE_CONFIG = {
+    hotel:   { label: 'Hotel',      badgeCls: 'badge-hotel'   },
+    meal:    { label: 'Meal',       badgeCls: 'badge-meal'    },
+    mileage: { label: 'Mileage',    badgeCls: 'badge-mileage' },
+    rental:  { label: 'Rental Car', badgeCls: 'badge-rental'  },
+    misc:    { label: 'Misc',       badgeCls: 'badge-misc'    },
+  };
+
+  // ---- RENDER FIELDS BY TYPE ----
+  function renderFields(id, type) {
+    if (type === 'meal') {
+      return `
+        <div class="row-fields fields-meal">
+          <div class="field-group">
+            <label>Date</label>
+            <input type="date" id="f-date-${id}">
+          </div>
+          <div class="field-group">
+            <label>Meal Period</label>
+            <select id="f-mealperiod-${id}" onchange="recalc(${id})">
+              <option value="">Select...</option>
+              <option value="Breakfast">Breakfast ($15 max)</option>
+              <option value="Lunch">Lunch ($20 max)</option>
+              <option value="Dinner">Dinner ($45 max)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Actual Cost ($)</label>
+            <input type="number" id="f-actual-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
+          </div>
+          <div class="field-group">
+            <label>Claimed ($)</label>
+            <input type="text" id="f-claimed-${id}" class="auto-field" readonly placeholder="Auto">
+          </div>
+          <div class="exceeded-wrap">
+            <label>Exceeded?</label>
+            <span class="exceeded-badge exceeded-na" id="f-exceeded-${id}">--</span>
+          </div>
+        </div>`;
+    }
+
+    if (type === 'mileage') {
+      return `
+        <div class="row-fields fields-mileage">
+          <div class="field-group">
+            <label>Date</label>
+            <input type="date" id="f-date-${id}">
+          </div>
+          <div class="field-group">
+            <label>Route / Description</label>
+            <input type="text" id="f-desc-${id}" placeholder="e.g. Kingston to Ottawa">
+          </div>
+          <div class="field-group">
+            <label>Kilometres</label>
+            <input type="number" id="f-km-${id}" placeholder="0" step="0.1" min="0" oninput="recalc(${id})">
+          </div>
+          <div class="field-group">
+            <label>Amount ($0.59/km)</label>
+            <input type="text" id="f-amount-${id}" class="auto-field" readonly placeholder="Auto">
+          </div>
+        </div>`;
+    }
+
+    // hotel / rental / misc
+    const placeholder = type === 'hotel' ? 'Hotel name / location' : type === 'rental' ? 'Rental company / vehicle' : 'Description';
+    return `
+      <div class="row-fields fields-standard">
+        <div class="field-group">
+          <label>Date</label>
+          <input type="date" id="f-date-${id}">
+        </div>
+        <div class="field-group">
+          <label>Description</label>
+          <input type="text" id="f-desc-${id}" placeholder="${placeholder}">
+        </div>
+        <div class="field-group">
+          <label>Amount ($)</label>
+          <input type="number" id="f-amount-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
+        </div>
+      </div>`;
+  }
+
+  // ---- ADD ROW ----
+  function addRow() {
+    rowCount++;
+    const id = rowCount;
+
+    const el = document.createElement('div');
+    el.className = 'expense-row';
+    el.id = `row-${id}`;
+    el.innerHTML = `
+      <div class="row-header">
+        <span class="row-num">#${id}</span>
+        <select class="row-type-select" id="type-${id}" onchange="changeType(${id})">
+          <option value="">-- Select expense type --</option>
+          <option value="hotel">Hotel</option>
+          <option value="meal">Meal</option>
+          <option value="mileage">Mileage</option>
+          <option value="rental">Rental Car</option>
+          <option value="misc">Misc</option>
+        </select>
+        <span class="type-badge" id="badge-${id}"></span>
+        <button class="row-remove-btn" onclick="removeRow(${id})" title="Remove item">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="fields-${id}"></div>
+      <div id="receipts-${id}" style="display:none" class="row-receipts">
+        <span class="receipt-label">Receipts (up to 3 files -- photos or PDF)</span>
+        <input type="file" id="rec-${id}" class="receipt-input" accept="image/*,.pdf" multiple>
+      </div>
+    `;
+    document.getElementById('expenseRows').appendChild(el);
+  }
+
+  // ---- CHANGE TYPE ----
+  function changeType(id) {
+    const type    = document.getElementById(`type-${id}`).value;
+    const fieldsEl   = document.getElementById(`fields-${id}`);
+    const receiptsEl = document.getElementById(`receipts-${id}`);
+    const badgeEl    = document.getElementById(`badge-${id}`);
+
+    fieldsEl.innerHTML = type ? renderFields(id, type) : '';
+    receiptsEl.style.display = type ? 'block' : 'none';
+
+    if (type && TYPE_CONFIG[type]) {
+      const cfg = TYPE_CONFIG[type];
+      badgeEl.textContent = cfg.label;
+      badgeEl.className   = `type-badge ${cfg.badgeCls}`;
+      badgeEl.style.display = 'inline-flex';
+    } else {
+      badgeEl.style.display = 'none';
+    }
+
+    updateTotal();
+  }
+
+  // ---- REMOVE ROW ----
+  function removeRow(id) {
+    document.getElementById(`row-${id}`)?.remove();
+    updateTotal();
+  }
+
+  // ---- RECALC (per row) ----
+  function recalc(id) {
+    const type = document.getElementById(`type-${id}`)?.value;
+
+    if (type === 'mileage') {
+      const km = parseFloat(document.getElementById(`f-km-${id}`)?.value) || 0;
+      const dollars = parseFloat((km * 0.59).toFixed(2));
+      const el = document.getElementById(`f-amount-${id}`);
+      if (el) el.value = km > 0 ? `$${dollars.toFixed(2)}` : '';
+    }
+
+    if (type === 'meal') {
+      const period   = document.getElementById(`f-mealperiod-${id}`)?.value || '';
+      const actual   = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
+      const max      = MEAL_ALLOWANCES[period] || 0;
+      const claimed  = period && actual > 0 ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
+      const exceeded = period && actual > max;
+
+      const claimedEl  = document.getElementById(`f-claimed-${id}`);
+      const excEl      = document.getElementById(`f-exceeded-${id}`);
+
+      if (claimedEl) claimedEl.value = (period && actual > 0) ? `$${claimed.toFixed(2)}` : '';
+      if (excEl) {
+        if (!period || actual === 0) {
+          excEl.textContent = '--'; excEl.className = 'exceeded-badge exceeded-na';
+        } else if (exceeded) {
+          excEl.textContent = 'Exceeded'; excEl.className = 'exceeded-badge exceeded-yes';
+        } else {
+          excEl.textContent = 'Within limit'; excEl.className = 'exceeded-badge exceeded-no';
+        }
+      }
+    }
+
+    updateTotal();
+  }
+
+  // ---- GET ROW VALUE ----
+  function getRowValue(id) {
+    const type = document.getElementById(`type-${id}`)?.value;
+    if (!type) return 0;
+    if (type === 'mileage') {
+      const km = parseFloat(document.getElementById(`f-km-${id}`)?.value) || 0;
+      return parseFloat((km * 0.59).toFixed(2));
+    }
+    if (type === 'meal') {
+      const period  = document.getElementById(`f-mealperiod-${id}`)?.value || '';
+      const actual  = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
+      const max     = MEAL_ALLOWANCES[period] || 0;
+      return period && actual > 0 ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
+    }
+    return parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+  }
+
+  function updateTotal() {
+    let total = 0;
+    document.querySelectorAll('.expense-row').forEach(row => {
+      const id = parseInt(row.id.replace('row-', ''));
+      total += getRowValue(id);
+    });
+    document.getElementById('totalDisplay').innerHTML = `$${total.toFixed(2)}<span>CAD</span>`;
+  }
+
+  // ---- SIGNATURE ----
+  const canvas = document.getElementById('sig-canvas');
+  const ctx    = canvas.getContext('2d');
+  let drawing  = false;
+  let hasSig   = false;
+
+  function resizeCanvas() {
+    const w = canvas.parentElement.clientWidth;
+    canvas.width  = w;
+    canvas.height = 160;
+    ctx.strokeStyle = '#1a3a5c';
+    ctx.lineWidth   = 2.2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+  canvas.addEventListener('mousedown',  e => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+  canvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; });
+  canvas.addEventListener('mouseup',    () => drawing = false);
+  canvas.addEventListener('mouseleave', () => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; }, { passive: false });
+  canvas.addEventListener('touchend',   () => drawing = false);
+  function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
+
+  // ---- FILES TO BASE64 ----
+  async function filesToBase64(input) {
+    const out = [];
+    for (const file of Array.from(input?.files || [])) {
+      if (out.length >= 3) break; // enforce max 3
+      await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => { out.push({ name: file.name, type: file.type, data: r.result.split(',')[1] }); res(); };
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+    return out;
+  }
+
+  // ---- COLLECT ROWS ----
+  async function collectRows() {
+    const rows = [];
+    for (const rowEl of document.querySelectorAll('.expense-row')) {
+      const id   = parseInt(rowEl.id.replace('row-', ''));
+      const type = document.getElementById(`type-${id}`)?.value;
+      if (!type) continue;
+
+      const value    = getRowValue(id);
+      const receipts = await filesToBase64(document.getElementById(`rec-${id}`));
+      const date     = document.getElementById(`f-date-${id}`)?.value || '';
+
+      if (type === 'meal') {
+        const period  = document.getElementById(`f-mealperiod-${id}`)?.value || '';
+        const actual  = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
+        const max     = MEAL_ALLOWANCES[period] || 0;
+        rows.push({ type, date, mealPeriod: period, mealsActual: actual, mealClaimed: value, exceeded: period && actual > max ? 'Y' : (period ? 'N' : '-'), value, receipts });
+      } else if (type === 'mileage') {
+        const km = parseFloat(document.getElementById(`f-km-${id}`)?.value) || 0;
+        rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', km, value, receipts });
+      } else {
+        rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', amount: parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0, value, receipts });
+      }
+    }
+    return rows;
+  }
+
+  // ---- BUILD EXCEL ----
+  function buildExcel(fd) {
+    const wb = XLSX.utils.book_new();
+    const d  = [];
+    d.push(['THE LOOMEX GROUP LTD']);
+    d.push(['CONTRACTOR EXPENSE REPORT']);
+    d.push([]);
+    d.push(['Contractor:', fd.contractorName, '', 'Activation:', fd.activation]);
+    d.push(['Email:', fd.contractorEmail, '', 'Job Number:', fd.jobNumber || 'N/A']);
+    d.push(['Site:', fd.site, '', 'Period:', `${fd.periodStart} to ${fd.periodEnd}`]);
+    d.push(['Submitted:', new Date().toLocaleDateString('en-CA')]);
+    d.push([]);
+    d.push(['Type', 'Date', 'Description / Detail', 'Actual ($)', 'Claimed ($)', 'Exceeded?', 'Total ($)']);
+
+    fd.rows.forEach(r => {
+      if (r.type === 'meal') {
+        d.push(['Meal', r.date, r.mealPeriod, r.mealsActual.toFixed(2), r.mealClaimed.toFixed(2), r.exceeded, r.value.toFixed(2)]);
+      } else if (r.type === 'mileage') {
+        d.push(['Mileage', r.date, `${r.description} (${r.km} km)`, '', r.value.toFixed(2), '', r.value.toFixed(2)]);
+      } else {
+        const lbl = { hotel: 'Hotel', rental: 'Rental Car', misc: 'Misc' }[r.type] || r.type;
+        d.push([lbl, r.date, r.description, r.amount.toFixed(2), r.amount.toFixed(2), '', r.value.toFixed(2)]);
+      }
+    });
+
+    d.push([]);
+    d.push(['', '', '', '', '', 'TOTAL CLAIMED:', fd.total.toFixed(2)]);
+    d.push([]);
+    d.push(['CERTIFICATION']);
+    d.push(['I certify these expenses are accurate and comply with my contract with The Loomex Group Ltd.']);
+    d.push([]);
+    d.push(['Contractor:', fd.contractorName, '', 'Date:', new Date().toLocaleDateString('en-CA')]);
+    d.push(['Signature captured electronically on submission.']);
+    d.push([]);
+    d.push(['EOC ADMIN APPROVAL']);
+    d.push(['Approved By:', '', '', 'Date:', '']);
+    d.push(['Signature:', '(Pending admin review)']);
+
+    const ws = XLSX.utils.aoa_to_sheet(d);
+    ws['!cols'] = [{wch:14},{wch:12},{wch:34},{wch:12},{wch:12},{wch:10},{wch:13}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Expense Report');
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+  }
+
+  // ---- VALIDATE ----
+  function validate(rows) {
+    const required = ['contractorName','contractorEmail','activation','site','periodStart','periodEnd'];
+    let ok = true;
+    required.forEach(fid => {
+      const el = document.getElementById(fid);
+      if (!el.value.trim()) { el.classList.add('invalid'); ok = false; }
+      else el.classList.remove('invalid');
+    });
+    if (!ok) { showStatus('Please complete all required fields.', 'error'); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('contractorEmail').value.trim())) {
+      showStatus('Please enter a valid email address.', 'error'); return false;
+    }
+    if (rows.length === 0) { showStatus('Please add at least one expense item.', 'error'); return false; }
+    if (!hasSig) { showStatus('Please draw your signature before submitting.', 'error'); return false; }
+    return true;
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.innerHTML = msg;
+    el.className = `status-msg ${type}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ---- SUBMIT ----
+  async function submitForm() {
+    const rows = await collectRows();
+    if (!validate(rows)) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Building report...';
+
+    try {
+      const total = parseFloat(rows.reduce((s, r) => s + r.value, 0).toFixed(2));
+      const formData = {
+        contractorName:  document.getElementById('contractorName').value.trim(),
+        contractorEmail: document.getElementById('contractorEmail').value.trim(),
+        activation:      document.getElementById('activation').value,
+        jobNumber:       document.getElementById('jobNumber').value.trim(),
+        site:            document.getElementById('site').value,
+        periodStart:     document.getElementById('periodStart').value,
+        periodEnd:       document.getElementById('periodEnd').value,
+        rows, total
+      };
+
+      const signatureBase64 = canvas.toDataURL('image/png');
+      const excelBase64     = buildExcel(formData);
+      const allReceipts     = [];
+      rows.forEach((row, ri) => {
+        (row.receipts || []).forEach((rec, rj) => {
+          allReceipts.push({ filename: `Row${ri+1}_${row.date||'nodate'}_receipt${rj+1}.${rec.name.split('.').pop()}`, type: rec.type, data: rec.data });
+        });
+      });
+
+      btn.innerHTML = '<span class="spinner"></span>Sending to EOC...';
+
+      const res = await fetch(`${WORKER_URL}/expense-submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formData, excelBase64, signatureBase64, receipts: allReceipts, submittedAt: new Date().toISOString() })
+      });
+
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Unknown error');
+
+      showStatus(`<strong>&#10003; Submitted successfully.</strong><br>Your expense report has been sent to EOC Admin for review. A copy has been emailed to <strong>${formData.contractorEmail}</strong>.<br><small style="opacity:0.75">Reference: ${result.token}</small>`, 'success');
+      btn.style.display = 'none';
+
+    } catch (err) {
+      showStatus(`Submission failed: ${err.message}. Please try again or email eocadmin@loomex.ca directly.`, 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Submit Expense Report';
+    }
+  }
+
+  // Start with two rows
+  addRow();
+  addRow();
+</script>
+</body>
+</html>
