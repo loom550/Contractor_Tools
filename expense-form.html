@@ -909,7 +909,15 @@
 
     return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
   }
-  // ---- VALIDATE ----
+  // ---- SHOW STATUS ----
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.innerHTML = msg;
+    el.className = `status-msg ${type}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+   // ---- VALIDATE ----
   function validate(rows) {
     const fieldLabels = {
       contractorName: 'Full Name',
