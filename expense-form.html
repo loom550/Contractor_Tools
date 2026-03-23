@@ -470,7 +470,7 @@
           <input type="email" id="contractorEmail" placeholder="your@email.com" autocomplete="email">
         </div>
       </div>
-      <div class="field-grid cols-3" style="margin-top:16px">
+      <div class="field-grid cols-2" style="margin-top:16px">
         <div class="field-group">
           <label for="activation">Activation <span class="req">*</span></label>
           <select id="activation">
@@ -488,11 +488,6 @@
             <option value="EOC">EOC</option>
           </select>
         </div>
-        <div class="field-group">
-          <label for="jobNumber">Job Number</label>
-          <input type="text" id="jobNumber" placeholder="e.g. LMX-2026-001" style="font-family:'DM Mono',monospace">
-        </div>
-      </div>
       <div style="margin-top:16px">
         <div class="field-group">
           <label>Submission Period <span class="req">*</span></label>
@@ -866,7 +861,7 @@
     d.push(['CONTRACTOR EXPENSE REPORT']);
     d.push([]);
     d.push(['Contractor:', fd.contractorName, '', 'Activation:', fd.activation]);
-    d.push(['Email:', fd.contractorEmail, '', 'Job Number:', fd.jobNumber || 'N/A']);
+    d.push(['Email:', fd.contractorEmail, '', 'Job Number:', || 'N/A']);
     d.push(['Site:', fd.site, '', 'Period:', `${fd.periodStart} to ${fd.periodEnd}`]);
     d.push(['Submitted:', new Date().toLocaleDateString('en-CA')]);
     d.push([]);
@@ -942,7 +937,6 @@
         contractorName:  document.getElementById('contractorName').value.trim(),
         contractorEmail: document.getElementById('contractorEmail').value.trim(),
         activation:      document.getElementById('activation').value,
-        jobNumber:       document.getElementById('jobNumber').value.trim(),
         site:            document.getElementById('site').value,
         periodStart:     document.getElementById('periodStart').value,
         periodEnd:       document.getElementById('periodEnd').value,
