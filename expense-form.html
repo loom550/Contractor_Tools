@@ -573,6 +573,10 @@
     const site = document.getElementById('site').value;
     document.getElementById('notice-kingston').style.display = site === 'Kingston' ? 'block' : 'none';
     document.getElementById('notice-timmins').style.display  = site === 'Timmins'  ? 'block' : 'none';
+    document.querySelectorAll('.expense-row').forEach(row => {
+      const id = parseInt(row.id.replace('row-', ''));
+      if (document.getElementById(`type-${id}`)?.value === 'meal') recalc(id);
+    });
   }
 
   const TYPE_CONFIG = {
@@ -610,7 +614,7 @@
             <input type="text" id="f-claimed-${id}" class="auto-field" readonly placeholder="Auto">
           </div>
           <div class="exceeded-wrap">
-            <label>Exceeded?</label>
+            <label>Status</label>
             <span class="exceeded-badge exceeded-na" id="f-exceeded-${id}">--</span>
           </div>
         </div>`;
@@ -638,7 +642,6 @@
         </div>`;
     }
 
-    // hotel / rental / misc
     const placeholder = type === 'hotel' ? 'Hotel name / location' : type === 'rental' ? 'Rental company / vehicle' : 'Description';
     return `
       <div class="row-fields fields-standard">
@@ -661,7 +664,6 @@
   function addRow() {
     rowCount++;
     const id = rowCount;
-
     const el = document.createElement('div');
     el.className = 'expense-row';
     el.id = `row-${id}`;
@@ -692,14 +694,12 @@
 
   // ---- CHANGE TYPE ----
   function changeType(id) {
-    const type    = document.getElementById(`type-${id}`).value;
+    const type       = document.getElementById(`type-${id}`).value;
     const fieldsEl   = document.getElementById(`fields-${id}`);
     const receiptsEl = document.getElementById(`receipts-${id}`);
     const badgeEl    = document.getElementById(`badge-${id}`);
-
     fieldsEl.innerHTML = type ? renderFields(id, type) : '';
     receiptsEl.style.display = type ? 'block' : 'none';
-
     if (type && TYPE_CONFIG[type]) {
       const cfg = TYPE_CONFIG[type];
       badgeEl.textContent = cfg.label;
@@ -708,7 +708,6 @@
     } else {
       badgeEl.style.display = 'none';
     }
-
     updateTotal();
   }
 
@@ -733,15 +732,20 @@
       const period   = document.getElementById(`f-mealperiod-${id}`)?.value || '';
       const actual   = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
       const max      = MEAL_ALLOWANCES[period] || 0;
-      const claimed  = period && actual > 0 ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
-      const exceeded = period && actual > max;
-
-      const claimedEl  = document.getElementById(`f-claimed-${id}`);
-      const excEl      = document.getElementById(`f-exceeded-${id}`);
-
-      if (claimedEl) claimedEl.value = (period && actual > 0) ? `$${claimed.toFixed(2)}` : '';
+      const site     = document.getElementById('site').value;
+      const ineligible = period && (
+        (site === 'Kingston' && (period === 'Breakfast' || period === 'Lunch')) ||
+        (site === 'Timmins'  && period === 'Breakfast')
+      );
+      const claimed  = (period && actual > 0 && !ineligible) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
+      const exceeded = period && actual > max && !ineligible;
+      const claimedEl = document.getElementById(`f-claimed-${id}`);
+      const excEl     = document.getElementById(`f-exceeded-${id}`);
+      if (claimedEl) claimedEl.value = ineligible ? '$0.00' : (period && actual > 0 ? `$${claimed.toFixed(2)}` : '');
       if (excEl) {
-        if (!period || actual === 0) {
+        if (ineligible) {
+          excEl.textContent = `Not eligible at ${site}`; excEl.className = 'exceeded-badge exceeded-yes';
+        } else if (!period || actual === 0) {
           excEl.textContent = '--'; excEl.className = 'exceeded-badge exceeded-na';
         } else if (exceeded) {
           excEl.textContent = 'Exceeded'; excEl.className = 'exceeded-badge exceeded-yes';
@@ -766,7 +770,12 @@
       const period  = document.getElementById(`f-mealperiod-${id}`)?.value || '';
       const actual  = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
       const max     = MEAL_ALLOWANCES[period] || 0;
-      return period && actual > 0 ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
+      const site    = document.getElementById('site').value;
+      const ineligible = period && (
+        (site === 'Kingston' && (period === 'Breakfast' || period === 'Lunch')) ||
+        (site === 'Timmins'  && period === 'Breakfast')
+      );
+      return (period && actual > 0 && !ineligible) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
     }
     return parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
   }
@@ -816,7 +825,7 @@
   async function filesToBase64(input) {
     const out = [];
     for (const file of Array.from(input?.files || [])) {
-      if (out.length >= 3) break; // enforce max 3
+      if (out.length >= 3) break;
       await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => { out.push({ name: file.name, type: file.type, data: r.result.split(',')[1] }); res(); };
@@ -834,16 +843,19 @@
       const id   = parseInt(rowEl.id.replace('row-', ''));
       const type = document.getElementById(`type-${id}`)?.value;
       if (!type) continue;
-
       const value    = getRowValue(id);
       const receipts = await filesToBase64(document.getElementById(`rec-${id}`));
       const date     = document.getElementById(`f-date-${id}`)?.value || '';
-
       if (type === 'meal') {
-        const period  = document.getElementById(`f-mealperiod-${id}`)?.value || '';
-        const actual  = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
-        const max     = MEAL_ALLOWANCES[period] || 0;
-        rows.push({ type, date, mealPeriod: period, mealsActual: actual, mealClaimed: value, exceeded: period && actual > max ? 'Y' : (period ? 'N' : '-'), value, receipts });
+        const period     = document.getElementById(`f-mealperiod-${id}`)?.value || '';
+        const actual     = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
+        const max        = MEAL_ALLOWANCES[period] || 0;
+        const site       = document.getElementById('site').value;
+        const ineligible = !!(period && (
+          (site === 'Kingston' && (period === 'Breakfast' || period === 'Lunch')) ||
+          (site === 'Timmins'  && period === 'Breakfast')
+        ));
+        rows.push({ type, date, mealPeriod: period, mealsActual: actual, mealClaimed: value, exceeded: period && actual > max ? 'Y' : (period ? 'N' : '-'), mealIneligible: ineligible, value, receipts });
       } else if (type === 'mileage') {
         const km = parseFloat(document.getElementById(`f-km-${id}`)?.value) || 0;
         rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', km, value, receipts });
@@ -854,7 +866,7 @@
     return rows;
   }
 
- // ---- BUILD EXCEL (fills original Loomex template, preserving styles) ----
+  // ---- BUILD EXCEL ----
   function buildExcel(fd) {
     const wb = XLSX.read(EXPENSE_TEMPLATE_B64, { type: 'base64' });
     const ws = wb.Sheets['Expense Report'];
@@ -864,13 +876,11 @@
       else { ws[addr] = { t: type, v: value }; }
     }
 
-    // Header
     setCell('A2', 's', 'Contractor:');
     setCell('B2', 's', fd.contractorName);
     setCell('A3', 's', 'Activation / Site / Period:');
     setCell('B3', 's', `${fd.activation} | ${fd.site} | ${fd.periodStart} to ${fd.periodEnd}`);
 
-    // Clear all data rows (rows 6-17)
     for (let r = 6; r <= 17; r++) {
       setCell(`A${r}`, 's', '');
       setCell(`B${r}`, 's', '');
@@ -882,33 +892,32 @@
       setCell(`H${r}`, 'n', 0);
     }
 
-    // Fill expense rows (up to 12 -- template limit)
     const maxRows = Math.min(fd.rows.length, 12);
     for (let i = 0; i < maxRows; i++) {
       const row = fd.rows[i];
       const r = 6 + i;
-
       setCell(`A${r}`, 's', row.date || '');
-
       let desc = row.description || '';
-      if (row.type === 'meal') desc = row.mealPeriod + (row.mealsActual > ({ Breakfast: 15, Lunch: 20, Dinner: 45 }[row.mealPeriod] || 0) ? ' (exceeded -- claimed at allowance)' : '');
+      if (row.type === 'meal') {
+        if (row.mealIneligible) {
+          desc = `${row.mealPeriod} (NOT ELIGIBLE at ${fd.site} -- EOC review required)`;
+        } else {
+          desc = row.mealPeriod + (row.mealsActual > ({ Breakfast: 15, Lunch: 20, Dinner: 45 }[row.mealPeriod] || 0) ? ' (exceeded -- claimed at allowance)' : '');
+        }
+      }
       if (row.type === 'mileage') desc = `${row.description || ''} (${row.km} km @ $0.59)`;
       setCell(`B${r}`, 's', desc);
-
       setCell(`C${r}`, 'n', row.type === 'hotel'   ? row.value : 0);
       setCell(`D${r}`, 'n', row.type === 'rental'  ? row.value : 0);
       setCell(`E${r}`, 'n', row.type === 'mileage' ? row.value : 0);
-      setCell(`F${r}`, 'n', row.type === 'meal'    ? row.value : 0);
-      setCell(`G${r}`, 'n', 0); // Fuel -- not used
-      setCell(`H${r}`, 'n', row.type === 'misc'    ? row.value : 0);
+      setCell(`F${r}`, 'n', row.type === 'meal' ? (row.mealIneligible ? row.mealsActual : row.value) : 0);
+      setCell(`G${r}`, 'n', 0);
+      setCell(`H${r}`, 'n', row.type === 'misc' ? row.value : 0);
     }
-
-    // Certification note
-    setCell('A21', 's', `Submitted by: ${fd.contractorName} | ${fd.contractorEmail} | ${new Date().toLocaleDateString('en-CA')}`);
-   
 
     return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
   }
+
   // ---- SHOW STATUS ----
   function showStatus(msg, type) {
     const el = document.getElementById('statusMsg');
@@ -917,19 +926,18 @@
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-   // ---- VALIDATE ----
+  // ---- VALIDATE ----
   function validate(rows) {
     const fieldLabels = {
-      contractorName: 'Full Name',
+      contractorName:  'Full Name',
       contractorEmail: 'Email Address',
-      activation: 'Activation',
-      site: 'Site',
-      periodStart: 'Period Start Date',
-      periodEnd: 'Period End Date'
+      activation:      'Activation',
+      site:            'Site',
+      periodStart:     'Period Start Date',
+      periodEnd:       'Period End Date'
     };
     const missing = [];
     let ok = true;
-
     Object.keys(fieldLabels).forEach(fid => {
       const el = document.getElementById(fid);
       if (!el.value.trim()) {
@@ -940,24 +948,19 @@
         el.classList.remove('invalid');
       }
     });
-
     if (!ok) {
       showStatus(`Please complete the following required fields: <strong>${missing.join(', ')}</strong>`, 'error');
       return false;
     }
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('contractorEmail').value.trim())) {
       document.getElementById('contractorEmail').classList.add('invalid');
       showStatus('Please enter a valid email address.', 'error');
       return false;
     }
-
     if (rows.length === 0) {
       showStatus('Please add at least one expense item.', 'error');
       return false;
     }
-
-    // Check dates on each row
     let missingDateRows = [];
     document.querySelectorAll('.expense-row').forEach(rowEl => {
       const id = parseInt(rowEl.id.replace('row-', ''));
@@ -975,12 +978,10 @@
       showStatus(`Please enter a date for expense item${missingDateRows.length > 1 ? 's' : ''}: <strong>${missingDateRows.join(', ')}</strong>`, 'error');
       return false;
     }
-
     if (!hasSig) {
       showStatus('Please draw your signature before submitting.', 'error');
       return false;
     }
-
     return true;
   }
 
@@ -988,11 +989,9 @@
   async function submitForm() {
     const rows = await collectRows();
     if (!validate(rows)) return;
-
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Building report...';
-
     try {
       const total = parseFloat(rows.reduce((s, r) => s + r.value, 0).toFixed(2));
       const formData = {
@@ -1004,7 +1003,6 @@
         periodEnd:       document.getElementById('periodEnd').value,
         rows, total
       };
-
       const signatureBase64 = canvas.toDataURL('image/png');
       const excelBase64     = buildExcel(formData);
       const allReceipts     = [];
@@ -1013,21 +1011,16 @@
           allReceipts.push({ filename: `Row${ri+1}_${row.date||'nodate'}_receipt${rj+1}.${rec.name.split('.').pop()}`, type: rec.type, data: rec.data });
         });
       });
-
       btn.innerHTML = '<span class="spinner"></span>Sending to EOC...';
-
       const res = await fetch(`${WORKER_URL}/expense-submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formData, excelBase64, signatureBase64, receipts: allReceipts, submittedAt: new Date().toISOString() })
       });
-
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Unknown error');
-
       showStatus(`<strong>&#10003; Submitted successfully.</strong><br>Your expense report has been sent to EOC Admin for review. A copy has been emailed to <strong>${formData.contractorEmail}</strong>.<br><small style="opacity:0.75">Reference: ${result.token}</small>`, 'success');
       btn.style.display = 'none';
-
     } catch (err) {
       showStatus(`Submission failed: ${err.message}. Please try again or email eocadmin@loomex.ca directly.`, 'error');
       btn.disabled = false;
@@ -1038,6 +1031,3 @@
   // Start with two rows
   addRow();
   addRow();
-</script>
-</body>
-</html>
