@@ -673,7 +673,7 @@ resizeCanvas();
       if (!result.success) throw new Error(result.error || 'Approval failed');
 
       showStatus(`<strong>&#10003; Approved and sent to Finance.</strong><br>The approved expense report for <strong>${submission.formData.contractorName}</strong> has been forwarded to Finance.`, 'success');
-      btn.textContent = `&#10003; Approved by ${adminName}`;
+      btn.innerHTML = `&#10003; Approved by ${adminName}`;
 
     } catch (err) {
       showStatus(`Approval failed: ${err.message}`, 'error');
