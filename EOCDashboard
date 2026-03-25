@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOOMI Emergency Management Command Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-900: #0A1929;
+      --navy-800: #1A2B35;
+      --navy-700: #1A4E7E;
+      --navy-600: #2D6A9F;
+      --teal-500: #2F9879;
+      --teal-400: #42A278;
+      --lime-500: #7DBE42;
+      --amber-500: #D9860F;
+      --red-500: #C0392B;
+      --gray-100: #F5F7F8;
+      --gray-200: #EEF0F1;
+      --gray-300: #D8DEE3;
+      --gray-400: #A0A8AD;
+      --gray-500: #747A7C;
+      --gray-700: #4A5053;
+      --gray-900: #1A2B35;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, system-ui, sans-serif;
+      background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+      color: white;
+      min-height: 100vh;
+      padding: 0;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Tactical grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(47, 152, 121, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(47, 152, 121, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid rgba(47, 152, 121, 0.2);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 200px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--teal-500) 0%, transparent 100%);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .logo {
+      height: 70px;
+      filter: drop-shadow(0 4px 20px rgba(47, 152, 121, 0.4));
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    h1 {
+      font-family: 'Epilogue', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      background: rgba(47, 152, 121, 0.1);
+      border: 1px solid rgba(47, 152, 121, 0.3);
+      border-left: 4px solid var(--teal-500);
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      background: var(--teal-500);
+      border-radius: 50%;
+      box-shadow: 
+        0 0 10px var(--teal-500),
+        0 0 20px var(--teal-500);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(1.15);
+      }
+    }
+
+    .status-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--teal-500);
+      letter-spacing: 0.05em;
+    }
+
+    .timestamp {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.4);
+      padding: 0.75rem 1.25rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+
+    /* Overall Summary Section */
+    .summary-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-family: 'Epilogue', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .summary-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-left: 3px solid;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+      clip-path: polygon(100% 0, 0 0, 100% 100%);
+    }
+
+    .summary-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: white;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-context {
+      font-size: 0.8125rem;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Hub Cards */
+    .hubs-section {
+      margin-bottom: 2rem;
+    }
+
+    .hubs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+      gap: 2rem;
+    }
+
+    .hub-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      animation: fadeIn 0.6s ease-out backwards;
+    }
+
+    .hub-card:hover {
+      border-color: rgba(47, 152, 121, 0.4);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .hub-header {
+      background: linear-gradient(90deg, rgba(26, 78, 126, 0.3) 0%, rgba(47, 152, 121, 0.2) 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hub-name {
+      font-family: 'Epilogue', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .hub-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.4rem 0.9rem;
+      background: rgba(47, 152, 121, 0.2);
+      border: 1px solid rgba(47, 152, 121, 0.4);
+      border-radius: 4px;
+      color: var(--teal-500);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .hub-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .hub-metric {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 1.25rem;
+      transition: background 0.2s ease;
+    }
+
+    .hub-metric:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: white;
+      line-height: 1;
+    }
+
+    .metric-sub {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 0.35rem;
+    }
+
+    .occupancy-bar {
+      margin-top: 1.5rem;
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    .bar-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bar-percentage {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--teal-500);
+      font-weight: 700;
+    }
+
+    .bar-track {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal-500) 0%, var(--lime-500) 100%);
+      border-radius: 4px;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 16px rgba(47, 152, 121, 0.5);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hub-card:nth-child(1) { animation-delay: 0.1s; }
+    .hub-card:nth-child(2) { animation-delay: 0.2s; }
+    .hub-card:nth-child(3) { animation-delay: 0.3s; }
+    .hub-card:nth-child(4) { animation-delay: 0.4s; }
+    .hub-card:nth-child(5) { animation-delay: 0.5s; }
+    .hub-card:nth-child(6) { animation-delay: 0.6s; }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .hubs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1.5rem;
+      }
+
+      .header {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .hub-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .card-value {
+        font-size: 1.75rem;
+      }
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 4rem 0;
+      color: rgba(255, 255, 255, 0.5);
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-section">
+        <div class="title-group">
+          <h1>Loomex Emergency Operations</h1>
+          <div class="subtitle">Command Dashboard</div>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div class="system-status">
+          <div class="status-indicator"></div>
+          <div class="status-text">SYSTEM OPERATIONAL</div>
+        </div>
+        <div class="timestamp" id="timestamp">--</div>
+      </div>
+    </header>
+
+    <!-- Overall Summary -->
+    <section class="summary-section">
+      <div class="section-header">
+        <div class="section-title">System-Wide Overview</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="summary-grid" id="summaryGrid">
+        <!-- Populated by JavaScript -->
+      </div>
+    </section>
+
+    <!-- Individual Hubs -->
+    <section class="hubs-section">
+      <div class="section-header">
+        <div class="section-title">Hub Status</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="hubs-grid" id="hubsGrid">
+        <!-- Populated by JavaScript -->
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Update timestamp
+    function updateTimestamp() {
+      const now = new Date();
+      const formatted = now.toLocaleString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      document.getElementById('timestamp').textContent = formatted;
+    }
+
+    updateTimestamp();
+    setInterval(updateTimestamp, 1000);
+
+    // Fetch data from Power Automate
+// Fetch data from Power Automate
+async function fetchData() {
+  const FLOW_URL = 'https://defaultf37e3a4c5aaa4bf993d2cc21b157eb.4c.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/49779f52c7ce4b1cac7d0d3bdd2a71e7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ym6PDiJax2F_Kcf87lUZmFPLQt-n4p0atqwPq2YSbys';
+  
+  try {
+    console.log('Calling Power Automate flow...');
+    const response = await fetch(FLOW_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('Response status:', response.status);
+    
+    const text = await response.text();
+    console.log('Raw response:', text);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+    }
+    
+    const data = JSON.parse(text);
+    console.log('Parsed data:', data);
+    return data;
+  } catch (error) {
+    console.error('FULL ERROR:', error);
+    console.error('Error details:', error.message);
+    throw error; // Re-throw the error instead of returning mock data
+  }
+}
+// Render summary cards
+function renderSummary(data, hubs) {
+  // Calculate available capacity by summing all hub capacities (already vacant × 2.5)
+  const availableCapacity = hubs
+    .filter(hub => hub.name !== "Main EOC")
+    .reduce((sum, hub) => sum + hub.capacity, 0);
+
+  const summaryHTML = `
+    <div class="summary-card" style="border-left-color: var(--teal-500)">
+      <div class="card-label">Active Hubs</div>
+      <div class="card-value">${data.totalHubs}</div>
+      <div class="card-context">operational sites</div>
+    </div>
+    <div class="summary-card" style="border-left-color: var(--navy-600)">
+      <div class="card-label">Total Rooms</div>
+      <div class="card-value">${data.totalRooms}</div>
+      <div class="card-context">${data.occupied} occupied, ${data.vacant} vacant</div>
+    </div>
+    <div class="summary-card" style="border-left-color: var(--lime-500)">
+      <div class="card-label">Current Occupancy</div>
+      <div class="card-value">${data.totalEvacuees}</div>
+      <div class="card-context">evacuees sheltered</div>
+    </div>
+    <div class="summary-card" style="border-left-color: var(--navy-600)">
+      <div class="card-label">Available Capacity</div>
+      <div class="card-value">${Math.round(availableCapacity)}</div>
+      <div class="card-context">(Rooms x 2.5)</div>
+    </div>
+    <div class="summary-card" style="border-left-color: var(--red-500)">
+      <div class="card-label">Open IMS 213s</div>
+      <div class="card-value">${data.open213s}</div>
+      <div class="card-context">messages pending</div>
+    </div>
+    <div class="summary-card" style="border-left-color: var(--amber-500)">
+      <div class="card-label">Pending Transfers</div>
+      <div class="card-value">${data.pendingTransfers}</div>
+      <div class="card-context">${data.activeTransfers} in progress</div>
+    </div>
+    <div class="summary-card" style="border-left-color: var(--teal-500)">
+      <div class="card-label">Completed Today</div>
+      <div class="card-value">${data.completedToday}</div>
+      <div class="card-context">transfers finalized</div>
+    </div>
+  `;
+
+  document.getElementById('summaryGrid').innerHTML = summaryHTML;
+}
+    
+// Render hub cards
+function renderHubs(hubs) {
+  // Filter out Main EOC
+  hubs = hubs.filter(hub => hub.name !== "Main EOC");
+  
+  const hubsHTML = hubs.map(hub => {
+    const occupancyRate = hub.rooms > 0 
+  ? Math.round((hub.occupied / hub.rooms) * 100) 
+  : 0;
+
+    return `
+      <div class="hub-card">
+        <div class="hub-header">
+          <div class="hub-name">${hub.name}</div>
+          <div class="hub-status">${hub.status}</div>
+        </div>
+        <div class="hub-metrics">
+          <div class="hub-metric">
+            <div class="metric-label">Total Rooms</div>
+            <div class="metric-value">${hub.rooms}</div>
+          </div>
+          <div class="hub-metric">
+            <div class="metric-label">Occupied</div>
+            <div class="metric-value">${hub.occupied}</div>
+            <div class="metric-sub">rooms in use</div>
+          </div>
+          <div class="hub-metric">
+            <div class="metric-label">Vacant</div>
+            <div class="metric-value">${hub.vacant}</div>
+            <div class="metric-sub">available</div>
+          </div>
+          <div class="hub-metric">
+            <div class="metric-label">Evacuees</div>
+            <div class="metric-value">${hub.evacuees}</div>
+            <div class="metric-sub">current</div>
+          </div>
+          <div class="hub-metric">
+            <div class="metric-label">Capacity</div>
+            <div class="metric-value">${hub.capacity}</div>
+            <div class="metric-sub">max (2.5x rooms)</div>
+          </div>
+          <div class="hub-metric">
+            <div class="metric-label">Utilization</div>
+            <div class="metric-value">${occupancyRate}%</div>
+            <div class="metric-sub">occupied</div>
+          </div>
+        </div>
+        <div class="occupancy-bar">
+          <div class="bar-label">
+            <span>Occupancy Rate</span>
+            <span class="bar-percentage">${occupancyRate}%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: ${occupancyRate}%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('hubsGrid').innerHTML = hubsHTML;
+}
+
+    // Initialize dashboard
+async function initDashboard() {
+  const data = await fetchData();
+  const filteredHubs = data.hubs.filter(hub => hub.name !== "Main EOC");
+  renderSummary(data.summary, data.hubs);
+  renderHubs(filteredHubs);
+}
+
+    // Load dashboard on page load
+    window.addEventListener('DOMContentLoaded', initDashboard);
+
+    // Refresh every 30 seconds
+    setInterval(initDashboard, 30000);
+  </script>
+</body>
+</html>
