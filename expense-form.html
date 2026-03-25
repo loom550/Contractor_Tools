@@ -133,6 +133,11 @@
       border-color: var(--error);
       box-shadow: 0 0 0 3px rgba(204,41,54,0.08);
     }
+    input[type="date"]:out-of-range {
+  background: #f5f5f5;
+  color: var(--text-muted);
+  border-color: #c0c0c0;
+}
     .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
     /* SITE NOTICE */
@@ -253,6 +258,8 @@
       font-weight: 700;
       border: 1.5px solid;
       white-space: nowrap;
+      min-width: 130px;
+width: 100%;
     }
     .exceeded-yes { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
     .exceeded-no  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
