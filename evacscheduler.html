@@ -291,16 +291,29 @@ function getJwt() {
 }
 
 async function api(path, options = {}) {
-  const jwt = getJwt();
   const res = await fetch(WORKER + path, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'Cf-Access-Jwt-Assertion': jwt,
       ...(options.headers || {}),
     },
   });
   const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+
+
+
+
+
+
+
+
+
+
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }
