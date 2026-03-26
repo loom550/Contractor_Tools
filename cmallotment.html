@@ -418,7 +418,9 @@ async function loadData() {
     fetch(`${WORKER}/allotments?hub=${currentHub}`)
   ]);
 
-  evacuees = await evRes.json();
+  evacuees = (await evRes.json()).sort((a, b) =>
+  `${a.LastName} ${a.FirstName}`.localeCompare(`${b.LastName} ${b.FirstName}`)
+);
 
   const allotments = await allRes.json();
   allotmentTotals = {};
