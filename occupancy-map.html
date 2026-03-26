@@ -496,6 +496,7 @@
       <div class="badge-text">ACTIVE EVACUATION</div>
     </div>
     <div class="timestamp-box">As of <span id="ts-display">Loading...</span></div>
+    <span id="save-status" style="display:none;font-family:'JetBrains Mono',monospace;font-size:0.65rem;padding:0.4rem 0.75rem;border-radius:4px;"></span>
     <button class="admin-header-btn" onclick="openAdmin()">⚙ Update Numbers</button>
     <button class="export-header-btn" onclick="exportImage()">⬇ Export Image</button>
   </div>
@@ -644,21 +645,22 @@ const sites = [
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const hotels = {
   kapuskasing: [
-    { id: 'kap-1', name: 'Hotel 1', count: 0, capacity: 0 },
-    { id: 'kap-2', name: 'Hotel 2', count: 0, capacity: 0 },
-    { id: 'kap-3', name: 'Hotel 3', count: 0, capacity: 0 },
-    { id: 'kap-4', name: 'Hotel 4', count: 0, capacity: 0 },
-    { id: 'kap-5', name: 'Hotel 5', count: 0, capacity: 0 },
+    { id: 'kap-1', name: 'Advantage',   count: 15,  capacity: 0 },
+    { id: 'kap-2', name: 'Travelodge',  count: 91,  capacity: 0 },
+    { id: 'kap-3', name: 'SureStay',    count: 76,  capacity: 0 },
+    { id: 'kap-4', name: 'Val Rita',    count: 39,  capacity: 0 },
+    { id: 'kap-5', name: 'Best Value',  count: 12,  capacity: 0 },
   ],
   timmins: [
-    { id: 'tim-1', name: 'Hotel 1', count: 0, capacity: 0 },
-    { id: 'tim-2', name: 'Hotel 2', count: 0, capacity: 0 },
-    { id: 'tim-3', name: 'Hotel 3', count: 0, capacity: 0 },
-    { id: 'tim-4', name: 'Hotel 4', count: 0, capacity: 0 },
+    { id: 'tim-1', name: 'Hampton Inn',    count: 23,  capacity: 0 },
+    { id: 'tim-2', name: 'Ramada',         count: 137, capacity: 0 },
+    { id: 'tim-3', name: 'Bon Air',        count: 6,   capacity: 0 },
+    { id: 'tim-4', name: 'Cedar Meadows',  count: 0,   capacity: 0 },
+    { id: 'tim-5', name: 'Holiday Inn',    count: 62,  capacity: 0 },
   ],
   kingston: [
-    { id: 'kin-1', name: 'DoubleTree', count: 0, capacity: 0 },
-    { id: 'kin-2', name: 'Home2Suites', count: 0, capacity: 0 },
+    { id: 'kin-1', name: 'Home2Suites', count: 120, capacity: 0 },
+    { id: 'kin-2', name: 'DoubleTree',  count: 22,  capacity: 0 },
   ],
   'kingston-west': [
     { id: 'kinw-1', name: 'Quality Inn', count: 0, capacity: 0 },
@@ -668,7 +670,7 @@ const hotels = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // JSONBIN CONFIG
 const BIN_ID  = '69a09bfdd0ea881f40dca468';
-const API_KEY = '$2a$10$o8LpE0.A5Gmy6gxRTM4xsujzvcG7QEj8lHFBCbCAdeUNTVnXZE0I2';
+const API_KEY = '$2a$10$yix8gE4u8dK1HPdVeiQZauXduGGWkuQ3pkgbMl4nBVXEzbMsi2ogK';
 const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 async function loadFromBin() {
@@ -706,6 +708,22 @@ async function loadFromBin() {
   }
 }
 
+function setSaveStatus(state, msg) {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  const styles = {
+    saving: { bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', text: '⏳ Saving…' },
+    ok:     { bg: 'rgba(47,152,121,0.2)',   color: '#2F9879',               text: '✓ Synced'  },
+    error:  { bg: 'rgba(192,57,43,0.2)',    color: '#E74C3C',               text: '✗ ' + (msg || 'Sync failed') }
+  };
+  const s = styles[state];
+  el.style.background = s.bg;
+  el.style.color = s.color;
+  el.textContent = s.text;
+  el.style.display = 'inline-block';
+  if (state === 'ok') setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
 async function saveToBin() {
   const payload = {
     lastUpdated: lastUpdated,
@@ -717,16 +735,27 @@ async function saveToBin() {
       ])
     )
   };
+  setSaveStatus('saving');
   try {
     const res = await fetch(BIN_URL, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error('Save failed');
+    const text = await res.text();
+    if (!res.ok) {
+      const msg = `HTTP ${res.status}: ${text.slice(0, 150)}`;
+      console.error('JSONBin save error:', msg);
+      setSaveStatus('error', `HTTP ${res.status}`);
+      alert('Sync failed — ' + msg);
+      return;
+    }
+    console.log('JSONBin save ok');
+    setSaveStatus('ok');
   } catch(e) {
-    console.warn('JSONBin save error:', e);
-    alert('Warning: numbers updated locally but could not sync. Check your connection.');
+    console.error('JSONBin save exception:', e);
+    setSaveStatus('error', e.message.slice(0, 40));
+    alert('Sync failed — ' + e.message);
   }
 }
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
