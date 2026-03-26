@@ -677,7 +677,7 @@ async function doSubmit() {
     const pdfRes  = await fetch(`${WORKER}/generate-pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submissionRef, hub: currentHub, submittedBy: staffName, submissionDate, members, receiptUrl })
+      body: JSON.stringify({ submissionRef, hub: currentHub, submittedBy: staffName, submissionDate, members, receiptUrl, receiptGraphPath: uploadData.graphPath })
     });
     const pdfData = await pdfRes.json();
     const pdfUrl  = pdfData.pdfUrl || null;
