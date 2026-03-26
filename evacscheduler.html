@@ -744,8 +744,10 @@ async function confirmAssignment(rid, btn) {
 }
 
 async function doRemove(rid, btn) {
+  console.log("doRemove called, rid:", rid);
   btn.disabled = true; btn.textContent = '...';
   try {
+    console.log("calling DELETE /assignments/" + rid);
     await api(`/assignments/${rid}`, { method: 'DELETE' });
     assignments = assignments.filter(a => a.recordId !== rid);
     renderDrawer();
