@@ -38,6 +38,21 @@
     /* ---- SCREENS ---- */
     .screen { display: none; }
     .screen.active { display: block; }
+    @media (max-width: 380px) {
+  .filter-tabs { flex-wrap: wrap; }
+  .filter-tab  { flex: none; width: calc(50% - 3px); }
+  .stats-bar   { grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .stat .num   { font-size: 18px; }
+  .stat .lbl   { font-size: 9px; }
+}
+
+@media (max-width: 480px) {
+  .line-item        { flex-wrap: wrap; }
+  .line-name        { width: 100%; flex: none; margin-bottom: 4px; }
+  .line-remain      { font-size: 11px; flex: 1; }
+  .line-amount      { width: 90px; }
+  .ev-badge         { font-size: 10px; padding: 2px 5px; }
+}
 
     /* ---- AUTH SCREEN ---- */
     .auth-wrap {
