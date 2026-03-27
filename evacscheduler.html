@@ -276,6 +276,15 @@ async function api(path, options = {}) {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
+  // If Cloudflare Access redirects to login, do a hard redirect
+  if (res.redirected && res.url.includes('cloudflareaccess.com')) {
+    window.location.href = res.url;
+    throw new Error('Redirecting to login...');
+  }
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = `https://evacscheduling.cloudflareaccess.com/cdn-cgi/access/login/evacscheduling.loomex-it.workers.dev?redirectUrl=${encodeURIComponent(window.location.href)}`;
+    throw new Error('Redirecting to login...');
+  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
