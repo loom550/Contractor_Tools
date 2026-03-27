@@ -784,7 +784,7 @@
     payload.append('CompletedDate', document.querySelector('[name=CompletedDate]').value);
     payload.append('ActivationID', document.querySelector('[name=ActivationID]').value);
     payload.append('HubName', document.querySelector('[name=HubName]').value);
-    payload.append('Distribution', 'EOC Operations');
+    payload.append('Distribution', 'EOC Operations, EOC Command');
     payload.append('RecordStatus', 'Submitted');
 
     selectedFiles.forEach((f, i) => payload.append(`attachment_${i}`, f, f.name));
