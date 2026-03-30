@@ -32,7 +32,7 @@
     const t = p.get('t') || 'LOOMI Help';
     document.getElementById('title').textContent = t;
     document.getElementById('container').innerHTML = v
-      ? `<div class="video-wrapper"><iframe src="https://embed.app.guidde.com/playbooks/${v}" allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`
+      ? `<div class="video-wrapper"><iframe src="https://embed.app.guidde.com/playbooks/${v}?mode=videoAndDoc" allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`
       : `<p class="no-video">No tutorial video found for this module.</p>`;
   </script>
 </body>
