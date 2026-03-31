@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Site Compliance Checker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #F5F9F7;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #003E28 0%, #005C3D 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        
+        header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 30px;
+            border-bottom: 1px solid #D4E5DC;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 12px;
+        }
+        
+        #searchInput {
+            flex: 1;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #D4E5DC;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        #searchInput:focus {
+            border-color: #003E28;
+        }
+        
+        #searchBtn {
+            padding: 16px 32px;
+            background: #003E28;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        #searchBtn:hover {
+            background: #005C3D;
+        }
+        
+        .quick-filters {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: #E8F0ED;
+            border: 1px solid #B8D4C8;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #003E28;
+        }
+        
+        .filter-btn:hover {
+            background: #D4E5DC;
+            border-color: #003E28;
+        }
+        
+        .results-section {
+            background: white;
+            padding: 20px 30px 30px;
+            border-radius: 0 0 12px 12px;
+            min-height: 300px;
+        }
+        
+        .result-card {
+            border: 2px solid #D4E5DC;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .result-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .result-header.green { background: #d4edda; border-left: 5px solid #28a745; }
+        .result-header.yellow { background: #fff3cd; border-left: 5px solid #D4A017; }
+        .result-header.red { background: #f8d7da; border-left: 5px solid #dc3545; }
+        .result-header.ineligible { background: #e9ecef; border-left: 5px solid #6c757d; }
+        
+        .status-icon {
+            font-size: 2rem;
+        }
+        
+        .result-title {
+            flex: 1;
+        }
+        
+        .result-title h3 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            color: #003E28;
+        }
+        
+        .result-title .category {
+            font-size: 0.85rem;
+            color: #5A7D6C;
+        }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .status-badge.green { background: #28a745; color: white; }
+        .status-badge.yellow { background: #D4A017; color: white; }
+        .status-badge.red { background: #dc3545; color: white; }
+        .status-badge.ineligible { background: #6c757d; color: white; }
+        
+        .result-body {
+            padding: 20px;
+            background: #FAFCFB;
+        }
+        
+        .result-body p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        
+        .result-body strong {
+            color: #003E28;
+        }
+        
+        .rate-box {
+            display: inline-block;
+            background: #E8F0ED;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            margin: 8px 0;
+            color: #003E28;
+            border: 1px solid #B8D4C8;
+        }
+        
+        .action-box {
+            background: white;
+            border: 1px solid #D4E5DC;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .action-box h4 {
+            font-size: 0.9rem;
+            color: #5A7D6C;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .action-box ul {
+            margin-left: 20px;
+        }
+        
+        .action-box li {
+            margin-bottom: 6px;
+        }
+        
+        .threshold-warning {
+            background: #FFF8E6;
+            border: 1px solid #D4A017;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #5A7D6C;
+        }
+        
+        .no-results h3 {
+            margin-bottom: 12px;
+            color: #003E28;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #D4E5DC;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #003E28;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .legend-dot.green { background: #28a745; }
+        .legend-dot.yellow { background: #D4A017; }
+        .legend-dot.red { background: #dc3545; }
+        .legend-dot.grey { background: #6c757d; }
+        
+        @media (max-width: 600px) {
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .result-header {
+                flex-wrap: wrap;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Loomex Host Site Compliance Checker</h1>
+            <p>JEMS + EMAP Expense Approval Guide</p>
+        </header>
+        
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="What do you need? (e.g., breakfast, hotel, laundry, bus...)" autofocus>
+                <button id="searchBtn">Check</button>
+            </div>
+            
+            <div class="quick-filters">
+                <button class="filter-btn" data-search="breakfast">Breakfast</button>
+                <button class="filter-btn" data-search="lunch">Lunch</button>
+                <button class="filter-btn" data-search="hotel">Hotel</button>
+                <button class="filter-btn" data-search="laundry">Laundry</button>
+                <button class="filter-btn" data-search="bus">Bus</button>
+                <button class="filter-btn" data-search="diapers">Diapers</button>
+                <button class="filter-btn" data-search="recreation">Recreation</button>
+                <button class="filter-btn" data-search="liaison">Liaison</button>
+                <button class="filter-btn" data-search="pet">Pet</button>
+                <button class="filter-btn" data-search="wheelchair">Wheelchair</button>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="legend-dot green"></div> GREEN = Pre-approved, proceed</div>
+                <div class="legend-item"><div class="legend-dot yellow"></div> YELLOW = IC approval needed</div>
+                <div class="legend-item"><div class="legend-dot red"></div> RED = EOC Logistics approval (IMS 213)</div>
+                <div class="legend-item"><div class="legend-dot grey"></div> INELIGIBLE = Cannot claim</div>
+            </div>
+        </div>
+        
+        <div class="results-section" id="results">
+            <div class="no-results">
+                <h3>Search for an expense</h3>
+                <p>Type what you need to purchase or arrange, and we'll tell you the approval level.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const complianceData = [
+            // MEALS
+            { id: "MEALS-001", category: "Meals", name: "Breakfast", level: "GREEN", rate: "$24.90/person", unit: "per person per day", conditions: "At or below TBS Travel Directive rate", overLimit: "RED", docs: ["Receipt", "Evacuee count"], keywords: ["breakfast", "morning meal", "food", "per diem"] },
+            { id: "MEALS-002", category: "Meals", name: "Lunch", level: "GREEN", rate: "$25.20/person", unit: "per person per day", conditions: "At or below TBS Travel Directive rate", overLimit: "RED", docs: ["Receipt", "Evacuee count"], keywords: ["lunch", "midday meal", "food", "per diem"] },
+            { id: "MEALS-003", category: "Meals", name: "Dinner", level: "GREEN", rate: "$61.85/person", unit: "per person per day", conditions: "At or below TBS Travel Directive rate", overLimit: "RED", docs: ["Receipt", "Evacuee count"], keywords: ["dinner", "supper", "evening meal", "food", "per diem"] },
+            { id: "MEALS-004", category: "Meals", name: "Snacks and Beverages", level: "GREEN", rate: "$17.30/day max", unit: "per person per day", conditions: "Daily maximum per person", overLimit: "RED", docs: ["Receipt", "Evacuee count"], keywords: ["snacks", "beverages", "drinks", "refreshments", "between meals"] },
+            { id: "MEALS-005", category: "Meals", name: "Catering Services", level: "YELLOW", rate: "Per-person rates apply", unit: "per event", conditions: "Must not exceed per-person daily meal rates. IC approval if total >$1000", overLimit: "RED", docs: ["Catering invoice", "Attendee count", "Per-person calculation"], keywords: ["catering", "caterer", "group meals", "buffet", "food service"] },
+            { id: "MEALS-006", category: "Meals", name: "Traditional Foods", level: "YELLOW", rate: "Case-by-case", unit: "per event", conditions: "Eligible at extra expense. IC approval. Document cultural significance", overLimit: "RED", docs: ["Receipt", "Cultural justification", "IC approval"], keywords: ["traditional food", "cultural food", "indigenous food", "country food", "wild game", "fish", "bannock"] },
+            { id: "MEALS-007", category: "Meals", name: "Special Dietary Meals", level: "GREEN", rate: "Reasonable extra", unit: "per person per day", conditions: "Reasonable additional cost for medical necessity", overLimit: "YELLOW", docs: ["Receipt", "Dietary need documentation"], keywords: ["diabetic", "diabetes", "celiac", "gluten free", "allergy", "dietary restriction", "medical diet"] },
+            { id: "MEALS-008", category: "Meals", name: "Infant Formula/Baby Food", level: "GREEN", rate: "As needed", unit: "as needed", conditions: "Reasonable quantities for infants", overLimit: "YELLOW", docs: ["Receipt", "Number of infants"], keywords: ["formula", "baby food", "infant", "baby", "nursing"] },
+            { id: "MEALS-009", category: "Meals", name: "Restaurant Vouchers", level: "GREEN", rate: "$111.95/day max", unit: "per person per day", conditions: "Cannot exceed combined meal rates (B+L+D)", overLimit: "RED", docs: ["Voucher records", "Distribution list"], keywords: ["voucher", "meal voucher", "restaurant", "gift card"] },
+            { id: "MEALS-010", category: "Meals", name: "Grocery Store Vouchers", level: "GREEN", rate: "$111.95/day max", unit: "per person per day", conditions: "Cannot exceed combined meal rates", overLimit: "RED", docs: ["Voucher records", "Distribution list"], keywords: ["grocery", "food voucher", "supermarket", "store"] },
+            
+            // ACCOMMODATION
+            { id: "ACCOM-001", category: "Accommodation", name: "Hotel/Motel - Standard Rate", level: "GREEN", rate: "PWGSC Directory rate", unit: "per room per night", conditions: "At or below PWGSC Accommodation Directory rate", overLimit: "RED", docs: ["Hotel invoice", "PWGSC rate verification"], keywords: ["hotel", "motel", "room", "accommodation", "lodging", "stay"] },
+            { id: "ACCOM-002", category: "Accommodation", name: "Hotel/Motel - Above Rate", level: "RED", rate: "Requires justification", unit: "per room per night", conditions: "Requires EOC Logistics pre-approval with market justification", overLimit: "RED", docs: ["Hotel invoice", "PWGSC comparison", "Availability proof", "IMS 213"], keywords: ["hotel over rate", "expensive hotel", "premium", "above limit"] },
+            { id: "ACCOM-003", category: "Accommodation", name: "Group Lodging Facility", level: "YELLOW", rate: "Case-by-case", unit: "per facility per day", conditions: "Emergency/life safety only OR no commercial available. PHU inspection required", overLimit: "RED", docs: ["Facility rental", "PHU inspection", "Justification"], keywords: ["arena", "gymnasium", "gym", "community hall", "group lodging", "cots", "shelter"] },
+            { id: "ACCOM-006", category: "Accommodation", name: "Extended Family Suite", level: "YELLOW", rate: "Case-by-case", unit: "per room per night", conditions: "IC approval to keep family units together. Cost vs multiple standard rooms", overLimit: "RED", docs: ["Invoice", "Family grouping justification", "Cost comparison"], keywords: ["suite", "family room", "large room", "extended family", "family together"] },
+            { id: "ACCOM-008", category: "Accommodation", name: "Facility Cleaning", level: "GREEN", rate: "Normal costs", unit: "per facility", conditions: "Normal cleaning and restoration covered", overLimit: "YELLOW", docs: ["Cleaning invoice", "Pre/post inspection"], keywords: ["cleaning", "sanitation", "restoration", "housekeeping"] },
+            { id: "ACCOM-009", category: "Accommodation", name: "Facility Damage Repair", level: "RED", rate: "Case-by-case", unit: "per incident", conditions: "Extraordinary damage requires EOC Logistics case-by-case review", overLimit: "RED", docs: ["Damage photos", "Repair estimates", "Pre-inspection", "IMS 213"], keywords: ["damage", "repair", "broken", "vandalism", "destruction"] },
+            
+            // TRANSPORTATION
+            { id: "TRANS-001", category: "Transportation", name: "Local Transit Passes", level: "GREEN", rate: "Local rates", unit: "per pass", conditions: "Where public transit available and practical", overLimit: "YELLOW", docs: ["Receipt", "Distribution list"], keywords: ["transit", "bus pass", "public transit", "transportation"] },
+            { id: "TRANS-002", category: "Transportation", name: "Vehicle Rental - Standard", level: "GREEN", rate: "PWGSC Directory rate", unit: "per vehicle per day", conditions: "1 vehicle per 100 evacuees at PWGSC rate", overLimit: "RED", docs: ["Rental agreement", "Insurance endorsement"], keywords: ["rental car", "vehicle", "car rental", "van rental"] },
+            { id: "TRANS-003", category: "Transportation", name: "Vehicle Rental - Extra", level: "RED", rate: "PWGSC + justification", unit: "per vehicle per day", conditions: "Requires EOC Logistics approval to exceed 1:100 ratio", overLimit: "RED", docs: ["Rental agreement", "Ratio exceedance justification", "IMS 213"], keywords: ["extra vehicle", "additional car", "more vehicles"] },
+            { id: "TRANS-004", category: "Transportation", name: "Vehicle Fuel", level: "GREEN", rate: "Actual cost", unit: "per fill", conditions: "For approved rental vehicles only", overLimit: "YELLOW", docs: ["Fuel receipts", "Vehicle log"], keywords: ["gas", "fuel", "gasoline", "diesel", "fill up"] },
+            { id: "TRANS-005", category: "Transportation", name: "Vehicle Insurance", level: "GREEN", rate: "Vendor rates", unit: "per vehicle", conditions: "Required for all rental vehicles", overLimit: "YELLOW", docs: ["Insurance documentation"], keywords: ["insurance", "coverage", "liability", "CDW", "collision"] },
+            { id: "TRANS-006", category: "Transportation", name: "Bus Charter (20+ people)", level: "RED", rate: "Case-by-case", unit: "per trip", conditions: "Minimum 20 evacuees. Requires EOC Logistics pre-approval", overLimit: "RED", docs: ["Bus charter invoice", "Event purpose", "Sign-up list", "IMS 213"], keywords: ["bus", "charter", "coach", "group transportation"] },
+            { id: "TRANS-007", category: "Transportation", name: "Taxi - Medical Appointment", level: "GREEN", rate: "Actual cost", unit: "per trip", conditions: "For evacuee medical appointments in host community", overLimit: "YELLOW", docs: ["Receipt", "Appointment confirmation"], keywords: ["taxi", "cab", "uber", "lyft", "rideshare", "medical", "appointment"] },
+            { id: "TRANS-008", category: "Transportation", name: "Family Reunification Transport", level: "YELLOW", rate: "Economical method", unit: "per trip", conditions: "Confirm receiving family consent and accommodation availability", overLimit: "RED", docs: ["Transfer Request Form", "Family consent", "Accommodation confirmation"], keywords: ["family reunification", "transfer", "move between hosts", "family together"] },
+            { id: "TRANS-009", category: "Transportation", name: "Airport Shuttle", level: "GREEN", rate: "Actual cost", unit: "per trip", conditions: "For arrival and departure of evacuees", overLimit: "YELLOW", docs: ["Receipt", "Flight manifest correlation"], keywords: ["airport", "shuttle", "pickup", "dropoff", "arrival", "departure"] },
+            
+            // PERSONNEL
+            { id: "STAFF-001", category: "Personnel", name: "FN Community Liaison", level: "GREEN", rate: "Min wage + $1.00/hr", unit: "per hour", conditions: "2 per 100 evacuees (min 2). Max 10 hrs/day. Min 6 hrs paid", overLimit: "YELLOW", docs: ["Timesheet", "Liaison agreement"], keywords: ["liaison", "community liaison", "FN liaison", "first nation liaison"] },
+            { id: "STAFF-002", category: "Personnel", name: "FN Liaison - Above Ratio", level: "RED", rate: "Min wage + $1.00/hr", unit: "per hour", conditions: "Requires EOC Logistics approval for exceptional circumstances", overLimit: "RED", docs: ["Timesheet", "Ratio justification", "IMS 213"], keywords: ["extra liaison", "additional liaison", "more liaisons"] },
+            { id: "STAFF-003", category: "Personnel", name: "Driver", level: "GREEN", rate: "Minimum wage", unit: "per hour", conditions: "Max 12 hrs/day. Min 6 hrs paid. Valid license required", overLimit: "YELLOW", docs: ["Timesheet", "Driver agreement", "License verification"], keywords: ["driver", "chauffeur", "transportation staff"] },
+            { id: "STAFF-005", category: "Personnel", name: "Evacuation Centre Monitor", level: "GREEN", rate: "Minimum wage", unit: "per 8-hour shift", conditions: "Number determined jointly by FN Liaison, Host, and EOC Logistics", overLimit: "YELLOW", docs: ["Timesheet", "Monitor agreement"], keywords: ["monitor", "floor monitor", "evacuation monitor", "accommodation monitor"] },
+            { id: "STAFF-008", category: "Personnel", name: "Translator/Interpreter", level: "YELLOW", rate: "Case-by-case", unit: "per hour or service", conditions: "IC approval for extended services", overLimit: "RED", docs: ["Invoice", "Service description"], keywords: ["translator", "interpreter", "translation", "language", "cree", "ojibway", "oji-cree"] },
+            { id: "STAFF-010", category: "Personnel", name: "Cell Phone for Liaison", level: "GREEN", rate: "Actual cost", unit: "per phone", conditions: "One phone per liaison", overLimit: "YELLOW", docs: ["Receipt", "Phone assignment"], keywords: ["phone", "cell phone", "mobile", "cellular", "liaison phone"] },
+            
+            // PERSONAL CARE
+            { id: "CARE-001", category: "Personal Care", name: "Personal Hygiene Products", level: "GREEN", rate: "Reasonable cost", unit: "per person", conditions: "Basic hygiene items. Individual-use preferred (IPAC)", overLimit: "YELLOW", docs: ["Receipt", "Distribution record"], keywords: ["hygiene", "soap", "shampoo", "toothbrush", "toothpaste", "grooming", "personal care"] },
+            { id: "CARE-002", category: "Personal Care", name: "Sanitary Products", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "Reasonable quantities", overLimit: "YELLOW", docs: ["Receipt"], keywords: ["sanitary", "feminine", "pads", "tampons", "menstrual"] },
+            { id: "CARE-003", category: "Personal Care", name: "Diapers and Wipes", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "Reasonable quantities. Maintain overnight stock", overLimit: "YELLOW", docs: ["Receipt", "Number of infants/children"], keywords: ["diapers", "wipes", "baby wipes", "nappies", "infant"] },
+            { id: "CARE-004", category: "Personal Care", name: "Stroller", level: "GREEN", rate: "Reasonable cost", unit: "per child under 3", conditions: "One per child under age 3", overLimit: "YELLOW", docs: ["Receipt", "Child count"], keywords: ["stroller", "pram", "buggy", "pushchair"] },
+            { id: "CARE-005", category: "Personal Care", name: "Playpen", level: "GREEN", rate: "Reasonable cost", unit: "per child under 3", conditions: "One per child under age 3", overLimit: "YELLOW", docs: ["Receipt", "Child count"], keywords: ["playpen", "play yard", "pack and play", "portable crib"] },
+            { id: "CARE-006", category: "Personal Care", name: "Elder Care Products", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "Reasonable quantities for elder evacuees", overLimit: "YELLOW", docs: ["Receipt", "Elder count"], keywords: ["elder", "senior", "elderly", "elder care"] },
+            { id: "CARE-007", category: "Personal Care", name: "Adult Incontinence Products", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "As needed for evacuees requiring them", overLimit: "YELLOW", docs: ["Receipt"], keywords: ["incontinence", "adult diaper", "depends", "briefs"] },
+            { id: "CARE-008", category: "Personal Care", name: "Wheelchair", level: "GREEN", rate: "Rental preferred", unit: "per person", conditions: "When evacuee unable to bring own. Rental preferred", overLimit: "YELLOW", docs: ["Receipt/rental", "Mobility need"], keywords: ["wheelchair", "mobility", "assistive device"] },
+            { id: "CARE-009", category: "Personal Care", name: "Walker", level: "GREEN", rate: "Rental preferred", unit: "per person", conditions: "When evacuee unable to bring own. Rental preferred", overLimit: "YELLOW", docs: ["Receipt/rental", "Mobility need"], keywords: ["walker", "rollator", "mobility aid"] },
+            { id: "CARE-011", category: "Personal Care", name: "PPE Supplies", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "As required for IPAC", overLimit: "YELLOW", docs: ["Receipt"], keywords: ["PPE", "masks", "gloves", "hand sanitizer", "sanitizer", "disinfectant"] },
+            { id: "CARE-012", category: "Personal Care", name: "Bottled Water", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "If municipal water unsuitable", overLimit: "YELLOW", docs: ["Receipt", "Justification if large quantity"], keywords: ["water", "bottled water", "drinking water"] },
+            { id: "CARE-013", category: "Personal Care", name: "Emergency Clothing", level: "GREEN", rate: "Donation first", unit: "as needed", conditions: "Work with charities first. Purchase only if unavailable", overLimit: "YELLOW", docs: ["Receipt if purchased", "Donation record"], keywords: ["clothing", "clothes", "emergency clothing", "donation"] },
+            
+            // LAUNDRY
+            { id: "LAUND-001", category: "Laundry", name: "Laundry - Standard", level: "GREEN", rate: "$50/week/family", unit: "per family per week", conditions: "Up to $50 per week per family", overLimit: "RED", docs: ["Receipt", "Family count"], keywords: ["laundry", "laundromat", "washing", "clothes washing"] },
+            { id: "LAUND-002", category: "Laundry", name: "Laundry - Above Standard", level: "RED", rate: "Case-by-case", unit: "per family per week", conditions: "Requires EOC Logistics pre-approval with justification", overLimit: "RED", docs: ["Receipt", "Justification", "IMS 213"], keywords: ["extra laundry", "additional laundry", "laundry overage"] },
+            
+            // RECREATION
+            { id: "REC-001", category: "Recreation", name: "Recreation Activity", level: "RED", rate: "Case-by-case", unit: "per event", conditions: "Requires EOC Logistics pre-approval. Use Appendix F form. Sign-up lists required", overLimit: "RED", docs: ["Appendix F form", "Sign-up list", "EOC Logistics approval", "Receipts"], keywords: ["recreation", "activity", "event", "outing", "entertainment"] },
+            { id: "REC-002", category: "Recreation", name: "Facility Admission", level: "RED", rate: "Case-by-case", unit: "per event", conditions: "Pool, arena, rec center. Requires EOC Logistics pre-approval", overLimit: "RED", docs: ["Appendix F form", "Sign-up list", "EOC Logistics approval", "Receipt"], keywords: ["pool", "arena", "recreation center", "gym", "community center"] },
+            { id: "REC-003", category: "Recreation", name: "Cultural/Spiritual Gathering", level: "YELLOW", rate: "Case-by-case", unit: "per event", conditions: "IC approval. Culturally appropriate activities encouraged", overLimit: "RED", docs: ["Event description", "Materials receipt", "IC approval"], keywords: ["cultural", "spiritual", "ceremony", "elder gathering", "feast", "traditional"] },
+            { id: "REC-004", category: "Recreation", name: "Elder Tea/Social", level: "GREEN", rate: "Within snack budget", unit: "per event", conditions: "Within standard snack budget. Room space no extra cost", overLimit: "YELLOW", docs: ["Receipt for refreshments"], keywords: ["elder tea", "elder gathering", "senior social", "quiet room"] },
+            { id: "REC-005", category: "Recreation", name: "Children's Programming", level: "YELLOW", rate: "Case-by-case", unit: "per event", conditions: "IC approval. Age-appropriate activities", overLimit: "RED", docs: ["Activity description", "Supply receipts", "IC approval"], keywords: ["children", "kids", "youth", "games", "toys", "crafts", "child care"] },
+            
+            // PETS
+            { id: "PET-001", category: "Pets", name: "Pet Food", level: "YELLOW", rate: "Case-by-case", unit: "as needed", conditions: "Coordinate with OSPCA/NGO Alliance. One community contact for distribution", overLimit: "RED", docs: ["Receipt", "Pet count", "Distribution plan"], keywords: ["pet food", "dog food", "cat food", "animal food"] },
+            { id: "PET-002", category: "Pets", name: "Pet Boarding", level: "YELLOW", rate: "Case-by-case", unit: "per pet per day", conditions: "When pets evacuated and cannot stay with owners. IC approval", overLimit: "RED", docs: ["Boarding invoice", "Pet inventory", "IC approval"], keywords: ["boarding", "kennel", "pet hotel", "pet shelter"] },
+            { id: "PET-004", category: "Pets", name: "Veterinary Services", level: "RED", rate: "Emergency only", unit: "per service", conditions: "Emergency only. Requires EOC Logistics pre-approval. OSPCA coordinates", overLimit: "RED", docs: ["Vet invoice", "Emergency justification", "IMS 213"], keywords: ["vet", "veterinary", "veterinarian", "animal medical"] },
+            { id: "PET-005", category: "Pets", name: "Pet Transport", level: "RED", rate: "Case-by-case", unit: "per trip", conditions: "Coordinated by PEOC with OSPCA. Requires EOC Logistics approval", overLimit: "RED", docs: ["Transport invoice", "Pet manifest", "IMS 213"], keywords: ["pet transport", "animal transport", "pet evacuation"] },
+            
+            // EQUIPMENT
+            { id: "EQUIP-001", category: "Equipment", name: "Office Equipment Rental", level: "YELLOW", rate: "Rental rates", unit: "per item per day", conditions: "Rental only. IC approval. Operational necessity", overLimit: "RED", docs: ["Rental agreement", "Justification", "IC approval"], keywords: ["computer", "printer", "office equipment", "laptop", "copier"] },
+            { id: "EQUIP-002", category: "Equipment", name: "Communication Equipment", level: "YELLOW", rate: "Rental rates", unit: "per item per day", conditions: "Rental only. IC approval. For coordination purposes", overLimit: "RED", docs: ["Rental agreement", "IC approval"], keywords: ["radio", "walkie talkie", "two-way radio", "communication"] },
+            { id: "EQUIP-003", category: "Equipment", name: "Heavy Equipment Rental", level: "RED", rate: "Case-by-case", unit: "per item per day", conditions: "Requires EOC Logistics Regional AND HQ concurrence. Business case required", overLimit: "RED", docs: ["Rental agreement", "Business case", "IMS 213", "HQ concurrence"], keywords: ["boat", "ATV", "heavy equipment", "machinery", "helicopter"] },
+            { id: "EQUIP-004", category: "Equipment", name: "Equipment Purchase", level: "RED", rate: "Last resort", unit: "per item", conditions: "Only when rental unavailable. Requires EOC Logistics + HQ concurrence", overLimit: "RED", docs: ["Invoice", "Rental unavailability proof", "Business case", "IMS 213", "HQ concurrence"], keywords: ["purchase", "buy", "equipment purchase", "capital"] },
+            { id: "EQUIP-005", category: "Equipment", name: "Generator Rental", level: "YELLOW", rate: "Rental rates", unit: "per unit per day", conditions: "Rental only. IC approval. Document power need", overLimit: "RED", docs: ["Rental agreement", "Justification", "IC approval"], keywords: ["generator", "power", "electricity", "backup power"] },
+            
+            // HEALTH
+            { id: "HEALTH-001", category: "Health", name: "Paramedic On-Site", level: "YELLOW", rate: "Case-by-case", unit: "per shift", conditions: "By request for group lodging. Coordinate with MOH", overLimit: "RED", docs: ["Service agreement", "Request documentation"], keywords: ["paramedic", "EMS", "medical", "first aid", "ambulance"] },
+            { id: "HEALTH-002", category: "Health", name: "Public Health Inspection", level: "GREEN", rate: "Standard rates", unit: "per inspection", conditions: "Required for group lodging. Coordinate with local PHU", overLimit: "YELLOW", docs: ["Inspection report"], keywords: ["inspection", "public health", "PHU", "health inspection"] },
+            { id: "HEALTH-003", category: "Health", name: "Mental Health Support", level: "YELLOW", rate: "Case-by-case", unit: "per service", conditions: "Coordinate with health partners. IC approval for contracted services", overLimit: "RED", docs: ["Service agreement", "IC approval"], keywords: ["mental health", "counseling", "crisis", "trauma", "wellness"] },
+            
+            // ADMIN
+            { id: "ADMIN-001", category: "Admin", name: "Administration Fee", level: "GREEN", rate: "10% maximum", unit: "of eligible costs", conditions: "Max 10% BEFORE HST. Agreement Holder only. Charged once", overLimit: "INELIGIBLE", docs: ["Calculated on final claim"], keywords: ["admin", "administration", "fee", "overhead", "management fee"] },
+            { id: "ADMIN-002", category: "Admin", name: "Registration Supplies", level: "GREEN", rate: "Reasonable cost", unit: "as needed", conditions: "Reasonable quantities for registration process", overLimit: "YELLOW", docs: ["Receipt"], keywords: ["registration", "forms", "wristband", "ID", "badge"] },
+            
+            // INELIGIBLE
+            { id: "INELIG-001", category: "INELIGIBLE", name: "Movie Rentals/Pay-Per-View", level: "INELIGIBLE", rate: "N/A", conditions: "Personal entertainment not covered", keywords: ["movie", "pay per view", "PPV", "in-room entertainment"] },
+            { id: "INELIG-002", category: "INELIGIBLE", name: "Long Distance Calls", level: "INELIGIBLE", rate: "N/A", conditions: "Personal communication not covered", keywords: ["long distance", "phone calls", "telephone"] },
+            { id: "INELIG-003", category: "INELIGIBLE", name: "Alcohol", level: "INELIGIBLE", rate: "N/A", conditions: "Not an eligible expense", keywords: ["alcohol", "beer", "wine", "liquor", "spirits"] },
+            { id: "INELIG-004", category: "INELIGIBLE", name: "Tobacco Products", level: "INELIGIBLE", rate: "N/A", conditions: "Not an eligible expense", keywords: ["cigarettes", "tobacco", "smoking"] },
+            { id: "INELIG-005", category: "INELIGIBLE", name: "Secondary Residence", level: "INELIGIBLE", rate: "N/A", conditions: "Only primary residence eligible", keywords: ["cottage", "cabin", "vacation home", "secondary residence"] },
+            { id: "INELIG-006", category: "INELIGIBLE", name: "Capital Repairs", level: "INELIGIBLE", rate: "N/A", conditions: "Capital costs excluded", keywords: ["capital", "maintenance", "repairs", "infrastructure"] },
+            { id: "INELIG-007", category: "INELIGIBLE", name: "Medical Equipment (NIHB)", level: "INELIGIBLE", rate: "N/A", conditions: "Covered under FNIHB/NIHB program", keywords: ["medical equipment", "medical transport", "NIHB"] },
+            { id: "INELIG-008", category: "INELIGIBLE", name: "Volunteer Payment", level: "INELIGIBLE", rate: "N/A", conditions: "Volunteers cannot be paid", keywords: ["volunteer", "volunteer pay", "stipend"] },
+            { id: "INELIG-009", category: "INELIGIBLE", name: "Band Employee Services", level: "INELIGIBLE", rate: "N/A", conditions: "Considered volunteer contribution", keywords: ["band employee", "band staff", "council staff"] },
+            { id: "INELIG-010", category: "INELIGIBLE", name: "Funeral Costs", level: "INELIGIBLE", rate: "N/A", conditions: "Not eligible under EMAP", keywords: ["funeral", "burial", "death", "memorial"] },
+            { id: "INELIG-011", category: "INELIGIBLE", name: "Personal Items", level: "INELIGIBLE", rate: "N/A", conditions: "Only basic care items eligible", keywords: ["personal items", "luxury", "electronics", "jewelry"] },
+            { id: "INELIG-012", category: "INELIGIBLE", name: "Food Outside Arrangements", level: "INELIGIBLE", rate: "N/A", conditions: "Evacuee personal responsibility", keywords: ["outside food", "personal food", "restaurant not approved"] }
+        ];
+
+        function searchCompliance(query) {
+            if (!query.trim()) return [];
+            
+            const searchTerms = query.toLowerCase().split(/\s+/);
+            
+            return complianceData
+                .map(item => {
+                    let score = 0;
+                    const searchableText = [
+                        item.name,
+                        item.category,
+                        item.conditions,
+                        ...item.keywords
+                    ].join(' ').toLowerCase();
+                    
+                    searchTerms.forEach(term => {
+                        if (searchableText.includes(term)) {
+                            score += 1;
+                            // Bonus for exact keyword match
+                            if (item.keywords.some(k => k.toLowerCase() === term)) {
+                                score += 2;
+                            }
+                            // Bonus for name match
+                            if (item.name.toLowerCase().includes(term)) {
+                                score += 3;
+                            }
+                        }
+                    });
+                    
+                    return { ...item, score };
+                })
+                .filter(item => item.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 8);
+        }
+
+        function getStatusIcon(level) {
+            switch(level) {
+                case 'GREEN': return '✅';
+                case 'YELLOW': return '⚠️';
+                case 'RED': return '🛑';
+                case 'INELIGIBLE': return '❌';
+                default: return '❓';
+            }
+        }
+
+        function getStatusClass(level) {
+            switch(level) {
+                case 'GREEN': return 'green';
+                case 'YELLOW': return 'yellow';
+                case 'RED': return 'red';
+                case 'INELIGIBLE': return 'ineligible';
+                default: return '';
+            }
+        }
+
+        function getActionText(level) {
+            switch(level) {
+                case 'GREEN': return 'Proceed and document with receipts.';
+                case 'YELLOW': return 'Obtain IC written approval before expenditure.';
+                case 'RED': return 'IC must submit IMS 213 to EOC Logistics. Wait for written approval.';
+                case 'INELIGIBLE': return 'Do NOT claim. Not eligible for reimbursement.';
+                default: return '';
+            }
+        }
+
+        function renderResults(results) {
+            const container = document.getElementById('results');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <h3>No matching items found</h3>
+                        <p>Try different keywords, or this may be an unlisted item.<br>
+                        <strong>Default: RED</strong> - Submit IMS 213 to EOC Logistics for unlisted items.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div class="result-card">
+                    <div class="result-header ${getStatusClass(item.level)}">
+                        <span class="status-icon">${getStatusIcon(item.level)}</span>
+                        <div class="result-title">
+                            <h3>${item.name}</h3>
+                            <span class="category">${item.category}</span>
+                        </div>
+                        <span class="status-badge ${getStatusClass(item.level)}">${item.level}</span>
+                    </div>
+                    <div class="result-body">
+                        ${item.rate ? `<p><strong>Rate:</strong> <span class="rate-box">${item.rate}</span></p>` : ''}
+                        <p><strong>Conditions:</strong> ${item.conditions}</p>
+                        ${item.docs ? `<p><strong>Documentation:</strong> ${item.docs.join(', ')}</p>` : ''}
+                        <div class="action-box">
+                            <h4>Action Required</h4>
+                            <p>${getActionText(item.level)}</p>
+                        </div>
+                        ${item.level === 'YELLOW' ? `
+                            <div class="threshold-warning">
+                                <strong>⚠️ $1,000 Threshold:</strong> If expenditure exceeds $1,000, this automatically escalates to RED (EOC Logistics approval required via IMS 213).
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Event listeners
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const query = document.getElementById('searchInput').value;
+            const results = searchCompliance(query);
+            renderResults(results);
+        });
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = document.getElementById('searchInput').value;
+                const results = searchCompliance(query);
+                renderResults(results);
+            }
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const searchTerm = btn.dataset.search;
+                document.getElementById('searchInput').value = searchTerm;
+                const results = searchCompliance(searchTerm);
+                renderResults(results);
+            });
+        });
+    </script>
+</body>
+</html>
