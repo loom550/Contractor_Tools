@@ -270,10 +270,10 @@ body {
       <label>Contractor ID</label>
       <input type="text" id="login-cid" placeholder="e.g. LOOMI-0042" autocomplete="off">
     </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <button class="login-btn" id="login-btn" id="login-btn-main">Sign In</button>
     <div class="login-error" id="login-error"></div>
     <div style="text-align:center;margin-top:16px">
-      <button onclick="showForgot()" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;text-decoration:underline">Forgot your Contractor ID?</button>
+      <button id="forgot-link-btn" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;text-decoration:underline">Forgot your Contractor ID?</button>
     </div>
 
     <!-- FORGOT PANEL -->
@@ -283,7 +283,7 @@ body {
         <label>Your Email Address</label>
         <input type="email" id="forgot-email" placeholder="you@example.com">
       </div>
-      <button class="login-btn" id="forgot-btn" onclick="doForgot()">Send My Contractor ID</button>
+      <button class="login-btn" id="forgot-btn" id="forgot-submit-btn">Send My Contractor ID</button>
       <div class="login-error" id="forgot-error"></div>
       <div id="forgot-success" style="display:none;background:rgba(0,166,81,.1);border:1px solid rgba(0,166,81,.3);color:var(--green);padding:10px 14px;border-radius:6px;font-size:13px;margin-top:12px">Check your email - your Contractor ID has been sent.</div>
     </div>
@@ -298,7 +298,7 @@ body {
         <div class="welcome-name" id="welcome-name"></div>
         <div class="welcome-act" id="welcome-act"></div>
       </div>
-      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+      <button class="logout-btn" id="logout-btn-el">Sign Out</button>
     </div>
 
     <!-- PROFILE SECTION -->
@@ -310,7 +310,7 @@ body {
         <div class="profile-field full"><label>Address</label><input type="text" id="prof-address" placeholder="Street, City, Province, Postal Code"></div>
         <div class="profile-field full"><label>Email</label><input type="email" id="prof-email" placeholder="Email address"></div>
       </div>
-      <button class="profile-save-btn" id="prof-save-btn" onclick="saveProfile()">Save Changes</button>
+      <button class="profile-save-btn" id="prof-save-btn" id="prof-save-el">Save Changes</button>
     </div>
 
     <div class="legend">
@@ -320,16 +320,16 @@ body {
     </div>
 
     <div class="cal-nav">
-      <button class="cal-nav-btn" onclick="shiftMonth(-1)">&#8249;</button>
+      <button class="cal-nav-btn" id="cal-prev">&#8249;</button>
       <div class="cal-month" id="cal-month-label"></div>
-      <button class="cal-nav-btn" onclick="shiftMonth(1)">&#8250;</button>
+      <button class="cal-nav-btn" id="cal-next">&#8250;</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
 
     <div class="save-bar" id="save-bar">
       <div class="save-bar-label">Selected: <strong id="save-bar-range"></strong></div>
-      <button class="cancel-btn" onclick="cancelSelection()">Cancel</button>
-      <button class="save-btn" onclick="saveSelection()">Save Availability</button>
+      <button class="cancel-btn" id="cancel-sel-btn">Cancel</button>
+      <button class="save-btn" id="save-sel-btn">Save Availability</button>
     </div>
 
     <div class="windows-section">
@@ -340,11 +340,11 @@ body {
 </div>
 
 <!-- DEPLOYMENT POPUP -->
-<div class="popup-overlay" id="popup-overlay" onclick="closePopup()">
-  <div class="popup" onclick="event.stopPropagation()">
+<div class="popup-overlay" id="popup-overlay" id="popup-close-el">
+  <div class="popup" id="popup-inner">
     <div class="popup-title">
       <span>&#128274; Confirmed Deployment</span>
-      <button class="popup-close" onclick="closePopup()">&#10005;</button>
+      <button class="popup-close" id="popup-close-el">&#10005;</button>
     </div>
     <div id="popup-body"></div>
     <div class="popup-locked-msg">
