@@ -491,7 +491,7 @@
     <!-- Individual Hubs -->
     <section class="hubs-section">
       <div class="section-header">
-        <div class="section-title">Hub Status</div>
+        <div class="section-title">Site Status</div>
         <div class="section-line"></div>
       </div>
       <div class="hubs-grid" id="hubsGrid">
@@ -561,7 +561,7 @@ function renderSummary(data, hubs) {
 
   const summaryHTML = `
     <div class="summary-card" style="border-left-color: var(--teal-500)">
-      <div class="card-label">Active Hubs</div>
+      <div class="card-label">Active Sites</div>
       <div class="card-value">${data.totalHubs}</div>
       <div class="card-context">operational sites</div>
     </div>
@@ -573,7 +573,7 @@ function renderSummary(data, hubs) {
     <div class="summary-card" style="border-left-color: var(--lime-500)">
       <div class="card-label">Current Occupancy</div>
       <div class="card-value">${data.totalEvacuees}</div>
-      <div class="card-context">evacuees sheltered</div>
+      <div class="card-context">community members sheltered</div>
     </div>
     <div class="summary-card" style="border-left-color: var(--navy-600)">
       <div class="card-label">Available Capacity</div>
@@ -632,7 +632,7 @@ function renderHubs(hubs) {
             <div class="metric-sub">available</div>
           </div>
           <div class="hub-metric">
-            <div class="metric-label">Evacuees</div>
+            <div class="metric-label">Community Members</div>
             <div class="metric-value">${hub.evacuees}</div>
             <div class="metric-sub">current</div>
           </div>
