@@ -458,7 +458,6 @@ async function loadProfile(){
 async function saveProfile(){
   var btn=document.getElementById('prof-save-btn');
   btn.disabled=true;btn.textContent='Saving...';
-  var newEmail=document.getElementById('prof-email').value.trim();
   try{
     await api('/avail-profile',{method:'PATCH',body:JSON.stringify({
       email:auth.email,
@@ -466,7 +465,6 @@ async function saveProfile(){
       name:document.getElementById('prof-name').value.trim(),
       phone:document.getElementById('prof-phone').value.trim(),
       address:document.getElementById('prof-address').value.trim(),
-      newEmail:newEmail,
     })});
     // Update local auth if email changed
     if(newEmail&&newEmail!==auth.email){
