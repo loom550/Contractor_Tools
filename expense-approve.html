@@ -715,7 +715,7 @@
       tr.id = `erow-${i}`;
       const isHstEligible = (r.type === 'hotel' || r.type === 'rental' || r.type === 'misc');
       const hstCell = isHstEligible
-        ? `<input type="number" class="hst-input" id="hst-${i}" value="${r.hst || 0}" step="0.01" min="0" oninput="rowDecisions[${i}].hst = parseFloat(this.value) || 0; renderSummaryGrid();">`
+        ? `<span style="color:inherit">$<input type="number" class="hst-input" id="hst-${i}" value="${r.hst || 0}" step="0.01" min="0" oninput="rowDecisions[${i}].hst = parseFloat(this.value) || 0; renderSummaryGrid();"></span>`
         : `<span style="color:var(--text-muted)">—</span>`;
       tr.innerHTML = `
         <td style="color:var(--text-muted);font-size:12px;font-weight:700;">#${i + 1}</td>
