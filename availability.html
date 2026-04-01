@@ -660,4 +660,8 @@ function shiftMonth(d){ calMonth+=d; if(calMonth<0){calMonth=11;calYear--;} if(c
 
 // Enter key on login
 document.getElementById('login-cid').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
-document.getElementById('login-email').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('login-c
+document.getElementById('login-email').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('login-cid').focus();});
+
+</script>
+</body>
+</html>
