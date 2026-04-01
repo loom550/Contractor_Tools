@@ -283,7 +283,7 @@ body {
         <label>Your Email Address</label>
         <input type="email" id="forgot-email" placeholder="you@example.com">
       </div>
-      <button class="login-btn" id="forgot-btn" id="forgot-submit-btn">Send My Contractor ID</button>
+      <button class="login-btn" id="forgot-submit-btn">Send My Contractor ID</button>
       <div class="login-error" id="forgot-error"></div>
       <div id="forgot-success" style="display:none;background:rgba(0,166,81,.1);border:1px solid rgba(0,166,81,.3);color:var(--green);padding:10px 14px;border-radius:6px;font-size:13px;margin-top:12px">Check your email - your Contractor ID has been sent.</div>
     </div>
@@ -401,7 +401,7 @@ async function doLogin(){
   var email = document.getElementById('login-email').value.trim().toLowerCase();
   var cid = document.getElementById('login-cid').value.trim();
   var errEl = document.getElementById('login-error');
-  var btn = document.getElementById('login-btn');
+  var btn = document.getElementById('login-btn-main');
   if(!email||!cid){ errEl.textContent='Please enter both fields.'; errEl.style.display='block'; return; }
   btn.disabled=true; btn.innerHTML='<span class="loading-spinner"></span>Signing in...';
   try{
@@ -420,8 +420,8 @@ function doLogout(){
   document.getElementById('app-screen').style.display='none';
   document.getElementById('login-email').value='';
   document.getElementById('login-cid').value='';
-  document.getElementById('login-btn').disabled=false;
-  document.getElementById('login-btn').textContent='Sign In';
+  document.getElementById('login-btn-main').disabled=false;
+  document.getElementById('login-btn-main').textContent='Sign In';
 }
 
 function showForgot(){
@@ -432,7 +432,7 @@ function showForgot(){
 async function doForgot(){
   var email=document.getElementById('forgot-email').value.trim().toLowerCase();
   var errEl=document.getElementById('forgot-error');
-  var btn=document.getElementById('forgot-btn');
+  var btn=document.getElementById('forgot-submit-btn');
   var succ=document.getElementById('forgot-success');
   if(!email){errEl.textContent='Please enter your email.';errEl.style.display='block';return;}
   btn.disabled=true;btn.textContent='Sending...';errEl.style.display='none';succ.style.display='none';
