@@ -228,7 +228,7 @@
       gap: 12px;
     }
     .fields-standard { grid-template-columns: 150px 1fr 140px 120px; }
-    .fields-meal     { grid-template-columns: 150px 160px 130px 130px minmax(100px, 140px); }
+    .fields-meal     { grid-template-columns: 140px 150px 120px 120px 1fr; }
     .fields-mileage  { grid-template-columns: 150px 1fr 120px 130px; }
 
     .auto-field {
@@ -251,14 +251,14 @@
       align-items: center;
       justify-content: center;
       height: 42px;
-      padding: 0 12px;
+      padding: 0 8px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 700;
       border: 1.5px solid;
       white-space: nowrap;
-      min-width: 130px;
       width: 100%;
+      box-sizing: border-box;
     }
     .exceeded-yes { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
     .exceeded-no  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
