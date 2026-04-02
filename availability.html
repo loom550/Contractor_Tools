@@ -308,7 +308,7 @@ body {
         <div class="profile-field"><label>Full Name <span style="color:var(--red)">*</span></label><input type="text" id="prof-name" placeholder="Your name"></div>
 <div class="profile-field"><label>Phone <span style="color:var(--red)">*</span></label><input type="tel" id="prof-phone" placeholder="Phone number"></div>
 <div class="profile-field full"><label>Address <span style="color:var(--red)">*</span></label><input type="text" id="prof-address" placeholder="Street, City, Province, Postal Code"></div>
-        <div class="profile-field full"><label>Email</label><input type="email" id="prof-email" placeholder="Email address"></div>
+<div class="profile-field full"><label>Email <span style="color:var(--red)">*</span></label><input type="email" id="prof-email" placeholder="Email address"></div>
       </div>
       <button class="profile-save-btn" id="prof-save-btn">Save Changes</button>
     </div>
@@ -458,12 +458,13 @@ async function loadProfile(){
 async function saveProfile(){
   var btn=document.getElementById('prof-save-btn');
   var name=document.getElementById('prof-name').value.trim();
-  var phone=document.getElementById('prof-phone').value.trim();
-  var address=document.getElementById('prof-address').value.trim();
-  if(!name||!phone||!address){
-    showToast('Please fill in Name, Phone, and Address before saving.','error');
-    return;
-  }
+var phone=document.getElementById('prof-phone').value.trim();
+var address=document.getElementById('prof-address').value.trim();
+var email=document.getElementById('prof-email').value.trim();
+if(!name||!phone||!address||!email){
+  showToast('Please fill in all required fields before saving.','error');
+  return;
+}
   btn.disabled=true;btn.textContent='Saving...';
   var newEmail=document.getElementById('prof-email').value.trim();
   try{
