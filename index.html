@@ -396,7 +396,7 @@
   <div class="card">
 
     <div class="intro">
-      <p>This portal provides tools for the activation as well as tools for contractors deployed under Loomex activations. <a href="mailto:eocadmin@loomex.ca" style="color:var(--green);font-weight:600">eocadmin@loomex.ca</a>.</p>
+      <p>This portal provides tools for the activation as well as tools for contractors deployed under Loomex activations. <a href="/cdn-cgi/l/email-protection#11747e7270757c787f517d7e7e7c74693f7270" style="color:var(--green);font-weight:600"><span class="__cf_email__" data-cfemail="c8ada7aba9aca5a1a688a4a7a7a5adb0e6aba9">[email&#160;protected]</span></a>.</p>
     </div>
 
     <div class="tools-list">
@@ -444,7 +444,7 @@
         <div class="tool-icon icon-green">🧾</div>
         <div class="tool-info">
           <h3>Expense Report <span class="tool-badge badge-live">Live</span></h3>
-          <p>Submit expenses for hotel, meals, mileage, rental car, and miscellaneous items for EOC review and reimbursement. If you are unsure which form to use, or wish to use a paper/fillable form, contact your site IC or email eocadmin@loomex.ca</p>
+          <p>Submit expenses for hotel, meals, mileage, rental car, and miscellaneous items for EOC review and reimbursement. If you are unsure which form to use, or wish to use a paper/fillable form, contact your site IC or email <span class="__cf_email__" data-cfemail="e4818b878580898d8aa4888b8b89819cca8785">[email&#160;protected]</span></p>
         </div>
         <span class="tool-arrow">›</span>
       </a>
@@ -499,7 +499,7 @@
   </div>
 
   <div class="page-footer">
-    <p>The Loomex Group Ltd &mdash; Response and Readiness Division &mdash; For support contact eocadmin@loomex.ca</p>
+    <p>The Loomex Group Ltd &mdash; Response and Readiness Division &mdash; For support contact <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="badfd5d9dbded7d3d4fad6d5d5d7dfc294d9db">[email&#160;protected]</a></p>
   </div>
 
 </div>
@@ -539,9 +539,16 @@
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   const AUTH_KEY = 'eoc_authed';
-  const WORKER_URL = 'https://evacscheduling.loomex-it.workers.dev/eoc-auth';
+  // SHA-256 hash of the EOC password - generate with: crypto.subtle.digest then hex encode
+  // To update: run hashPassword('yournewpassword') in console and paste result below
+  const PW_HASH = '__REPLACE_WITH_HASH__';
+
+  async function hashPassword(pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
 
   window.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem(AUTH_KEY) === '1') showEocSection();
@@ -560,29 +567,20 @@
     const pw = document.getElementById('eocPassword').value;
     if (!pw) return;
     const btn = document.getElementById('loginSubmit');
-    const err = document.getElementById('loginError');
+    const errEl = document.getElementById('loginError');
     btn.disabled = true;
     btn.textContent = 'Checking...';
-    err.classList.remove('visible');
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        localStorage.setItem(AUTH_KEY, '1');
-        closeModal('loginModal');
-        document.getElementById('eocPassword').value = '';
-        showEocSection();
-        setTimeout(() => document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' }), 150);
-      } else {
-        err.classList.add('visible');
-      }
-    } catch (e) {
-      err.textContent = 'Could not reach server. Please try again.';
-      err.classList.add('visible');
+    errEl.classList.remove('visible');
+    const hash = await hashPassword(pw);
+    if (hash === PW_HASH) {
+      localStorage.setItem(AUTH_KEY, '1');
+      closeModal('loginModal');
+      document.getElementById('eocPassword').value = '';
+      showEocSection();
+      setTimeout(() => document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' }), 150);
+    } else {
+      errEl.textContent = 'Incorrect password. Please try again.';
+      errEl.classList.add('visible');
     }
     btn.disabled = false;
     btn.textContent = 'Sign In';
@@ -609,19 +607,4 @@
     document.getElementById(id).classList.add('open');
     document.body.style.overflow = 'hidden';
   }
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  function handleOverlayClick(e, id) {
-    if (e.target === document.getElementById(id)) closeModal(id);
-  }
-  function openAvailabilityModal() { openModal('availabilityModal'); }
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal('availabilityModal'); closeModal('loginModal'); }
-  });
-</script>
-
-</body>
-</html>
+  function closeModal(id)
