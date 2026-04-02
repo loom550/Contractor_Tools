@@ -586,12 +586,12 @@
   </div>
 
   <div class="page-footer">
-    <p>Submitted reports are reviewed by EOC Admin before being forwarded to Finance. Questions? Contact eocadmin@loomex.ca</p>
+    <p>Submitted reports are reviewed by EOC Admin before being forwarded to Finance. Questions? Contact <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="95f0faf6f4f1f8fcfbd5f9fafaf8f0edbbf6f4">[email&#160;protected]</a></p>
   </div>
 
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   const WORKER_URL = 'https://loomex-expense.loomex-it.workers.dev';
   const MEAL_ALLOWANCES = { Breakfast: 15, Lunch: 20, Dinner: 45 };
 
@@ -709,12 +709,12 @@
             <input type="text" id="f-evcat-${id}" placeholder="e.g. Clothing, Personal items, Prescriptions">
           </div>
           <div class="field-group">
-            <label>Amount ($)</label>
+            <label>Total Amount ($) incl. HST</label>
             <input type="number" id="f-amount-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
           </div>
           <div class="field-group">
-            <label>HST ($)</label>
-            <input type="number" id="f-hst-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
+            <label>HST (13%, auto)</label>
+            <input type="text" id="f-hst-${id}" class="auto-field" readonly placeholder="Auto">
           </div>
         </div>`;
     }
@@ -731,12 +731,12 @@
           <input type="text" id="f-desc-${id}" placeholder="${placeholder}">
         </div>
         <div class="field-group">
-          <label>Amount ($)</label>
+          <label>Total Amount ($) incl. HST</label>
           <input type="number" id="f-amount-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
         </div>
         <div class="field-group">
-          <label>HST ($)</label>
-          <input type="number" id="f-hst-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
+          <label>HST (13%, auto)</label>
+          <input type="text" id="f-hst-${id}" class="auto-field" readonly placeholder="Auto">
         </div>
       </div>`;
   }
@@ -833,6 +833,13 @@
       }
     }
 
+    if (['hotel','rental','misc','evacuee'].includes(type)) {
+      const total = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+      const hst   = parseFloat((total * 13 / 113).toFixed(2));
+      const hstEl = document.getElementById(`f-hst-${id}`);
+      if (hstEl) hstEl.value = total > 0 ? `$${hst.toFixed(2)}` : '';
+    }
+
     updateTotal();
   }
 
@@ -849,19 +856,24 @@
       const max     = MEAL_ALLOWANCES[period] || 0;
       return (period && actual > 0) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
     }
-    return parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+    // hotel/rental/misc/evacuee: total entered includes HST, return pre-tax portion
+    const total = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+    const hst   = parseFloat((total * 13 / 113).toFixed(2));
+    return parseFloat((total - hst).toFixed(2));
   }
 
   function getRowHst(id) {
     const type = document.getElementById(`type-${id}`)?.value;
     if (!['hotel','rental','misc','evacuee'].includes(type)) return 0;
-    return parseFloat(document.getElementById(`f-hst-${id}`)?.value) || 0;
+    const total = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+    return parseFloat((total * 13 / 113).toFixed(2));
   }
 
   function updateTotal() {
     let total = 0;
     document.querySelectorAll('.expense-row').forEach(row => {
       const id = parseInt(row.id.replace('row-', ''));
+      // running total shows full amount paid (pre-tax + HST)
       total += getRowValue(id) + getRowHst(id);
     });
     document.getElementById('totalDisplay').innerHTML = `$${total.toFixed(2)}<span>CAD</span>`;
@@ -964,9 +976,15 @@
         const km = parseFloat(document.getElementById(`f-km-${id}`)?.value) || 0;
         rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', km, value, hst: 0, receipts });
       } else if (type === 'evacuee') {
-        rows.push({ type, date, evacueeCategory: document.getElementById(`f-evcat-${id}`)?.value || '', amount: value, value, hst, receipts });
+        const total = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+        const hst   = parseFloat((total * 13 / 113).toFixed(2));
+        const val   = parseFloat((total - hst).toFixed(2));
+        rows.push({ type, date, evacueeCategory: document.getElementById(`f-evcat-${id}`)?.value || '', amount: total, value: val, hst, receipts });
       } else {
-        rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', amount: value, value, hst, receipts });
+        const total = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+        const hst   = parseFloat((total * 13 / 113).toFixed(2));
+        const val   = parseFloat((total - hst).toFixed(2));
+        rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', amount: total, value: val, hst, receipts });
       }
     }
     return rows;
@@ -1160,15 +1178,4 @@
         addRow();
       }, 4000);
     } catch (err) {
-      showStatus(`Submission failed: ${err.message}. Please try again or email eocadmin@loomex.ca directly.`, 'error');
-      btn.disabled = false;
-      btn.innerHTML = 'Submit Expense Report';
-    }
-  }
-
-  // Start with two rows
-  addRow();
-  addRow();
-</script>
-</body>
-</html>
+      showStatus(`Submission failed: ${err.message}.
