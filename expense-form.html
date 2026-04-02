@@ -225,7 +225,7 @@
 <script>
 var WORKER_URL  = 'https://loomex-expense.loomex-it.workers.dev';
 var MEAL_LIMITS = { Breakfast: 15, Lunch: 20, Dinner: 45 };
-var HST_RATE    = 13 / 113;
+var HST_RATE    = 0.13;
 var JOB_NUMBERS = { Kingston: '900086', Kapuskasing: '900084', Timmins: '900083', EOC: '900085' };
 var HST_TYPES   = ['hotel', 'rental', 'misc', 'evacuee'];
 var TYPE_CFG    = {
@@ -312,7 +312,7 @@ function renderFields(id, type) {
     + dateField
     + '<div class="field-group"><label>Description</label>'
     + '<input type="text" id="fdesc' + id + '" placeholder="' + ph + '"></div>'
-    + '<div class="field-group"><label>Total Amount ($) incl. HST</label>'
+    + '<div class="field-group"><label>Amount ($)</label>'
     + '<input type="number" id="famt' + id + '" placeholder="0.00" step="0.01" min="0" oninput="recalc(' + id + ')"></div>'
     + '<div class="field-group"><label>HST (13%, auto)</label>'
     + '<input type="text" id="fhst' + id + '" class="auto-field" readonly placeholder="Auto"></div>'
@@ -420,7 +420,7 @@ function getRowTotal(id) {
     var a = gnum('fa' + id);
     return (p && a > 0) ? parseFloat(Math.min(a, MEAL_LIMITS[p] || 0).toFixed(2)) : 0;
   }
-  return gnum('famt' + id); // total incl. HST
+  var base = gnum('famt' + id); return parseFloat((base * 1.13).toFixed(2));
 }
 
 function updateTotal() {
@@ -533,11 +533,11 @@ function collectRows() {
         km: km, value: val, hst: 0, receipts: receipts });
 
     } else {
-      var totalPaid = gnum('famt' + id);
-      var hstAmt    = parseFloat((totalPaid * HST_RATE).toFixed(2));
-      var preTax    = parseFloat((totalPaid - hstAmt).toFixed(2));
+      var base = gnum('famt' + id);
+      var hstAmt = parseFloat((base * HST_RATE).toFixed(2));
+      var preTax = base;
       rows.push({ type: type, date: date, description: gval('fdesc' + id),
-        amount: totalPaid, value: preTax, hst: hstAmt, receipts: receipts });
+        amount: base, value: preTax, hst: hstAmt, receipts: receipts });
     }
   }
   return rows;
