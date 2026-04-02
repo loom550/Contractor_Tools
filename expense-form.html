@@ -871,11 +871,6 @@ width: 100%;
       const site    = document.getElementById('site').value;
       return (period && actual > 0) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
     }
-    if (type === 'evacuee') {
-      const amount = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
-      const hst = parseFloat((amount * 0.13).toFixed(2));
-      return parseFloat((amount + hst).toFixed(2));
-    }
     return parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
   }
 
