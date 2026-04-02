@@ -725,7 +725,8 @@ width: 100%;
               <button type="button" class="hst-confirm-btn" id="f-hstbtn-${id}" onclick="confirmEvacHst(${id})" style="margin-top:22px;">&#10003; Confirm HST</button>
             </div>
           </div>
-        </div>`;\n    }
+        </div>`;
+    }
 
     return `
       <div class="row-fields fields-standard">
@@ -912,7 +913,6 @@ width: 100%;
       return parseFloat(total.toFixed(2));
     }
     return parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
-  }
   }
 
   function updateTotal() {
