@@ -216,7 +216,7 @@
       display: grid;
       gap: 12px;
     }
-    .fields-standard { grid-template-columns: 150px 1fr 140px; }
+    .fields-standard { grid-template-columns: 150px 1fr 140px 140px; }
     .fields-meal     { grid-template-columns: 150px 160px 130px 130px auto; }
     .fields-mileage  { grid-template-columns: 150px 1fr 120px 130px; }
     .fields-evacuee  { grid-template-columns: 150px 1fr 140px 140px; }
@@ -260,8 +260,7 @@
       font-weight: 700;
       border: 1.5px solid;
       white-space: nowrap;
-      min-width: 130px;
-width: 100%;
+      min-width: 110px;
     }
     .exceeded-yes { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
     .exceeded-no  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
@@ -489,8 +488,7 @@ width: 100%;
     @media (min-width: 641px) and (max-width: 900px) {
       .fields-meal     { grid-template-columns: 1fr 1fr 1fr; }
       .fields-mileage  { grid-template-columns: 1fr 1fr; }
-      .fields-standard { grid-template-columns: 1fr 1fr; }
-      .fields-evacuee  { grid-template-columns: 1fr 1fr; }
+      .fields-standard { grid-template-columns: 1fr 1fr; }      .fields-evacuee  { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -753,6 +751,11 @@ width: 100%;
           <label>Amount ($)</label>
           <input type="number" id="f-amount-${id}" placeholder="0.00" step="0.01" min="0" oninput="recalc(${id})">
         </div>
+        <div class="field-group">
+          <label>HST (13%, auto)</label>
+          <input type="text" id="f-hst-${id}" class="auto-field" readonly placeholder="Auto">
+          <button type="button" class="hst-confirm-btn" id="f-hstbtn-${id}" onclick="confirmHst(${id})">&#10003; Confirm HST</button>
+        </div>
       </div>`;
   }
 
@@ -868,6 +871,11 @@ width: 100%;
     updateTotal();
   }
 
+  function confirmHst(id) {
+    const btn = document.getElementById(`f-hstbtn-${id}`);
+    if (btn) { btn.textContent = '✓ HST Confirmed'; btn.classList.add('confirmed'); }
+  }
+
   function recalc(id) {
     const type = document.getElementById(`type-${id}`)?.value;
 
@@ -896,6 +904,15 @@ width: 100%;
           excEl.textContent = 'Within limit'; excEl.className = 'exceeded-badge exceeded-no';
         }
       }
+    }
+
+    if (['hotel', 'rental', 'misc'].includes(type)) {
+      const amount = parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
+      const hst = parseFloat((amount * 0.13).toFixed(2));
+      const he = document.getElementById(`f-hst-${id}`);
+      if (he) he.value = amount > 0 ? '$' + hst.toFixed(2) : '';
+      const hb = document.getElementById(`f-hstbtn-${id}`);
+      if (hb) { hb.textContent = '✓ Confirm HST'; hb.classList.remove('confirmed'); }
     }
 
     updateTotal();
@@ -1046,7 +1063,7 @@ width: 100%;
         const hst = parseFloat((value * 0.13).toFixed(2));
         rows.push({ type, date, evacueeItems, hst, value, receipts });
       } else {
-        rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', amount: parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0, value, receipts });
+        rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', amount: parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0, hst: parseFloat((parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0) * 0.13).toFixed(2) * 1, value, receipts });
       }
     }
     return rows;
