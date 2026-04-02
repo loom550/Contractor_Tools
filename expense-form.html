@@ -3,121 +3,462 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contractor Expense Submission</title>
+  <title>Expense Approval -- Loomex</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root {
-      --green: #00A651; --green-dark: #007a3d; --green-light: #e8f5ee; --green-mid: #c8e6d4;
-      --navy: #1a3a5c; --grey-footer: #6D6E71; --grey-border: #d8dde3; --grey-bg: #f5f7fa;
-      --white: #ffffff; --text: #2c3e50; --text-muted: #6b7c93;
-      --error: #cc2936; --error-bg: #fdf0f0;
+      --green: #00A651;
+      --green-dark: #007a3d;
+      --green-light: #e8f5ee;
+      --green-mid: #c8e6d4;
+      --navy: #1a3a5c;
+      --grey-footer: #6D6E71;
+      --grey-border: #d8dde3;
+      --grey-bg: #f5f7fa;
+      --white: #ffffff;
+      --text: #2c3e50;
+      --text-muted: #6b7c93;
+      --error: #cc2936;
+      --error-bg: #fdf0f0;
+      --amber: #E8A317;
       --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04);
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--grey-bg); color: var(--text); min-height: 100vh; padding: 32px 16px 64px; }
-    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 10%, rgba(0,166,81,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(26,58,92,0.05) 0%, transparent 50%); pointer-events: none; z-index: 0; }
-    .container { max-width: 820px; margin: 0 auto; position: relative; z-index: 1; }
-    .header { background: var(--navy); border-radius: 12px 12px 0 0; padding: 28px 36px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-    .header-left h1 { color: var(--white); font-size: 20px; font-weight: 700; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--grey-bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 10%, rgba(0,166,81,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(26,58,92,0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* HEADER */
+    .header {
+      background: var(--navy);
+      border-radius: 12px 12px 0 0;
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .header-left h1 { color: var(--white); font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
     .header-left p  { color: rgba(255,255,255,0.55); font-size: 13px; margin-top: 4px; }
-    .header-badge { background: var(--green); color: white; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 6px 12px; border-radius: 20px; white-space: nowrap; font-family: 'DM Mono', monospace; }
+    .header-badge {
+      background: var(--green);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    /* CARD */
     .card { background: var(--white); box-shadow: var(--shadow-card); }
     .card-section { padding: 32px 36px; border-bottom: 1px solid #eef0f3; }
     .card-section:last-of-type { border-bottom: none; }
-    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--green); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--green-mid); }
-    .field-grid { display: grid; gap: 16px; }
-    .field-grid.cols-2 { grid-template-columns: 1fr 1fr; }
-    .field-group { display: flex; flex-direction: column; gap: 6px; }
-    label { font-size: 12px; font-weight: 600; color: var(--navy); }
-    label .req { color: var(--green); margin-left: 2px; }
-    input[type="text"], input[type="date"], input[type="number"], input[type="email"], select {
-      border: 1.5px solid var(--grey-border); border-radius: 8px; padding: 10px 14px; font-size: 14px;
-      font-family: 'DM Sans', sans-serif; width: 100%; color: var(--text); background: var(--white);
-      transition: border-color 0.15s; appearance: none; -webkit-appearance: none;
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    input[type="number"] { font-family: 'DM Mono', monospace; }
-    input:focus, select:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,166,81,0.12); }
-    input::placeholder { color: #bcc5ce; }
-    input.invalid, select.invalid { border-color: var(--error); }
-    .expense-rows { display: flex; flex-direction: column; gap: 12px; }
-    .expense-row { border: 1.5px solid var(--grey-border); border-radius: 10px; overflow: hidden; }
-    .row-header { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: #f8f9fb; border-bottom: 1px solid #eef0f3; flex-wrap: wrap; }
-    .row-num { font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text-muted); min-width: 22px; }
-    .row-type-select { border: 1.5px solid var(--grey-border) !important; border-radius: 6px !important; padding: 7px 12px !important; font-size: 13px !important; font-weight: 600 !important; background: white !important; color: var(--navy) !important; width: auto; min-width: 180px; }
-    .type-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; display: none; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--green-mid); }
+
+    /* STATE BOXES */
+    .state-box { padding: 56px 36px; text-align: center; }
+    .state-icon { font-size: 2.5rem; margin-bottom: 14px; }
+    .state-box h2 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+    .state-box p  { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-lg {
+      width: 40px; height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 18px;
+    }
+
+    /* SUMMARY GRID */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .summary-item {
+      padding: 12px 16px;
+      background: var(--grey-bg);
+      border: 1.5px solid var(--grey-border);
+      border-radius: 8px;
+    }
+    .summary-item .s-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+    }
+    .summary-item .s-val { font-size: 14px; font-weight: 600; color: var(--text); }
+    .summary-item.total-item { background: var(--green-light); border-color: var(--green-mid); }
+    .summary-item.total-item .s-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .summary-item.approved-item { background: #e8f5ee; border-color: var(--green-mid); }
+    .summary-item.approved-item .s-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--green-dark);
+    }
+    .summary-item.partial-item { background: #fff8e1; border-color: #f5d88a; }
+    .summary-item.partial-item .s-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #7a5200;
+    }
+    .summary-item.report-item { background: #f0f4ff; border-color: #c5d0f0; }
+    .summary-item.report-item .s-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: #1a3a5c; }
+
+    /* ALREADY PROCESSED BANNER */
+    .processed-banner {
+      display: none;
+      padding: 12px 18px;
+      background: var(--green-light);
+      border: 1.5px solid var(--green-mid);
+      border-radius: 8px;
+      color: var(--green-dark);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    /* EXPENSE TABLE */
+    .exp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .exp-table thead th {
+      background: var(--navy);
+      color: rgba(255,255,255,0.8);
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .exp-table thead th:first-child { border-radius: 6px 0 0 0; }
+    .exp-table thead th:last-child  { border-radius: 0 6px 0 0; }
+    .exp-table tbody tr.expense-row { border-bottom: none; }
+    .exp-table tbody tr.expense-row:hover td { background: #fafbfc; }
+    .exp-table tbody tr.expense-row.row-rejected td { background: #fff5f5; }
+    .exp-table tbody tr.expense-row.row-approved td { background: #f8fffe; }
+    .exp-table td { padding: 9px 12px; vertical-align: middle; }
+    .exp-table tfoot td {
+      padding: 10px 12px;
+      font-weight: 700;
+      border-top: 2px solid var(--navy);
+      font-size: 14px;
+      color: var(--navy);
+    }
+
+    /* RECEIPT + DECISION ROW */
+    .exp-table tr.detail-row td {
+      padding: 0 12px 12px;
+      border-bottom: 1px solid #eef0f3;
+    }
+    .detail-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fafbfc;
+      border: 1px solid #eef0f3;
+    }
+    .exp-table tr.expense-row.row-rejected + tr.detail-row .detail-inner { background: #fff5f5; border-color: #fcd0d0; }
+    .exp-table tr.expense-row.row-approved + tr.detail-row .detail-inner { background: #f0faf5; border-color: var(--green-mid); }
+
+    /* Receipts inline */
+    .receipts-inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; }
+    .receipt-thumb {
+      width: 64px; height: 64px; object-fit: cover; border-radius: 6px;
+      border: 1px solid var(--grey-border); cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .receipt-thumb:hover { transform: scale(1.06); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .receipt-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 10px; background: var(--white);
+      border: 1px solid var(--grey-border); border-radius: 6px;
+      font-size: 12px; font-weight: 500; color: var(--navy); text-decoration: none;
+    }
+    .receipt-link:hover { background: var(--green-light); border-color: var(--green-mid); }
+    .no-receipts { color: var(--text-muted); font-size: 12px; font-style: italic; }
+
+    /* Decision controls */
+    .decision-controls { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .btn-dec {
+      padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 700;
+      border: 1.5px solid var(--grey-border); background: var(--white); cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all 0.12s; white-space: nowrap;
+    }
+    .btn-dec.approve { color: var(--green); }
+    .btn-dec.approve:hover { background: var(--green-light); border-color: var(--green); }
+    .btn-dec.approve.active { background: var(--green); color: white; border-color: var(--green); }
+    .btn-dec.reject  { color: var(--error); }
+    .btn-dec.reject:hover  { background: var(--error-bg); border-color: var(--error); }
+    .btn-dec.reject.active  { background: var(--error); color: white; border-color: var(--error); }
+    .hst-input {
+      width: 70px;
+      padding: 2px 4px;
+      border: none;
+      border-bottom: 1px solid #d1d5db;
+      border-radius: 0;
+      font-size: 13px;
+      font-family: inherit;
+      color: inherit;
+      background: transparent;
+      text-align: left;
+    }
+    .hst-input:focus { outline: none; border-bottom-color: var(--green-mid); }
+    .hst-confirm-btn {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+      border: 1.5px solid var(--amber); background: #fff8e1; color: #7a5200;
+      cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .hst-confirm-btn.confirmed {
+      border-color: var(--green-mid); background: var(--green-light); color: var(--green-dark);
+    }
+    .reason-input {
+      width: 100%; margin-top: 6px;
+      border: 1.5px solid var(--grey-border); border-radius: 6px;
+      padding: 6px 10px; font-size: 12px; font-family: 'DM Sans', sans-serif;
+      resize: vertical; min-height: 46px;
+    }
+    .reason-input:focus { outline: none; border-color: var(--amber); }
+
+    /* TYPE BADGES */
+    .type-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
     .badge-hotel   { background: #dbeafe; color: #1e40af; }
     .badge-meal    { background: #fce7f3; color: #9d174d; }
     .badge-mileage { background: #d1fae5; color: #065f46; }
     .badge-rental  { background: #ede9fe; color: #5b21b6; }
     .badge-misc    { background: #f3f4f6; color: #374151; }
-    .badge-evacuee { background: #fef9c3; color: #854d0e; }
-    .row-remove-btn { background: none; border: none; color: #c0c8d0; cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; transition: color 0.15s, background 0.15s; margin-left: auto; }
-    .row-remove-btn:hover { color: var(--error); background: var(--error-bg); }
-    .row-fields { padding: 14px 16px; display: grid; gap: 12px; }
-    .fields-4col    { grid-template-columns: 140px 1fr 130px 110px; }
-    .fields-meal    { grid-template-columns: 140px 1fr 120px 120px auto; }
-    .fields-mileage { grid-template-columns: 140px 1fr 120px 130px; }
-    .auto-field { background: #f0fdf4 !important; border-color: var(--green-mid) !important; color: var(--green-dark) !important; font-weight: 600; font-family: 'DM Mono', monospace; cursor: default; }
-    .exceeded-wrap { display: flex; flex-direction: column; gap: 6px; }
-    .exceeded-badge { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 10px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1.5px solid; white-space: nowrap; width: 100%; }
-    .exceeded-yes { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
-    .exceeded-no  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
-    .exceeded-na  { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
-    .row-receipts { padding: 0 16px 14px; }
-    .receipt-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
-    .receipt-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-    .receipt-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--green-light); border: 1px solid var(--green-mid); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--green-dark); font-weight: 500; max-width: 260px; }
-    .receipt-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .receipt-pill-remove { background: none; border: none; cursor: pointer; color: var(--green-dark); padding: 0; opacity: 0.6; font-size: 14px; }
-    .receipt-pill-remove:hover { opacity: 1; color: var(--error); }
-    .add-receipt-btn { background: none; border: 1.5px dashed var(--grey-border); border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--green); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
-    .add-receipt-btn:hover { background: var(--green-light); border-color: var(--green-mid); }
-    .add-receipt-btn:disabled { color: var(--text-muted); border-color: var(--grey-border); cursor: not-allowed; background: none; }
-    .add-expense-btn { width: 100%; padding: 14px; background: none; border: 1.5px dashed var(--grey-border); border-radius: 10px; color: var(--green); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; }
-    .add-expense-btn:hover { background: var(--green-light); border-color: var(--green-mid); }
-    .allowance-ref { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
-    .allowance-pill { background: var(--green-light); border: 1px solid var(--green-mid); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--green-dark); font-weight: 600; }
-    .allowance-ref-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .totals-bar { background: var(--navy); border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
-    .totals-bar .t-label { color: rgba(255,255,255,0.65); font-size: 13px; font-weight: 500; }
-    .totals-bar .t-value { color: white; font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; }
-    .totals-bar .t-value span { font-size: 14px; color: rgba(255,255,255,0.5); font-weight: 400; margin-left: 4px; }
-    .sig-container { border: 1.5px solid var(--grey-border); border-radius: 10px; overflow: hidden; background: white; position: relative; }
+
+    .exceeded-y { background: #fef3c7; color: #92400e; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+    .exceeded-n { background: #d1fae5; color: #065f46; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 11px; }
+
+    /* FIELDS */
+    .field-group { display: flex; flex-direction: column; gap: 6px; max-width: 360px; }
+    label { font-size: 12px; font-weight: 600; color: var(--navy); }
+    label .req { color: var(--green); margin-left: 2px; }
+
+    input[type="text"] {
+      border: 1.5px solid var(--grey-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      width: 100%;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,166,81,0.12); }
+    input.invalid { border-color: var(--error); box-shadow: 0 0 0 3px rgba(204,41,54,0.08); }
+
+    /* SIGNATURE */
+    .sig-container {
+      border: 1.5px solid var(--grey-border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: white;
+      position: relative;
+      margin-top: 16px;
+    }
     #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
-    .sig-clear-btn { position: absolute; top: 10px; right: 10px; background: white; border: 1.5px solid var(--grey-border); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+    .sig-clear-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: white;
+      border: 1.5px solid var(--grey-border);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
     .sig-clear-btn:hover { border-color: var(--error); color: var(--error); }
     .sig-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
-    .attestation { background: var(--green-light); border: 1.5px solid var(--green-mid); border-radius: 10px; padding: 16px 20px; font-size: 13px; color: var(--navy); line-height: 1.6; margin-bottom: 20px; }
+
+    /* ATTESTATION */
+    .attestation {
+      background: var(--green-light);
+      border: 1.5px solid var(--green-mid);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: var(--navy);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
     .attestation strong { color: var(--green-dark); }
-    .form-footer { padding: 24px 36px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #eef0f3; }
-    .status-msg { font-size: 13.5px; padding: 10px 16px; border-radius: 8px; display: none; flex: 1; line-height: 1.5; }
+
+    /* ACTION NOTE */
+    .action-note {
+      padding: 12px 16px;
+      background: #fff7ed;
+      border: 1.5px solid #fed7aa;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #9a3412;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    /* FOOTER ACTIONS */
+    .form-footer {
+      padding: 24px 36px;
+      border-top: 1px solid #eef0f3;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .status-msg {
+      font-size: 13.5px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      display: none;
+      line-height: 1.5;
+    }
     .status-msg.success { background: var(--green-light); color: var(--green-dark); border: 1.5px solid var(--green-mid); display: block; }
     .status-msg.error   { background: var(--error-bg); color: var(--error); border: 1.5px solid rgba(204,41,54,0.2); display: block; }
-    .submit-btn { background: var(--green); color: white; border: none; border-radius: 10px; padding: 13px 32px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.15s, transform 0.1s; white-space: nowrap; flex-shrink: 0; }
-    .submit-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
-    .submit-btn:disabled { background: #a0adb8; cursor: not-allowed; transform: none; }
+
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .btn-approve {
+      flex: 1;
+      min-width: 200px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: -0.2px;
+    }
+    .btn-approve:hover:not(:disabled) { background: var(--green-dark); transform: translateY(-1px); }
+    .btn-approve:active { transform: translateY(0); }
+    .btn-approve:disabled { background: #a0adb8; cursor: not-allowed; transform: none; }
+
+    .btn-contact {
+      flex: 1;
+      min-width: 200px;
+      background: white;
+      color: var(--error);
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      padding: 13px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: -0.2px;
+    }
+    .btn-contact:hover { background: var(--error-bg); border-color: var(--error); }
+
+    /* PAGE FOOTER */
     .page-footer { background: var(--grey-footer); border-radius: 0 0 12px 12px; padding: 14px 36px; text-align: center; }
     .page-footer p { color: rgba(255,255,255,0.7); font-size: 12px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+
+    @keyframes spinsmall { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spinsmall 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* LIGHTBOX */
+    #lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+    #lightbox .lb-close { position: absolute; top: 20px; right: 28px; color: #fff; font-size: 28px; cursor: pointer; line-height: 1; }
+
     @media (max-width: 640px) {
       body { padding: 0 0 48px; }
       .header { padding: 20px; border-radius: 0; flex-wrap: wrap; }
       .card { border-radius: 0; }
       .card-section { padding: 24px 20px; }
       .page-footer { border-radius: 0; padding: 14px 20px; }
-      .form-footer { padding: 20px; flex-direction: column; align-items: stretch; }
-      .submit-btn { width: 100%; }
-      .field-grid.cols-2 { grid-template-columns: 1fr; }
-      .row-fields { grid-template-columns: 1fr !important; }
-      .header { flex-wrap: wrap; }
-    }
-    @media (min-width: 641px) and (max-width: 900px) {
-      .fields-4col    { grid-template-columns: 1fr 1fr; }
-      .fields-meal    { grid-template-columns: 1fr 1fr 1fr; }
-      .fields-mileage { grid-template-columns: 1fr 1fr; }
+      .form-footer { padding: 20px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .btn-row { flex-direction: column; }
+      .btn-approve, .btn-contact { min-width: unset; width: 100%; text-align: center; }
+      .exp-table { font-size: 12px; }
+      .exp-table td, .exp-table th { padding: 7px 8px; }
+      .decision-controls { margin-left: 0; width: 100%; }
     }
   </style>
 </head>
@@ -126,571 +467,714 @@
 
   <div class="header">
     <div class="header-left">
-      <h1>Contractor Expense Report</h1>
-      <p>The Loomex Group -- Expense Submission Portal</p>
+      <h1>Expense Approval</h1>
+      <p>The Loomex Group -- Admin Review</p>
     </div>
-    <div class="header-badge">Expense Claim</div>
+    <div class="header-badge">Admin</div>
   </div>
 
   <div class="card">
 
-    <div class="card-section">
-      <div class="section-label">Contractor Information</div>
-      <div class="field-grid cols-2">
-        <div class="field-group">
-          <label for="contractorName">Full Name <span class="req">*</span></label>
-          <input type="text" id="contractorName" placeholder="First and last name" autocomplete="name">
-        </div>
-        <div class="field-group">
-          <label for="contractorEmail">Email Address <span class="req">*</span></label>
-          <input type="email" id="contractorEmail" placeholder="your@email.com" autocomplete="email">
-        </div>
-      </div>
-      <div class="field-grid cols-2" style="margin-top:16px">
-        <div class="field-group">
-          <label for="activation">Activation <span class="req">*</span></label>
-          <select id="activation">
-            <option value="">Select...</option>
-            <option value="2026-Kash-HubHost">2026-Kash-HubHost</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="site">Site <span class="req">*</span></label>
-          <select id="site" onchange="handleSiteChange()">
-            <option value="">Select...</option>
-            <option value="Kingston">Kingston</option>
-            <option value="Kapuskasing">Kapuskasing</option>
-            <option value="Timmins">Timmins</option>
-            <option value="EOC">EOC</option>
-          </select>
-        </div>
-      </div>
-      <input type="hidden" id="jobNumber">
-      <div style="margin-top:16px">
-        <div class="field-group">
-          <label>Submission Period <span class="req">*</span></label>
-          <div style="display:flex;gap:10px;align-items:center">
-            <input type="date" id="periodStart" style="flex:1;max-width:200px" onchange="handlePeriodChange()">
-            <span style="font-size:12px;color:var(--text-muted)">to</span>
-            <input type="date" id="periodEnd" style="flex:1;max-width:200px" onchange="handlePeriodChange()">
-          </div>
-        </div>
-      </div>
+    <!-- LOADING -->
+    <div id="stateLoading" class="card-section state-box">
+      <div class="spinner-lg"></div>
+      <h2>Loading submission...</h2>
+      <p>Retrieving expense report from system</p>
     </div>
 
-    <div class="card-section">
-      <div class="section-label">Expense Items</div>
-      <div class="expense-rows" id="expenseRows"></div>
-      <button type="button" class="add-expense-btn" onclick="addRow()">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Add Expense Item
-      </button>
-      <div class="allowance-ref">
-        <span class="allowance-ref-label">Allowances:</span>
-        <span class="allowance-pill">Breakfast $15</span>
-        <span class="allowance-pill">Lunch $20</span>
-        <span class="allowance-pill">Dinner $45</span>
-        <span class="allowance-pill">Mileage $0.59/km</span>
-      </div>
-      <div class="totals-bar">
-        <div class="t-label">Total Claimed</div>
-        <div class="t-value" id="totalDisplay">$0.00<span>CAD</span></div>
-      </div>
+    <!-- ERROR -->
+    <div id="stateError" class="card-section state-box" style="display:none">
+      <div class="state-icon">⚠️</div>
+      <h2>Submission not found</h2>
+      <p>This link may have expired (links are valid for 7 days) or the token is invalid.<br>Contact the contractor to resubmit if needed.</p>
     </div>
 
-    <div class="card-section">
-      <div class="section-label">Certification &amp; Signature</div>
-      <div class="attestation">
-        By signing below, <strong>I certify that all expenses listed are accurate, were incurred in the course of my contracted duties, and comply with the reimbursement conditions in my contract</strong> with The Loomex Group Ltd.
-      </div>
-      <div class="sig-container">
-        <canvas id="sig-canvas"></canvas>
-        <button type="button" class="sig-clear-btn" onclick="clearSig()">Clear</button>
-      </div>
-      <p class="sig-hint">Draw your signature above using your mouse or finger</p>
-    </div>
+    <!-- CONTENT -->
+    <div id="contentWrap" style="display:none">
 
-    <div class="form-footer">
-      <div class="status-msg" id="statusMsg"></div>
-      <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">Submit Expense Report</button>
-    </div>
+      <!-- SECTION 1: Summary -->
+      <div class="card-section">
+        <div class="section-label">Submission Summary</div>
+        <div class="processed-banner" id="processedBanner"></div>
+        <div class="summary-grid" id="summaryGrid"></div>
+      </div>
 
-  </div>
+      <!-- SECTION 2: Expense Details + Per-Row Decisions -->
+      <div class="card-section">
+        <div class="section-label">Expense Details &amp; Approval Decisions</div>
+        <div style="overflow-x:auto">
+          <table class="exp-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Detail</th>
+                <th>Total Paid</th>
+                <th>Pre-Tax</th>
+                <th>HST <span style="font-weight:400;opacity:0.7;font-size:10px;">(edit to confirm)</span></th>
+                <th>Exceeded?</th>
+                <th>Claimed</th>
+              </tr>
+            </thead>
+            <tbody id="expTableBody"></tbody>
+            <tfoot id="expTableFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Admin Approval -->
+      <div class="card-section">
+        <div class="section-label">Admin Approval &amp; Signature</div>
+        <div class="attestation">
+          By submitting below, <strong>I confirm that reviewed items are compliant with contract terms and reimbursement conditions</strong>. Approved items will be forwarded to Finance for payment processing.
+        </div>
+        <div class="field-group">
+          <label for="adminName">Your Name <span class="req">*</span></label>
+          <input type="text" id="adminName" placeholder="Full name of approving admin">
+        </div>
+        <div class="sig-container">
+          <canvas id="sig-canvas"></canvas>
+          <button class="sig-clear-btn" onclick="clearSig()">Clear</button>
+        </div>
+        <p class="sig-hint">Draw your signature above using your mouse or finger</p>
+      </div>
+
+      <!-- FOOTER ACTIONS -->
+      <div class="form-footer">
+        <div class="action-note" id="actionNote">
+          <strong>Per-row decisions:</strong> Use the Approve / Reject toggles on each line item above. Rejected items require a reason. Only approved items will be sent to Finance.
+        </div>
+        <div class="status-msg" id="statusMsg"></div>
+        <div class="btn-row">
+          <button class="btn-approve" id="approveBtn" onclick="submitDecision()">&#10003; Submit Approval Decision</button>
+          <button class="btn-contact" id="contactBtn">&#9993; Contact Contractor</button>
+        </div>
+      </div>
+
+    </div><!-- contentWrap -->
+
+  </div><!-- card -->
 
   <div class="page-footer">
-    <p>Submitted reports are reviewed by EOC Admin before forwarding to Finance. Questions? Contact eocadmin@loomex.ca</p>
+    <p>The Loomex Group Ltd -- Admin Portal -- For support contact eocadmin@loomex.ca</p>
   </div>
 
 </div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <span class="lb-close">&times;</span>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 <script>
-var WORKER_URL  = 'https://loomex-expense.loomex-it.workers.dev';
-var MEAL_LIMITS = { Breakfast: 15, Lunch: 20, Dinner: 45 };
-var HST_RATE    = 0.13;
-var JOB_NUMBERS = { Kingston: '900086', Kapuskasing: '900084', Timmins: '900083', EOC: '900085' };
-var HST_TYPES   = ['hotel', 'rental', 'misc', 'evacuee'];
-var TYPE_CFG    = {
-  hotel:   { label: 'Hotel',      cls: 'badge-hotel'   },
-  meal:    { label: 'Meal',       cls: 'badge-meal'    },
-  mileage: { label: 'Mileage',    cls: 'badge-mileage' },
-  rental:  { label: 'Rental Car', cls: 'badge-rental'  },
-  misc:    { label: 'Misc',       cls: 'badge-misc'    },
-  evacuee: { label: 'Evacuee',    cls: 'badge-evacuee' }
-};
-var rowReceipts = {};
-var rowCount    = 0;
+  const WORKER_URL = 'https://loomex-expense.loomex-it.workers.dev';
+  const token = new URLSearchParams(window.location.search).get('token');
+  let submission = null;
+  let rowDecisions = [];
 
-function gid(id) { return document.getElementById(id); }
-function gval(id) { var e = gid(id); return e ? e.value : ''; }
-function gnum(id) { return parseFloat(gval(id)) || 0; }
+  // ---- SIGNATURE ----
+  const canvas = document.getElementById('sig-canvas');
+  const ctx    = canvas.getContext('2d');
+  let drawing  = false;
+  let hasSig   = false;
 
-function handleSiteChange() {
-  var site = gval('site');
-  gid('jobNumber').value = JOB_NUMBERS[site] || '';
-  updateTotal();
-}
-
-function handlePeriodChange() {
-  var min = gval('periodStart');
-  var max = gval('periodEnd');
-  var els = document.querySelectorAll('.row-date');
-  for (var i = 0; i < els.length; i++) {
-    if (min) els[i].min = min;
-    if (max) els[i].max = max;
+  function resizeCanvas() {
+    const w = canvas.parentElement.clientWidth;
+    canvas.width  = w;
+    canvas.height = 160;
+    ctx.strokeStyle = '#1a3a5c';
+    ctx.lineWidth   = 2.2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
   }
-}
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
 
-function dateAttrs() {
-  var min = gval('periodStart');
-  var max = gval('periodEnd');
-  var s = '';
-  if (min) s += ' min="' + min + '"';
-  if (max) s += ' max="' + max + '"';
-  return s;
-}
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+  canvas.addEventListener('mousedown',  e => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+  canvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; });
+  canvas.addEventListener('mouseup',    () => drawing = false);
+  canvas.addEventListener('mouseleave', () => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; }, { passive: false });
+  canvas.addEventListener('touchend',   () => drawing = false);
+  function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
 
-function renderFields(id, type) {
-  var da = dateAttrs();
-  var dateField = '<div class="field-group"><label>Date</label><input type="date" id="fd' + id + '" class="row-date"' + da + '></div>';
-
-  if (type === 'meal') {
-    return '<div class="row-fields fields-meal">'
-      + dateField
-      + '<div class="field-group"><label>Meal Period</label>'
-      + '<select id="fmp' + id + '" onchange="recalc(' + id + ')">'
-      + '<option value="">Select...</option>'
-      + '<option value="Breakfast">Breakfast ($15 max)</option>'
-      + '<option value="Lunch">Lunch ($20 max)</option>'
-      + '<option value="Dinner">Dinner ($45 max)</option>'
-      + '</select></div>'
-      + '<div class="field-group"><label>Actual Cost ($)</label>'
-      + '<input type="number" id="fa' + id + '" placeholder="0.00" step="0.01" min="0" oninput="recalc(' + id + ')"></div>'
-      + '<div class="field-group"><label>Claimed ($)</label>'
-      + '<input type="text" id="fc' + id + '" class="auto-field" readonly placeholder="Auto"></div>'
-      + '<div class="exceeded-wrap"><label>Status</label>'
-      + '<span class="exceeded-badge exceeded-na" id="fx' + id + '">--</span></div>'
-      + '</div>';
+  // ---- STATE ----
+  function showState(state) {
+    document.getElementById('stateLoading').style.display = state === 'loading' ? 'block' : 'none';
+    document.getElementById('stateError').style.display   = state === 'error'   ? 'block' : 'none';
+    document.getElementById('contentWrap').style.display  = state === 'content' ? 'block' : 'none';
   }
 
-  if (type === 'mileage') {
-    return '<div class="row-fields fields-mileage">'
-      + dateField
-      + '<div class="field-group"><label>Route / Description</label>'
-      + '<input type="text" id="fdesc' + id + '" placeholder="e.g. Kingston to Ottawa"></div>'
-      + '<div class="field-group"><label>Kilometres</label>'
-      + '<input type="number" id="fkm' + id + '" placeholder="0" step="0.1" min="0" oninput="recalc(' + id + ')"></div>'
-      + '<div class="field-group"><label>Amount ($0.59/km)</label>'
-      + '<input type="text" id="famt' + id + '" class="auto-field" readonly placeholder="Auto"></div>'
-      + '</div>';
+  // ---- LOAD ----
+  async function loadSubmission() {
+    if (!token) { showState('error'); return; }
+    try {
+      const res = await fetch(`${WORKER_URL}/expense-submission?token=${token}`);
+      if (!res.ok) { showState('error'); return; }
+      submission = await res.json();
+      renderSubmission();
+      showState('content');
+      resizeCanvas();
+    } catch { showState('error'); }
   }
 
-  var ph = type === 'hotel' ? 'Hotel name / location'
-         : type === 'rental' ? 'Rental company / vehicle'
-         : type === 'evacuee' ? 'Evacuee category / description'
-         : 'Description';
+  const BADGE_CLS = { hotel: 'badge-hotel', meal: 'badge-meal', mileage: 'badge-mileage', rental: 'badge-rental', misc: 'badge-misc' };
+  const BADGE_LBL = { hotel: 'Hotel', meal: 'Meal', mileage: 'Mileage', rental: 'Rental Car', misc: 'Misc' };
+  function fmt(n) { return `$${parseFloat(n || 0).toFixed(2)}`; }
+  function fmtNum(n) { return parseFloat(n || 0).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
-  return '<div class="row-fields fields-4col">'
-    + dateField
-    + '<div class="field-group"><label>Description</label>'
-    + '<input type="text" id="fdesc' + id + '" placeholder="' + ph + '"></div>'
-    + '<div class="field-group"><label>Amount ($)</label>'
-    + '<input type="number" id="famt' + id + '" placeholder="0.00" step="0.01" min="0" oninput="recalc(' + id + ')"></div>'
-    + '<div class="field-group"><label>HST (13%, auto)</label>'
-    + '<input type="text" id="fhst' + id + '" class="auto-field" readonly placeholder="Auto"></div>'
-    + '</div>';
-}
+  // ---- RENDER ----
+  function renderSubmission() {
+    const fd  = submission.formData;
+    const sub = submission;
 
-function addRow() {
-  rowCount++;
-  var id  = rowCount;
-  var div = document.createElement('div');
-  div.className = 'expense-row';
-  div.id = 'row' + id;
-  div.innerHTML =
-    '<div class="row-header">'
-    + '<span class="row-num">#' + id + '</span>'
-    + '<select class="row-type-select" id="type' + id + '" onchange="changeType(' + id + ')">'
-    + '<option value="">-- Select expense type --</option>'
-    + '<option value="hotel">Hotel / Accommodation</option>'
-    + '<option value="meal">Meal</option>'
-    + '<option value="mileage">Mileage</option>'
-    + '<option value="rental">Rental Car</option>'
-    + '<option value="misc">Misc</option>'
-    + '<option value="evacuee">Evacuee Cost</option>'
-    + '</select>'
-    + '<span class="type-badge" id="badge' + id + '"></span>'
-    + '<button type="button" class="row-remove-btn" onclick="removeRow(' + id + ')" title="Remove">'
-    + '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-    + '</button></div>'
-    + '<div id="fields' + id + '"></div>'
-    + '<div id="receipts' + id + '" style="display:none" class="row-receipts">'
-    + '<span class="receipt-label">Receipts (up to 3 -- photos or PDF)</span>'
-    + '<div id="pills' + id + '" class="receipt-pills"></div>'
-    + '<button type="button" class="add-receipt-btn" id="recbtn' + id + '" onclick="triggerFile(' + id + ')">+ Add Receipt</button>'
-    + '<input type="file" id="recinput' + id + '" accept="image/*,.pdf" multiple style="display:none" onchange="handleFiles(' + id + ')">'
-    + '</div>';
-  gid('expenseRows').appendChild(div);
-}
-
-function removeRow(id) {
-  var row = gid('row' + id);
-  if (row) row.parentNode.removeChild(row);
-  delete rowReceipts[id];
-  updateTotal();
-}
-
-function changeType(id) {
-  var type     = gval('type' + id);
-  var fieldsEl = gid('fields' + id);
-  var recEl    = gid('receipts' + id);
-  var badgeEl  = gid('badge' + id);
-  fieldsEl.innerHTML = type ? renderFields(id, type) : '';
-  recEl.style.display = type ? 'block' : 'none';
-  if (type && TYPE_CFG[type]) {
-    badgeEl.textContent   = TYPE_CFG[type].label;
-    badgeEl.className     = 'type-badge ' + TYPE_CFG[type].cls;
-    badgeEl.style.display = 'inline-flex';
-  } else {
-    badgeEl.style.display = 'none';
-  }
-  updateTotal();
-}
-
-function recalc(id) {
-  var type = gval('type' + id);
-
-  if (type === 'mileage') {
-    var km  = gnum('fkm' + id);
-    var amt = parseFloat((km * 0.59).toFixed(2));
-    var ae  = gid('famt' + id);
-    if (ae) ae.value = km > 0 ? '$' + amt.toFixed(2) : '';
-  }
-
-  if (type === 'meal') {
-    var period  = gval('fmp' + id);
-    var actual  = gnum('fa' + id);
-    var limit   = MEAL_LIMITS[period] || 0;
-    var claimed = (period && actual > 0) ? parseFloat(Math.min(actual, limit).toFixed(2)) : 0;
-    var over    = period && actual > limit;
-    var ce = gid('fc' + id);
-    var xe = gid('fx' + id);
-    if (ce) ce.value = (period && actual > 0) ? '$' + claimed.toFixed(2) : '';
-    if (xe) {
-      if (!period || actual === 0) { xe.textContent = '--';            xe.className = 'exceeded-badge exceeded-na'; }
-      else if (over)               { xe.textContent = 'Exceeded';     xe.className = 'exceeded-badge exceeded-yes'; }
-      else                         { xe.textContent = 'Within limit'; xe.className = 'exceeded-badge exceeded-no'; }
+    // Already processed
+    if (sub.status !== 'pending') {
+      const b = document.getElementById('processedBanner');
+      b.textContent = `✓ This expense report was ${sub.status} by ${sub.approvedBy || 'EOC Admin'} on ${new Date(sub.approvedAt).toLocaleDateString('en-CA')}.`;
+      b.style.display = 'block';
+      document.getElementById('approveBtn').disabled = true;
+      document.getElementById('approveBtn').textContent = `${sub.status === 'approved' ? 'Approved' : 'Processed'} by ${sub.approvedBy}`;
     }
-  }
 
-  if (HST_TYPES.indexOf(type) !== -1) {
-    var total = gnum('famt' + id);
-    var hst   = parseFloat((total * HST_RATE).toFixed(2));
-    var he    = gid('fhst' + id);
-    if (he) he.value = total > 0 ? '$' + hst.toFixed(2) : '';
-  }
-
-  updateTotal();
-}
-
-function getRowTotal(id) {
-  var type = gval('type' + id);
-  if (!type) return 0;
-  if (type === 'mileage') { return parseFloat((gnum('fkm' + id) * 0.59).toFixed(2)); }
-  if (type === 'meal') {
-    var p = gval('fmp' + id);
-    var a = gnum('fa' + id);
-    return (p && a > 0) ? parseFloat(Math.min(a, MEAL_LIMITS[p] || 0).toFixed(2)) : 0;
-  }
-  var base = gnum('famt' + id); return parseFloat((base * 1.13).toFixed(2));
-}
-
-function updateTotal() {
-  var total = 0;
-  var rows  = document.querySelectorAll('.expense-row');
-  for (var i = 0; i < rows.length; i++) {
-    var id = parseInt(rows[i].id.replace('row', ''), 10);
-    total += getRowTotal(id);
-  }
-  gid('totalDisplay').innerHTML = '$' + total.toFixed(2) + '<span>CAD</span>';
-}
-
-// ---- SIGNATURE ----
-var canvas  = gid('sig-canvas');
-var ctx     = canvas.getContext('2d');
-var drawing = false;
-var hasSig  = false;
-
-function resizeCanvas() {
-  var w = canvas.parentElement.clientWidth;
-  canvas.width  = w;
-  canvas.height = 160;
-  ctx.strokeStyle = '#1a3a5c';
-  ctx.lineWidth   = 2.2;
-  ctx.lineCap     = 'round';
-  ctx.lineJoin    = 'round';
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-function gpos(e) {
-  var rect = canvas.getBoundingClientRect();
-  var src  = e.touches ? e.touches[0] : e;
-  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
-}
-canvas.addEventListener('mousedown',  function(e) { drawing = true; ctx.beginPath(); var p = gpos(e); ctx.moveTo(p.x, p.y); });
-canvas.addEventListener('mousemove',  function(e) { if (!drawing) return; var p = gpos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; });
-canvas.addEventListener('mouseup',    function() { drawing = false; });
-canvas.addEventListener('mouseleave', function() { drawing = false; });
-canvas.addEventListener('touchstart', function(e) { e.preventDefault(); drawing = true; ctx.beginPath(); var p = gpos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
-canvas.addEventListener('touchmove',  function(e) { e.preventDefault(); if (!drawing) return; var p = gpos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; }, { passive: false });
-canvas.addEventListener('touchend',   function() { drawing = false; });
-function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
-
-// ---- RECEIPTS ----
-function triggerFile(id) { gid('recinput' + id).click(); }
-
-function handleFiles(id) {
-  var input = gid('recinput' + id);
-  if (!rowReceipts[id]) rowReceipts[id] = [];
-  var cur   = rowReceipts[id];
-  var avail = 3 - cur.length;
-  if (avail <= 0) { input.value = ''; return; }
-  var files = [];
-  for (var i = 0; i < input.files.length && files.length < avail; i++) files.push(input.files[i]);
-  var loaded = 0;
-  files.forEach(function(file) {
-    var r = new FileReader();
-    r.onload = function() {
-      cur.push({ name: file.name, type: file.type, data: r.result.split(',')[1] });
-      loaded++;
-      if (loaded === files.length) { input.value = ''; renderPills(id); }
+    // Contact button
+    document.getElementById('contactBtn').onclick = () => {
+      window.location.href = `mailto:${fd.contractorEmail}?subject=Re: Expense Report - ${fd.activation} (${fd.periodStart} to ${fd.periodEnd})&body=Hi ${fd.contractorName},%0A%0ARegarding your expense submission (Ref: ${token}),%0A%0A`;
     };
-    r.readAsDataURL(file);
-  });
-}
 
-function removeFile(id, idx) { if (rowReceipts[id]) { rowReceipts[id].splice(idx, 1); renderPills(id); } }
+    // Init all decisions to approved
+    rowDecisions = (fd.rows || []).map((r, i) => ({ rowIndex: i, approved: true, reason: '', hst: r.hst || 0 }));
 
-function renderPills(id) {
-  var files   = rowReceipts[id] || [];
-  var pillsEl = gid('pills' + id);
-  var btnEl   = gid('recbtn' + id);
-  if (!pillsEl) return;
-  var html = '';
-  for (var i = 0; i < files.length; i++) {
-    html += '<div class="receipt-pill">'
-      + '<span class="receipt-pill-name" title="' + files[i].name + '">' + files[i].name + '</span>'
-      + '<button type="button" class="receipt-pill-remove" onclick="removeFile(' + id + ',' + i + ')">&#10005;</button>'
-      + '</div>';
+    renderSummaryGrid();
+    renderExpenseTable();
   }
-  pillsEl.innerHTML = html;
-  if (btnEl) { btnEl.disabled = files.length >= 3; btnEl.textContent = files.length >= 3 ? 'Max 3 files' : '+ Add Receipt'; }
-}
 
-// ---- COLLECT ----
-function collectRows() {
-  var rows  = [];
-  var rowEls = document.querySelectorAll('.expense-row');
-  for (var i = 0; i < rowEls.length; i++) {
-    var id       = parseInt(rowEls[i].id.replace('row', ''), 10);
-    var type     = gval('type' + id);
-    if (!type) continue;
-    var date     = gval('fd' + id);
-    var receipts = rowReceipts[id] || [];
+  function renderSummaryGrid() {
+    const fd  = submission.formData;
+    const sub = submission;
+    const approvedTotal = calcApprovedTotal();
+    const rejectedCount = rowDecisions.filter(d => !d.approved).length;
+    const allApproved   = rejectedCount === 0;
 
-    if (type === 'meal') {
-      var period = gval('fmp' + id);
-      var actual = gnum('fa' + id);
-      var limit  = MEAL_LIMITS[period] || 0;
-      var cl     = (period && actual > 0) ? parseFloat(Math.min(actual, limit).toFixed(2)) : 0;
-      rows.push({ type: type, date: date, mealPeriod: period, mealsActual: actual,
-        mealClaimed: cl, exceeded: (period && actual > limit) ? 'Y' : (period ? 'N' : '-'),
-        value: cl, hst: 0, receipts: receipts });
+    const items = [
+      { l: 'Report #',      v: sub.reportNumber || '—', cls: 'report-item' },
+      { l: 'Contractor',    v: fd.contractorName },
+      { l: 'Email',         v: fd.contractorEmail },
+      { l: 'Activation',    v: fd.activation },
+      { l: 'Job Number',    v: fd.jobNumber || 'N/A' },
+      { l: 'Site',          v: fd.site },
+      { l: 'Period',        v: `${fd.periodStart} to ${fd.periodEnd}` },
+      { l: 'Submitted',     v: new Date(sub.submittedAt).toLocaleString('en-CA') },
+      { l: 'Total Claimed', v: fmt(fd.total), cls: 'total-item' },
+    ];
 
-    } else if (type === 'mileage') {
-      var km  = gnum('fkm' + id);
-      var val = parseFloat((km * 0.59).toFixed(2));
-      rows.push({ type: type, date: date, description: gval('fdesc' + id),
-        km: km, value: val, hst: 0, receipts: receipts });
-
+    if (!allApproved) {
+      items.push({ l: `Approved Total (${rowDecisions.length - rejectedCount} of ${rowDecisions.length} items)`, v: `$${fmtNum(approvedTotal)}`, cls: 'partial-item' });
     } else {
-      var base = gnum('famt' + id);
-      var hstAmt = parseFloat((base * HST_RATE).toFixed(2));
-      var preTax = base;
-      rows.push({ type: type, date: date, description: gval('fdesc' + id),
-        amount: base, value: preTax, hst: hstAmt, receipts: receipts });
+      items.push({ l: 'Approved Total', v: `$${fmtNum(approvedTotal)}`, cls: 'approved-item' });
+    }
+
+    document.getElementById('summaryGrid').innerHTML = items.map(i =>
+      `<div class="summary-item${i.cls ? ' ' + i.cls : ''}">
+        <div class="s-label">${i.l}</div>
+        <div class="s-val">${i.v}</div>
+      </div>`
+    ).join('');
+  }
+
+  function renderExpenseTable() {
+    const fd = submission.formData;
+    const receiptFilenames = submission.receiptFilenames || [];
+    const tbody = document.getElementById('expTableBody');
+    tbody.innerHTML = '';
+
+    (fd.rows || []).forEach((r, i) => {
+      const badgeCls = BADGE_CLS[r.type] || 'badge-misc';
+      const badgeLbl = BADGE_LBL[r.type] || r.type;
+      let detail = '', actual = '—', claimed = '', exceeded = '—';
+
+      if (r.type === 'meal') {
+        detail   = r.mealPeriod || '—';
+        actual   = fmt(r.mealsActual);
+        claimed  = fmt(r.mealClaimed);
+        exceeded = r.exceeded === 'Y'
+          ? '<span class="exceeded-y">Exceeded</span>'
+          : r.exceeded === 'N' ? '<span class="exceeded-n">Within limit</span>' : '—';
+      } else if (r.type === 'mileage') {
+        detail  = `${r.description || '—'} (${r.km} km)`;
+        claimed = fmt(r.value);
+      } else {
+        // hotel/rental/misc/evacuee: amount = total paid incl. HST, value = pre-tax
+        detail  = r.description || r.evacueeCategory || '—';
+        actual  = r.amount ? fmt(r.amount) : fmt(r.value); // total paid incl. HST
+        claimed = fmt(r.value);                             // pre-tax
+      }
+
+      // Main expense row
+      const tr = document.createElement('tr');
+      tr.className = 'expense-row row-approved';
+      tr.id = `erow-${i}`;
+      const isHstEligible = (r.type === 'hotel' || r.type === 'rental' || r.type === 'misc' || r.type === 'evacuee');
+      const hstCell = isHstEligible
+        ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">
+            <span style="white-space:nowrap;">$<input type="number" class="hst-input" id="hst-${i}" value="${r.hst || 0}" step="0.01" min="0" oninput="updateHst(${i});setHstUnconfirmed(${i})"></span>
+            <button type="button" class="hst-confirm-btn" id="hstbtn-${i}" onclick="confirmHst(${i})">&#10003; Confirm HST</button>
+           </div>`
+        : `<span style="color:var(--text-muted)">—</span>`;
+      tr.innerHTML = `
+        <td style="color:var(--text-muted);font-size:12px;font-weight:700;">#${i + 1}</td>
+        <td><span class="type-badge ${badgeCls}">${badgeLbl}</span></td>
+        <td>${r.date || '—'}</td>
+        <td>${detail}</td>
+        <td>${actual}</td>
+        <td>${claimed}</td>
+        <td>${hstCell}</td>
+        <td>${exceeded}</td>
+        <td><strong>${fmt(r.value)}</strong></td>
+      `;
+      tbody.appendChild(tr);
+
+      // Detail row: receipts + decision controls
+      const rowReceipts = receiptFilenames.filter(f => { const m = f.match(/^Item(\d+)-/); return m && parseInt(m[1]) === i + 1; });
+      const tr2 = document.createElement('tr');
+      tr2.className = 'detail-row';
+      tr2.id = `drow-${i}`;
+      tr2.innerHTML = `<td colspan="9">
+        <div class="detail-inner" id="detail-inner-${i}">
+          <div class="receipts-inline" id="receipts-${i}">
+            ${rowReceipts.length === 0 ? '<span class="no-receipts">No receipts</span>' : '<span class="no-receipts">Loading receipts...</span>'}
+          </div>
+          <div class="decision-controls">
+            <button class="btn-dec approve active" id="abtn-${i}" onclick="setDecision(${i}, true)">&#10003; Approve</button>
+            <button class="btn-dec reject" id="rbtn-${i}" onclick="setDecision(${i}, false)">&#10005; Reject</button>
+          </div>
+          <div id="reason-wrap-${i}" style="display:none;width:100%;">
+            <textarea class="reason-input" id="reason-${i}" placeholder="Rejection reason (required)" oninput="updateReason(${i})"></textarea>
+          </div>
+        </div>
+      </td>`;
+      tbody.appendChild(tr2);
+
+      // Load receipts async
+      if (rowReceipts.length > 0) loadReceipts(i, rowReceipts);
+    });
+
+    document.getElementById('expTableFoot').innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align:right">Total Claimed</td>
+        <td>${fmt(submission.formData.total)}</td>
+      </tr>`;
+  }
+
+  // ---- HST + REASON UPDATERS ----
+  function updateHst(idx) {
+    rowDecisions[idx].hst = parseFloat(document.getElementById(`hst-${idx}`)?.value) || 0;
+    renderSummaryGrid();
+  }
+
+  function confirmHst(idx) {
+    const btn = document.getElementById(`hstbtn-${idx}`);
+    if (btn) { btn.textContent = '✓ Confirmed'; btn.classList.add('confirmed'); }
+    rowDecisions[idx].hst = parseFloat(document.getElementById(`hst-${idx}`)?.value) || 0;
+    renderSummaryGrid();
+  }
+
+  function setHstUnconfirmed(idx) {
+    const btn = document.getElementById(`hstbtn-${idx}`);
+    if (btn) { btn.textContent = '✓ Confirm HST'; btn.classList.remove('confirmed'); }
+  }
+
+  function updateReason(idx) {
+    rowDecisions[idx].reason = document.getElementById(`reason-${idx}`)?.value || '';
+  }
+
+  // ---- LOAD RECEIPTS FROM R2 ----
+  function loadReceipts(rowIndex, filenames) {
+    const area = document.getElementById(`receipts-${rowIndex}`);
+    area.innerHTML = '';
+    filenames.forEach(filename => {
+      const ext = filename.split('.').pop().toLowerCase();
+      const url = `${WORKER_URL}/expense-receipt?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(filename)}`;
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'receipt-thumb';
+        img.title = filename;
+        img.onclick = () => openLightbox(url);
+        img.onerror = () => img.replaceWith(makeReceiptLink(url, ext));
+        area.appendChild(img);
+      } else {
+        area.appendChild(makeReceiptLink(url, ext));
+      }
+    });
+  }
+
+  function makeReceiptLink(url, ext) {
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.className = 'receipt-link';
+    a.innerHTML = `&#128196; ${ext.toUpperCase()} Receipt`;
+    return a;
+  }
+
+  // ---- PER-ROW DECISION ----
+  function setDecision(index, approved) {
+    rowDecisions[index].approved = approved;
+    if (approved) rowDecisions[index].reason = '';
+
+    document.getElementById(`abtn-${index}`).classList.toggle('active', approved);
+    document.getElementById(`rbtn-${index}`).classList.toggle('active', !approved);
+    document.getElementById(`erow-${index}`).className = `expense-row ${approved ? 'row-approved' : 'row-rejected'}`;
+    document.getElementById(`reason-wrap-${index}`).style.display = approved ? 'none' : 'block';
+    if (approved && document.getElementById(`reason-${index}`)) {
+      document.getElementById(`reason-${index}`).value = '';
+    }
+    renderSummaryGrid();
+
+    const rejectedCount = rowDecisions.filter(d => !d.approved).length;
+    document.getElementById('actionNote').innerHTML = rejectedCount > 0
+      ? `<strong>${rejectedCount} item${rejectedCount > 1 ? 's' : ''} marked for rejection.</strong> Ensure each has a reason entered. Approved items will go to Finance; the contractor will receive a per-item decision email.`
+      : `<strong>Per-row decisions:</strong> Use the Approve / Reject toggles on each line item above. Only approved items will be sent to Finance.`;
+  }
+
+  function calcApprovedTotal() {
+    return (submission.formData.rows || [])
+      .filter((_, i) => rowDecisions[i]?.approved !== false)
+      .reduce((s, r) => s + parseFloat(r.value || 0), 0);
+  }
+
+  // ── BUILD APPROVED EXCEL ─────────────────────────────────────────────────────
+  function buildApprovedExcel(fd, adminName) {
+    const wb = XLSX.utils.book_new();
+
+    const approvedRows = (fd.rows || [])
+      .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0 }))
+      .filter((_, i) => rowDecisions[i]?.approved !== false);
+
+    let totalHotel=0, totalRental=0, totalMileage=0, totalMeals=0, totalHST=0, totalMisc=0;
+
+    const dataRows = approvedRows.map(row => {
+      let desc = row.description || '';
+      if (row.type === 'meal')    desc = row.mealPeriod || '';
+      if (row.type === 'mileage') desc = (row.description || '') + ' (' + (row.km || 0) + ' km @ $0.59)';
+      if (row.type === 'evacuee') desc = row.evacueeCategory || '';
+      const val  = parseFloat(row.value || 0);
+      const hst  = ['hotel','rental','misc','evacuee'].includes(row.type) ? parseFloat(row.hst || 0) : 0;
+      let hotel=0, rental=0, mileage=0, meals=0, misc=0;
+      if (row.type === 'hotel')                                { hotel   = val; }
+      if (row.type === 'rental')                               { rental  = val; }
+      if (row.type === 'mileage')                              { mileage = val; }
+      if (row.type === 'meal')                                 { meals   = val; }
+      if (row.type === 'misc' || row.type === 'evacuee')       { misc    = val; }
+      totalHotel+=hotel; totalRental+=rental; totalMileage+=mileage;
+      totalMeals+=meals; totalHST+=hst; totalMisc+=misc;
+      return [row.date||'', desc,
+        hotel||'', rental||'', mileage||'', meals||'', hst||'', misc||''];
+    });
+
+    const grandTotal = totalHotel + totalRental + totalMileage + totalMeals + totalHST + totalMisc;
+
+    const aoa = [
+      [submission.reportNumber || '', '', '', '', '', '', '', ''],
+      ['Contractor:', fd.contractorName],
+      ['Period:', fd.activation + ' | ' + fd.site + (fd.jobNumber ? ' | Job #' + fd.jobNumber : '') + ' | ' + fd.periodStart + ' to ' + fd.periodEnd],
+      [],
+      ['Date', 'Description', 'Hotel/Accommodation', 'Rental Car', 'Mileage', 'Meals', 'HST', 'Misc/Other'],
+      ...dataRows,
+      [],
+      ['APPROVED TOTAL', '', totalHotel, totalRental, totalMileage, totalMeals, totalHST, totalMisc],
+      ['GRAND TOTAL', '', '', '', '', '', '', grandTotal],
+      [],
+      ['Approved By:', adminName],
+      ['Approved On:', new Date().toLocaleDateString('en-CA')],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [
+      {wch:12},{wch:38},{wch:20},{wch:14},{wch:12},{wch:10},{wch:10},{wch:14}
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Expense Report');
+    return XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+  }
+
+  // ── BUILD APPROVED PDF ────────────────────────────────────────────────────────
+  async function buildApprovedPDF(adminName, signatureDataUrl) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+    const fd = submission.formData;
+    const W = 216, MARGIN = 15;
+
+    const approvedRows = (fd.rows || [])
+      .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0 }))
+      .filter((_, i) => rowDecisions[i]?.approved !== false);
+
+    const rejectedRows = (fd.rows || []).filter((_, i) => rowDecisions[i]?.approved === false);
+    const approvedTotal = approvedRows.reduce((s, r) => s + parseFloat(r.value || 0), 0);
+    const rejectedTotal = rejectedRows.reduce((s, r) => s + parseFloat(r.value || 0), 0);
+
+    const hstByType = { hotel: 0, rental: 0, misc: 0, evacuee: 0 };
+    approvedRows.forEach(r => {
+      if (hstByType[r.type] !== undefined) hstByType[r.type] += parseFloat(r.hst || 0);
+    });
+    const totalHST = Object.values(hstByType).reduce((s, v) => s + v, 0);
+    const TYPE_LABELS = { hotel: 'Hotel', meal: 'Meal', mileage: 'Mileage', rental: 'Rental Car', misc: 'Misc', evacuee: 'Evacuee' };
+
+    // PAGE 1: COVER
+    doc.setFillColor(26, 58, 92); doc.rect(0, 0, W, 22, 'F');
+    doc.setFillColor(0, 166, 81); doc.rect(0, 22, W, 1.5, 'F');
+
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('THE LOOMEX GROUP', MARGIN, 9.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text('Contractor Expense Report -- Approved Copy', MARGIN, 16);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(submission.reportNumber || '', W - MARGIN, 10, { align: 'right' });
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    doc.text('Report Number', W - MARGIN, 15, { align: 'right' });
+
+    let y = 33;
+    const details = [
+      ['Contractor',    fd.contractorName],
+      ['Email',         fd.contractorEmail],
+      ['Activation',    fd.activation],
+      ['Job Number',    fd.jobNumber || 'N/A'],
+      ['Site',          fd.site],
+      ['Period',        fd.periodStart + '  to  ' + fd.periodEnd],
+      ['Submitted',     new Date(submission.submittedAt).toLocaleDateString('en-CA')],
+      ['Approved By',   adminName],
+      ['Approved On',   new Date().toLocaleDateString('en-CA')],
+      ['Submission ID', token],
+    ];
+    doc.setFontSize(8.5);
+    details.forEach(([label, value]) => {
+      doc.setFont('helvetica','bold'); doc.setTextColor(26,58,92);
+      doc.text(label + ':', MARGIN, y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+      doc.text(String(value || ''), MARGIN + 33, y);
+      y += 6;
+    });
+
+    // Financial summary box
+    const bx = 115, bw = W - 115 - MARGIN;
+    doc.setFillColor(245,250,247); doc.setDrawColor(180,220,195); doc.setLineWidth(0.4);
+    doc.roundedRect(bx, 33, bw, rejectedRows.length ? 60 : 50, 2, 2, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(26,58,92);
+    doc.text('FINANCIAL SUMMARY', bx + bw / 2, 41, { align: 'center' });
+
+    let by = 49;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(60,60,60);
+    doc.text('Total Claimed:', bx + 5, by);
+    doc.text('$' + parseFloat(fd.total || 0).toFixed(2), bx + bw - 5, by, { align: 'right' });
+    by += 7;
+
+    if (rejectedRows.length) {
+      doc.setTextColor(180,40,40);
+      doc.text('Rejected (' + rejectedRows.length + ' item' + (rejectedRows.length > 1 ? 's' : '') + '):', bx + 5, by);
+      doc.text('-$' + rejectedTotal.toFixed(2), bx + bw - 5, by, { align: 'right' });
+      doc.setTextColor(60,60,60); by += 7;
+    }
+
+    doc.setDrawColor(0,166,81); doc.setLineWidth(0.5);
+    doc.line(bx + 5, by, bx + bw - 5, by); by += 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,110,55);
+    doc.text('Total Approved:', bx + 5, by);
+    doc.text('$' + approvedTotal.toFixed(2), bx + bw - 5, by, { align: 'right' }); by += 7;
+    if (totalHST > 0) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(90,90,90);
+      doc.text('(incl. HST: $' + totalHST.toFixed(2) + ')', bx + bw - 5, by, { align: 'right' });
+    }
+
+    // HST breakout
+    y = Math.max(y, 105);
+    if (totalHST > 0) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(26,58,92);
+      doc.text('HST BREAKOUT -- Approved Items', MARGIN, y); y += 2;
+      const hstBody = [];
+      if (hstByType.hotel   > 0) hstBody.push(['Hotel',       '$' + hstByType.hotel.toFixed(2)]);
+      if (hstByType.rental  > 0) hstBody.push(['Rental Car',  '$' + hstByType.rental.toFixed(2)]);
+      if (hstByType.misc    > 0) hstBody.push(['Misc',        '$' + hstByType.misc.toFixed(2)]);
+      if (hstByType.evacuee > 0) hstBody.push(['Evacuee',     '$' + hstByType.evacuee.toFixed(2)]);
+      doc.autoTable({
+        startY: y, head: [['Category', 'HST Amount']], body: hstBody,
+        foot: [['Total HST', '$' + totalHST.toFixed(2)]],
+        margin: { left: MARGIN }, tableWidth: 80, styles: { fontSize: 8 },
+        headStyles: { fillColor: [26,58,92] },
+        footStyles: { fillColor: [0,100,50], textColor: [255,255,255], fontStyle: 'bold' },
+        theme: 'striped',
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    }
+
+    // Signature
+    y = Math.max(y, 200);
+    if (signatureDataUrl) {
+      try { doc.addImage(signatureDataUrl, 'PNG', MARGIN, y - 22, 65, 20); } catch(e) {}
+      doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
+      doc.line(MARGIN, y - 1, MARGIN + 70, y - 1);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(80,80,80);
+      doc.text(adminName + '  |  ' + new Date().toLocaleDateString('en-CA'), MARGIN, y + 4);
+      doc.setFontSize(7);
+      doc.text('Authorized Signature -- EOC Admin', MARGIN, y + 9);
+    }
+
+    // PAGE 2: EXPENSE TABLE
+    doc.addPage();
+    doc.setFillColor(26,58,92); doc.rect(0, 0, W, 16, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('APPROVED EXPENSE ITEMS', MARGIN, 10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text(submission.reportNumber || '', W - MARGIN, 10, { align: 'right' });
+
+    const tableBody = approvedRows.map((row, i) => {
+      let desc = row.description || '';
+      if (row.type === 'meal')    desc = row.mealPeriod || '';
+      if (row.type === 'mileage') desc = (row.description || '') + ' (' + row.km + ' km)';
+      const hst = ['hotel','rental','misc'].includes(row.type)
+        ? '$' + parseFloat(row.hst || 0).toFixed(2) : '--';
+      return [i + 1, TYPE_LABELS[row.type] || row.type, row.date || '', desc,
+              '$' + parseFloat(row.value || 0).toFixed(2), hst];
+    });
+
+    doc.autoTable({
+      startY: 22,
+      head: [['#', 'Type', 'Date', 'Description', 'Amount', 'HST']],
+      body: tableBody,
+      foot: [['', '', '', 'TOTAL APPROVED', '$' + approvedTotal.toFixed(2),
+              totalHST > 0 ? '$' + totalHST.toFixed(2) : '--']],
+      margin: { left: MARGIN, right: MARGIN },
+      headStyles: { fillColor: [26,58,92], fontSize: 8 },
+      footStyles: { fillColor: [0,100,50], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9 },
+      styles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 8 }, 1: { cellWidth: 24 }, 2: { cellWidth: 22 },
+        3: { cellWidth: 'auto' },
+        4: { cellWidth: 26, halign: 'right' }, 5: { cellWidth: 22, halign: 'right' },
+      },
+      theme: 'striped',
+      alternateRowStyles: { fillColor: [245,250,247] },
+    });
+
+    // PAGES 3+: RECEIPT IMAGES
+    const receiptFilenames = submission.receiptFilenames || [];
+    const approvedReceipts = receiptFilenames.filter(f => {
+      const m = f.match(/^Item(\d+)-/);
+      if (!m) return false;
+      return rowDecisions[parseInt(m[1]) - 1]?.approved !== false;
+    });
+
+    for (const filename of approvedReceipts) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if (!['jpg','jpeg','png','gif','webp'].includes(ext)) continue;
+      try {
+        const url = WORKER_URL + '/expense-receipt?token=' + encodeURIComponent(token) + '&filename=' + encodeURIComponent(filename);
+        const resp = await fetch(url);
+        if (!resp.ok) continue;
+        const blob = await resp.blob();
+        const dataUrl = await new Promise((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res(reader.result);
+          reader.onerror = rej;
+          reader.readAsDataURL(blob);
+        });
+        doc.addPage();
+        doc.setFillColor(26,58,92); doc.rect(0, 0, W, 16, 'F');
+        doc.setTextColor(255,255,255);
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('RECEIPT', MARGIN, 10);
+        doc.setFont('helvetica','normal'); doc.setFontSize(7);
+        doc.text(filename, W - MARGIN, 10, { align: 'right' });
+
+        const imgProps = doc.getImageProperties(dataUrl);
+        const maxW = W - MARGIN * 2, maxH = 279 - 22 - MARGIN;
+        let imgW = maxW, imgH = (imgProps.height / imgProps.width) * imgW;
+        if (imgH > maxH) { imgH = maxH; imgW = (imgProps.width / imgProps.height) * imgH; }
+        const fmtMap = { jpg:'JPEG', jpeg:'JPEG', png:'PNG', gif:'GIF', webp:'WEBP' };
+        doc.addImage(dataUrl, fmtMap[ext] || 'JPEG', (W - imgW) / 2, 22, imgW, imgH);
+      } catch(e) {
+        console.warn('Receipt embed failed:', filename, e.message);
+      }
+    }
+
+    return doc.output('datauristring').split(',')[1];
+  }
+
+  // ---- STATUS ----
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.innerHTML = msg;
+    el.className = `status-msg ${type}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ---- SUBMIT ----
+  async function submitDecision() {
+    const adminName = document.getElementById('adminName').value.trim();
+    if (!adminName) {
+      document.getElementById('adminName').classList.add('invalid');
+      showStatus('Please enter your name before submitting.', 'error'); return;
+    }
+    if (!hasSig) { showStatus('Please draw your signature before submitting.', 'error'); return; }
+
+    const anyApproved = rowDecisions.some(d => d.approved !== false);
+    if (!anyApproved) { showStatus('At least one line item must be approved. Contact the contractor directly to reject all items.', 'error'); return; }
+
+    const missingReasons = rowDecisions.filter(d => d.approved === false && !d.reason.trim());
+    if (missingReasons.length > 0) {
+      showStatus(`Please provide a rejection reason for item${missingReasons.length > 1 ? 's' : ''} #${missingReasons.map(d => d.rowIndex + 1).join(', #')}.`, 'error'); return;
+    }
+
+    const btn = document.getElementById('approveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Processing...';
+
+    try {
+      const adminSignatureBase64 = canvas.toDataURL('image/png');
+
+      btn.innerHTML = '<span class="spinner"></span>Building Excel...';
+      const approvedExcelBase64 = buildApprovedExcel(submission.formData, adminName);
+
+      btn.innerHTML = '<span class="spinner"></span>Building PDF (may take a moment)...';
+      const approvedPDFBase64 = await buildApprovedPDF(adminName, adminSignatureBase64);
+
+      btn.innerHTML = '<span class="spinner"></span>Processing...';
+      const rejectedCount = rowDecisions.filter(d => !d.approved).length;
+      const approvedCount = rowDecisions.length - rejectedCount;
+
+      const res = await fetch(`${WORKER_URL}/expense-approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, adminName, adminSignatureBase64, approvedExcelBase64, approvedPDFBase64, rowDecisions })
+      });
+
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Approval failed');
+
+      const msg = rejectedCount > 0
+        ? `<strong>&#10003; Done.</strong> ${approvedCount} item${approvedCount !== 1 ? 's' : ''} approved and sent to Finance. ${rejectedCount} item${rejectedCount !== 1 ? 's' : ''} rejected -- <strong>${submission.formData.contractorName}</strong> has been notified with a per-item breakdown.`
+        : `<strong>&#10003; Approved and sent to Finance.</strong> The approved expense report for <strong>${submission.formData.contractorName}</strong> has been forwarded to Finance.`;
+      showStatus(msg, 'success');
+      btn.innerHTML = `&#10003; Submitted by ${adminName}`;
+
+    } catch (err) {
+      showStatus(`Submission failed: ${err.message}`, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '&#10003; Submit Approval Decision';
     }
   }
-  return rows;
-}
 
-// ---- EXCEL ----
-function buildExcel(fd) {
-  var wb  = XLSX.utils.book_new();
-  var aoa = [
-    ['Contractor:', fd.contractorName],
-    ['Period:', fd.activation + ' | ' + fd.site + (fd.jobNumber ? ' | Job #' + fd.jobNumber : '') + ' | ' + fd.periodStart + ' to ' + fd.periodEnd],
-    [], [],
-    ['Date', 'Description', 'Hotel/Accommodation', 'Rental Car', 'Mileage', 'Meals', 'HST', 'Misc/Other']
-  ];
-  var tot = { hotel: 0, rental: 0, mileage: 0, meals: 0, hst: 0, misc: 0 };
-  (fd.rows || []).forEach(function(row) {
-    var desc = row.description || '';
-    if (row.type === 'meal') desc = (row.mealPeriod || '') + (row.mealsActual > (MEAL_LIMITS[row.mealPeriod] || 0) ? ' (exceeded)' : '');
-    if (row.type === 'mileage') desc = (row.description || '') + ' (' + (row.km || 0) + ' km @ $0.59)';
-    var v = row.value || 0; var h = row.hst || 0;
-    var hotel = 0, rental = 0, mileage = 0, meals = 0, misc = 0;
-    if (row.type === 'hotel')   hotel   = v;
-    if (row.type === 'rental')  rental  = v;
-    if (row.type === 'mileage') mileage = v;
-    if (row.type === 'meal')    meals   = v;
-    if (row.type === 'misc' || row.type === 'evacuee') misc = v;
-    tot.hotel += hotel; tot.rental += rental; tot.mileage += mileage; tot.meals += meals; tot.hst += h; tot.misc += misc;
-    aoa.push([row.date || '', desc, hotel || '', rental || '', mileage || '', meals || '', h || '', misc || '']);
-  });
-  aoa.push([]);
-  aoa.push(['TOTAL', '', tot.hotel, tot.rental, tot.mileage, tot.meals, tot.hst, tot.misc]);
-  aoa.push(['GRAND TOTAL', '', '', '', '', '', '', tot.hotel + tot.rental + tot.mileage + tot.meals + tot.hst + tot.misc]);
-  var ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{wch:12},{wch:38},{wch:20},{wch:14},{wch:12},{wch:10},{wch:10},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Expense Report');
-  return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-}
+  // ---- LIGHTBOX ----
+  function openLightbox(url) { document.getElementById('lightboxImg').src = url; document.getElementById('lightbox').classList.add('open'); }
+  function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 
-// ---- STATUS ----
-function showStatus(msg, type) {
-  var s = gid('statusMsg');
-  s.innerHTML = msg;
-  s.className = 'status-msg ' + type;
-  s.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-// ---- VALIDATE ----
-function validate(rows) {
-  var req = { contractorName: 'Full Name', contractorEmail: 'Email', activation: 'Activation', site: 'Site', periodStart: 'Period Start', periodEnd: 'Period End' };
-  var missing = [];
-  var keys = Object.keys(req);
-  for (var i = 0; i < keys.length; i++) {
-    var fid = keys[i];
-    var e   = gid(fid);
-    if (!e || !e.value.trim()) { if (e) e.classList.add('invalid'); missing.push(req[fid]); }
-    else if (e) e.classList.remove('invalid');
-  }
-  if (missing.length) { showStatus('Please complete: <strong>' + missing.join(', ') + '</strong>', 'error'); return false; }
-  var email = gval('contractorEmail');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { gid('contractorEmail').classList.add('invalid'); showStatus('Please enter a valid email address.', 'error'); return false; }
-  if (rows.length === 0) { showStatus('Please add at least one expense item.', 'error'); return false; }
-  var missingDates = [];
-  var rowEls = document.querySelectorAll('.expense-row');
-  for (var j = 0; j < rowEls.length; j++) {
-    var id = parseInt(rowEls[j].id.replace('row', ''), 10);
-    if (!gval('type' + id)) continue;
-    var de = gid('fd' + id);
-    if (de && !de.value) { de.classList.add('invalid'); missingDates.push('#' + id); }
-    else if (de) de.classList.remove('invalid');
-  }
-  if (missingDates.length) { showStatus('Date missing for: <strong>' + missingDates.join(', ') + '</strong>', 'error'); return false; }
-  if (!hasSig) { showStatus('Please draw your signature before submitting.', 'error'); return false; }
-  return true;
-}
-
-// ---- SUBMIT ----
-async function submitForm() {
-  var rows = collectRows();
-  if (!validate(rows)) return;
-
-  var btn = gid('submitBtn');
-  btn.disabled  = true;
-  btn.innerHTML = '<span class="spinner"></span>Building report...';
-
-  try {
-    var grandTotal = 0;
-    rows.forEach(function(r) { grandTotal += (r.value || 0) + (r.hst || 0); });
-
-    var formData = {
-      contractorName:  gval('contractorName').trim(),
-      contractorEmail: gval('contractorEmail').trim(),
-      activation:      gval('activation'),
-      site:            gval('site'),
-      jobNumber:       gval('jobNumber'),
-      periodStart:     gval('periodStart'),
-      periodEnd:       gval('periodEnd'),
-      rows:            rows,
-      total:           parseFloat(grandTotal.toFixed(2))
-    };
-
-    var signatureBase64 = canvas.toDataURL('image/png');
-    var excelBase64     = buildExcel(formData);
-
-    var allReceipts = [];
-    var typeLabels  = { hotel: 'Hotel', meal: 'Meal', mileage: 'Mileage', rental: 'Rental', misc: 'Misc', evacuee: 'Evacuee' };
-    rows.forEach(function(row, ri) {
-      (row.receipts || []).forEach(function(rec, rj) {
-        var ext  = rec.name.split('.').pop();
-        var name = 'Item' + (ri + 1) + '-' + (typeLabels[row.type] || row.type) + '-' + (row.date || 'no-date') + '-Receipt' + (rj + 1) + '.' + ext;
-        allReceipts.push({ filename: name, type: rec.type, data: rec.data });
-      });
-    });
-
-    btn.innerHTML = '<span class="spinner"></span>Sending to EOC...';
-
-    var res    = await fetch(WORKER_URL + '/expense-submit', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ formData: formData, excelBase64: excelBase64, signatureBase64: signatureBase64, receipts: allReceipts, submittedAt: new Date().toISOString() })
-    });
-    var result = await res.json();
-    if (!result.success) throw new Error(result.error || 'Unknown error');
-
-    var savedName  = formData.contractorName;
-    var savedEmail = formData.contractorEmail;
-    showStatus('<strong>&#10003; Submitted successfully.</strong><br>Your report has been sent to EOC Admin. A copy was emailed to <strong>' + formData.contractorEmail + '</strong>.<br><small style="opacity:0.75">Reference: ' + result.token + '</small>', 'success');
-
-    setTimeout(function() {
-      gid('expenseRows').innerHTML = '';
-      rowCount = 0;
-      Object.keys(rowReceipts).forEach(function(k) { delete rowReceipts[k]; });
-      clearSig();
-      ['activation','site','periodStart','periodEnd'].forEach(function(fid) { gid(fid).value = ''; });
-      gid('jobNumber').value       = '';
-      gid('contractorName').value  = savedName;
-      gid('contractorEmail').value = savedEmail;
-      gid('statusMsg').className   = 'status-msg';
-      btn.disabled  = false;
-      btn.innerHTML = 'Submit Expense Report';
-      addRow();
-      addRow();
-    }, 4000);
-
-  } catch (err) {
-    showStatus('Submission failed: ' + err.message + '. Please try again or email eocadmin@loomex.ca directly.', 'error');
-    btn.disabled  = false;
-    btn.innerHTML = 'Submit Expense Report';
-  }
-}
-
-// ---- INIT ----
-addRow();
-addRow();
+  loadSubmission();
 </script>
 </body>
 </html>
