@@ -141,18 +141,6 @@
     .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
     /* SITE NOTICE */
-    .site-notice {
-      display: none;
-      margin-top: 16px;
-      padding: 12px 16px;
-      background: var(--warn-bg);
-      border: 1.5px solid var(--warn-border);
-      border-radius: 8px;
-      font-size: 13px;
-      color: var(--warn-text);
-      line-height: 1.5;
-    }
-    .site-notice strong { display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* EXPENSE ROWS */
     .expense-rows { display: flex; flex-direction: column; gap: 12px; }
@@ -546,15 +534,6 @@ width: 100%;
           </div>
         </div>
       </div>
-
-      <div id="notice-kingston" class="site-notice">
-        <strong>Kingston Site</strong>
-        Breakfast and lunch are provided by catering and are not eligible for reimbursement. Only Dinner claims will be accepted.
-      </div>
-      <div id="notice-timmins" class="site-notice">
-        <strong>Timmins Site</strong>
-        Breakfast is provided by the Holiday Inn and is not eligible for reimbursement at this location.
-      </div>
     </div>
 
     <!-- SECTION 2: Expense Items -->
@@ -631,9 +610,7 @@ width: 100%;
   function handleSiteChange() {
     const site = document.getElementById('site').value;
     document.getElementById('totalDisplay').innerHTML = '$0.00<span>CAD</span>';
-    document.getElementById('notice-kingston').style.display = site === 'Kingston' ? 'block' : 'none';
-    document.getElementById('notice-timmins').style.display  = site === 'Timmins'  ? 'block' : 'none';
-    document.querySelectorAll('.expense-row').forEach(row => {
+            document.querySelectorAll('.expense-row').forEach(row => {
       const id = parseInt(row.id.replace('row-', ''));
       if (document.getElementById(`type-${id}`)?.value === 'meal') recalc(id);
     });
@@ -802,20 +779,13 @@ width: 100%;
       const period   = document.getElementById(`f-mealperiod-${id}`)?.value || '';
       const actual   = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
       const max      = MEAL_ALLOWANCES[period] || 0;
-      const site     = document.getElementById('site').value;
-      const ineligible = period && (
-        (site === 'Kingston' && (period === 'Breakfast' || period === 'Lunch')) ||
-        (site === 'Timmins'  && period === 'Breakfast')
-      );
-      const claimed  = (period && actual > 0 && !ineligible) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
-      const exceeded = period && actual > max && !ineligible;
+      const claimed  = (period && actual > 0) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
+      const exceeded = period && actual > max;
       const claimedEl = document.getElementById(`f-claimed-${id}`);
       const excEl     = document.getElementById(`f-exceeded-${id}`);
-      if (claimedEl) claimedEl.value = ineligible ? '$0.00' : (period && actual > 0 ? `$${claimed.toFixed(2)}` : '');
+      if (claimedEl) claimedEl.value = (period && actual > 0 ? `$${claimed.toFixed(2)}` : '');
       if (excEl) {
-        if (ineligible) {
-          excEl.textContent = `Not eligible at ${site}`; excEl.className = 'exceeded-badge exceeded-yes';
-        } else if (!period || actual === 0) {
+        if (!period || actual === 0) {
           excEl.textContent = '--'; excEl.className = 'exceeded-badge exceeded-na';
         } else if (exceeded) {
           excEl.textContent = 'Exceeded'; excEl.className = 'exceeded-badge exceeded-yes';
@@ -841,11 +811,7 @@ width: 100%;
       const actual  = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
       const max     = MEAL_ALLOWANCES[period] || 0;
       const site    = document.getElementById('site').value;
-      const ineligible = period && (
-        (site === 'Kingston' && (period === 'Breakfast' || period === 'Lunch')) ||
-        (site === 'Timmins'  && period === 'Breakfast')
-      );
-      return (period && actual > 0 && !ineligible) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
+      return (period && actual > 0) ? parseFloat(Math.min(actual, max).toFixed(2)) : 0;
     }
     return parseFloat(document.getElementById(`f-amount-${id}`)?.value) || 0;
   }
@@ -951,11 +917,7 @@ width: 100%;
         const actual     = parseFloat(document.getElementById(`f-actual-${id}`)?.value) || 0;
         const max        = MEAL_ALLOWANCES[period] || 0;
         const site       = document.getElementById('site').value;
-        const ineligible = !!(period && (
-          (site === 'Kingston' && (period === 'Breakfast' || period === 'Lunch')) ||
-          (site === 'Timmins'  && period === 'Breakfast')
-        ));
-        rows.push({ type, date, mealPeriod: period, mealsActual: actual, mealClaimed: value, exceeded: period && actual > max ? 'Y' : (period ? 'N' : '-'), mealIneligible: ineligible, value, receipts });
+        rows.push({ type, date, mealPeriod: period, mealsActual: actual, mealClaimed: value, exceeded: period && actual > max ? 'Y' : (period ? 'N' : '-'), mealIneligible: false, value, receipts });
       } else if (type === 'mileage') {
         const km = parseFloat(document.getElementById(`f-km-${id}`)?.value) || 0;
         rows.push({ type, date, description: document.getElementById(`f-desc-${id}`)?.value || '', km, value, receipts });
@@ -999,18 +961,14 @@ width: 100%;
       setCell(`A${r}`, 's', row.date || '');
       let desc = row.description || '';
       if (row.type === 'meal') {
-        if (row.mealIneligible) {
-          desc = `${row.mealPeriod} (NOT ELIGIBLE at ${fd.site} -- EOC review required)`;
-        } else {
-          desc = row.mealPeriod + (row.mealsActual > ({ Breakfast: 15, Lunch: 20, Dinner: 45 }[row.mealPeriod] || 0) ? ' (exceeded -- claimed at allowance)' : '');
-        }
+        desc = row.mealPeriod + (row.mealsActual > ({ Breakfast: 15, Lunch: 20, Dinner: 45 }[row.mealPeriod] || 0) ? ' (exceeded -- claimed at allowance)' : '');
       }
       if (row.type === 'mileage') desc = `${row.description || ''} (${row.km} km @ $0.59)`;
       setCell(`B${r}`, 's', desc);
       setCell(`C${r}`, 'n', row.type === 'hotel'   ? row.value : 0);
       setCell(`D${r}`, 'n', row.type === 'rental'  ? row.value : 0);
       setCell(`E${r}`, 'n', row.type === 'mileage' ? row.value : 0);
-      setCell(`F${r}`, 'n', row.type === 'meal' ? (row.mealIneligible ? row.mealsActual : row.value) : 0);
+      setCell(`F${r}`, 'n', row.type === 'meal' ? row.value : 0);
       setCell(`G${r}`, 'n', 0);
       setCell(`H${r}`, 'n', row.type === 'misc' ? row.value : 0);
     }
