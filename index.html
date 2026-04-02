@@ -543,7 +543,7 @@
   const AUTH_KEY = 'eoc_authed';
   // SHA-256 hash of the EOC password - generate with: crypto.subtle.digest then hex encode
   // To update: run hashPassword('yournewpassword') in console and paste result below
-  const PW_HASH = '__REPLACE_WITH_HASH__';
+  const PW_HASH = 'e3c652f0ba0b4801205814f8b6bc49672c4c74e25b497770bb89b22cdeb4e951';
 
   async function hashPassword(pw) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
