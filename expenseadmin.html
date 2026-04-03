@@ -78,7 +78,7 @@
     }
     tbody tr { border-bottom: 1px solid #eef0f3; }
     tbody tr:hover td { background: #fafbfc; }
-    td { padding: 11px 14px; vertical-align: middle; }
+    td { padding: 8px 10px; vertical-align: middle; white-space: nowrap; }
     td.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
 
     /* Status badges */
@@ -354,7 +354,7 @@
         <td style="white-space:nowrap">${period}</td>
         <td style="white-space:nowrap">${submitted}</td>
         <td class="mono"><strong>${total}</strong></td>
-        <td>${status}${approvedBy}${financeBtn}</td>
+       <td style="white-space:normal;min-width:160px">${status}${approvedBy}${financeBtn}</td>
         <td>${spLink}</td>
         <td><button class="btn-delete" onclick="deleteReport('${s.reportNumber}')" title="Remove from tracker">&times;</button></td>
       </tr>`;
