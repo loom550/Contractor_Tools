@@ -3,447 +3,363 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Loomex Tools</title>
+  <title>Expense Repository -- Loomex Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --green: #00A651;
-      --green-dark: #007a3d;
-      --green-light: #e8f5ee;
-      --green-mid: #c8e6d4;
-      --navy: #1a3a5c;
-      --grey-footer: #6D6E71;
-      --grey-border: #d8dde3;
-      --grey-bg: #f5f7fa;
-      --white: #ffffff;
-      --text: #2c3e50;
-      --text-muted: #6b7c93;
+      --green: #00A651; --green-dark: #007a3d; --green-light: #e8f5ee; --green-mid: #c8e6d4;
+      --navy: #1a3a5c; --grey-footer: #6D6E71; --grey-border: #d8dde3; --grey-bg: #f5f7fa;
+      --white: #ffffff; --text: #2c3e50; --text-muted: #6b7c93;
+      --error: #cc2936; --error-bg: #fdf0f0; --amber: #E8A317;
+      --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04);
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--grey-bg); color: var(--text); min-height: 100vh; padding: 32px 16px 64px; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 10%, rgba(0,166,81,0.06) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+    .container { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+    .header { background: var(--navy); border-radius: 12px 12px 0 0; padding: 28px 36px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .header-left h1 { color: var(--white); font-size: 20px; font-weight: 700; }
+    .header-left p  { color: rgba(255,255,255,0.55); font-size: 13px; margin-top: 4px; }
+    .header-badge { background: var(--green); color: white; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 6px 12px; border-radius: 20px; white-space: nowrap; font-family: 'DM Mono', monospace; }
+    .card { background: var(--white); box-shadow: var(--shadow-card); }
+    .card-section { padding: 32px 36px; border-bottom: 1px solid #eef0f3; }
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--grey-bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 48px 16px 64px;
+    /* Login */
+    #loginView { max-width: 400px; margin: 60px auto; }
+    #loginView .card-section { border-radius: 12px; border: none; }
+    .login-title { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .login-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 12px; font-weight: 600; color: var(--navy); }
+    input[type="password"] {
+      border: 1.5px solid var(--grey-border); border-radius: 8px; padding: 10px 14px;
+      font-size: 14px; font-family: inherit; width: 100%; color: var(--text); background: var(--white);
+      transition: border-color 0.15s;
     }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse at 20% 10%, rgba(0,166,81,0.06) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 90%, rgba(26,58,92,0.05) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
+    input[type="password"]:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,166,81,0.12); }
+    .btn-login {
+      width: 100%; margin-top: 16px; background: var(--navy); color: white; border: none; border-radius: 10px;
+      padding: 13px 24px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s; letter-spacing: -0.2px;
     }
+    .btn-login:hover:not(:disabled) { background: #0f2640; }
+    .btn-login:disabled { background: #a0adb8; cursor: not-allowed; }
+    .login-error { font-size: 13px; color: var(--error); margin-top: 10px; min-height: 20px; }
 
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
+    /* Repository */
+    #repoView { display: none; }
+    .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 20px 36px; border-bottom: 1px solid #eef0f3; background: #fafbfc; }
+    .toolbar input[type="text"] {
+      border: 1.5px solid var(--grey-border); border-radius: 8px; padding: 8px 14px;
+      font-size: 13px; font-family: inherit; width: 260px; color: var(--text);
     }
-
-    .header {
-      background: var(--navy);
-      border-radius: 12px 12px 0 0;
-      padding: 32px 36px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+    .toolbar input[type="text"]:focus { outline: none; border-color: var(--green); }
+    .filter-btn {
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: inherit; border: 1.5px solid var(--grey-border); background: white; color: var(--text-muted);
+      transition: all 0.12s;
     }
-    .header-left h1 { color: var(--white); font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-    .header-left p { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 4px; }
-
-    .eoc-login-btn {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: rgba(255,255,255,0.8);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 7px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 0.15s;
+    .filter-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
+    .filter-btn:hover:not(.active) { background: var(--grey-bg); }
+    .refresh-btn {
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: inherit; border: 1.5px solid var(--green-mid); background: var(--green-light); color: var(--green-dark);
+      margin-left: auto;
     }
-    .eoc-login-btn:hover { background: rgba(255,255,255,0.18); color: var(--white); }
-    .eoc-login-btn.authed { background: rgba(0,166,81,0.25); border-color: rgba(0,166,81,0.4); color: #7ddb9e; }
+    .refresh-btn:hover { background: var(--green-mid); }
+    .count-badge { font-size: 12px; color: var(--text-muted); }
 
-    .card { background: var(--white); box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04); }
-
-    .intro { padding: 28px 36px 24px; border-bottom: 1px solid #eef0f3; }
-    .intro p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
-
-    .tools-list { padding: 16px 24px 24px; }
-
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: var(--green);
-      margin-bottom: 16px;
-      padding: 12px 12px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    /* Table */
+    .table-wrap { overflow-x: auto; padding: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--navy); color: rgba(255,255,255,0.8); padding: 10px 14px;
+      text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap;
     }
-    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--green-mid); }
-    .section-label.navy-label { color: var(--navy); }
-    .section-label.navy-label::after { background: #c5d3e0; }
+    tbody tr { border-bottom: 1px solid #eef0f3; }
+    tbody tr:hover td { background: #fafbfc; }
+    td { padding: 11px 14px; vertical-align: middle; }
+    td.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
 
-    .tool-card {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      padding: 18px 16px;
-      border: 1.5px solid var(--grey-border);
-      border-radius: 10px;
-      text-decoration: none;
-      color: var(--text);
-      transition: all 0.15s;
-      margin-bottom: 10px;
-      cursor: pointer;
-      background: var(--white);
-      width: 100%;
-      text-align: left;
-      font-family: 'DM Sans', sans-serif;
+    /* Status badges */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .tool-card:last-child { margin-bottom: 0; }
-    .tool-card:hover { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,166,81,0.08); transform: translateY(-1px); }
-    .tool-card.navy-card:hover { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(26,58,92,0.08); }
+    .status-pending          { background: #fff8e1; color: #7a5200; }
+    .status-approved         { background: var(--green-light); color: var(--green-dark); }
+    .status-rejected         { background: #fef2f2; color: #9f1239; }
+    .status-finance-approved { background: #eff6ff; color: #1d4ed8; }
 
-    .tool-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
-    .icon-green { background: var(--green-light); }
-    .icon-navy  { background: #e8eef5; }
+    /* Finance approve button -- only shown on approved rows */
+    .btn-finance {
+      display: inline-block; margin-top: 5px; padding: 3px 8px;
+      border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer;
+      font-family: inherit; border: 1.5px solid #bfdbfe; background: #eff6ff; color: #1d4ed8;
+      transition: all 0.12s; white-space: nowrap;
+    }
+    .btn-finance:hover { background: #dbeafe; }
 
-    .tool-info { flex: 1; }
-    .tool-info h3 { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
-    .tool-info p { font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+    /* Delete button */
+    .btn-delete {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid #fecaca;
+      background: #fff5f5; color: #dc2626; font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: inherit; line-height: 1;
+      transition: all 0.12s;
+    }
+    .btn-delete:hover { background: #fee2e2; border-color: #dc2626; }
 
-    .tool-arrow { color: var(--grey-border); font-size: 18px; flex-shrink: 0; transition: color 0.15s, transform 0.15s; }
-    .tool-card:hover .tool-arrow { color: var(--green); transform: translateX(3px); }
-    .tool-card.navy-card:hover .tool-arrow { color: var(--navy); }
+    .sp-link { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 11px; font-weight: 600; color: #1d4ed8; text-decoration: none; white-space: nowrap; }
+    .sp-link:hover { background: #dbeafe; }
+    .no-sp { color: var(--text-muted); font-size: 12px; }
 
-    .tool-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
-    .badge-live { background: var(--green-light); color: var(--green-dark); }
-    .badge-soon { background: #f3f4f6; color: #9ca3af; }
-
-    .tool-card.disabled { opacity: 0.55; cursor: default; pointer-events: none; }
-
-    #eocSection { display: none; border-top: 1px solid #eef0f3; padding: 16px 24px 24px; }
-    #eocSection.visible { display: block; }
-
-    .eoc-section-header { display: flex; align-items: center; gap: 12px; padding: 12px 12px 0; margin-bottom: 16px; }
-    .eoc-section-header .section-label { margin-bottom: 0; padding: 0; flex: 1; }
-
-    .logout-btn { font-size: 11px; color: var(--text-muted); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 4px 8px; border-radius: 4px; transition: all 0.15s; flex-shrink: 0; }
-    .logout-btn:hover { color: #c0392b; background: #fdf0ef; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-lg { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: var(--navy); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+    .state-box { padding: 48px 36px; text-align: center; }
+    .state-box p { color: var(--text-muted); font-size: 14px; }
 
     .page-footer { background: var(--grey-footer); border-radius: 0 0 12px 12px; padding: 14px 36px; text-align: center; }
-    .page-footer p { color: rgba(255,255,255,0.6); font-size: 12px; }
+    .page-footer p { color: rgba(255,255,255,0.7); font-size: 12px; }
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,25,40,0.6); z-index: 100; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px); }
-    .modal-overlay.open { display: flex; }
-
-    .modal { background: var(--white); border-radius: 12px; width: 100%; max-width: 720px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.2); overflow: hidden; }
-    .modal-header { background: var(--navy); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .modal-header h2 { color: var(--white); font-size: 16px; font-weight: 700; }
-    .modal-header p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 2px; }
-    .modal-close { background: rgba(255,255,255,0.1); border: none; color: var(--white); width: 32px; height: 32px; border-radius: 6px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
-    .modal-close:hover { background: rgba(255,255,255,0.2); }
-    .modal-body { flex: 1; overflow: hidden; min-height: 0; }
-    .modal-body iframe { width: 100%; height: 100%; min-height: 540px; border: none; display: block; }
-
-    .login-modal { max-width: 400px; }
-    .login-body { padding: 32px 28px; }
-    .login-body label { display: block; font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
-    .login-body input[type="password"] { width: 100%; padding: 11px 14px; border: 1.5px solid var(--grey-border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); outline: none; transition: border-color 0.15s; }
-    .login-body input[type="password"]:focus { border-color: var(--navy); }
-    .login-error { font-size: 13px; color: #c0392b; margin-top: 10px; display: none; }
-    .login-error.visible { display: block; }
-    .login-submit { width: 100%; margin-top: 20px; padding: 12px; background: var(--navy); color: var(--white); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-    .login-submit:hover { background: #0f2540; }
-    .login-submit:disabled { opacity: 0.6; cursor: default; }
-
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
       body { padding: 0 0 48px; }
-      .header { padding: 24px 20px; border-radius: 0; flex-direction: column; align-items: flex-start; gap: 12px; }
-      .eoc-login-btn { align-self: flex-start; }
-      .intro { padding: 20px; }
-      .tools-list { padding: 12px 16px 20px; }
-      #eocSection { padding: 12px 16px 20px; }
+      .header { padding: 20px; border-radius: 0; flex-wrap: wrap; }
       .card { border-radius: 0; }
-      .page-footer { border-radius: 0; padding: 14px 20px; }
-      .modal { max-height: 95vh; border-radius: 8px; }
-      .modal-body iframe { min-height: 460px; }
+      .card-section { padding: 24px 20px; }
+      .toolbar { padding: 16px 20px; }
+      .toolbar input[type="text"] { width: 100%; }
     }
   </style>
 </head>
 <body>
-<div class="container">
 
-  <div class="header">
-    <div class="header-left">
-      <h1>Loomex Tools</h1>
-      <p>Contractor and EOC Portal</p>
+<!-- LOGIN -->
+<div id="loginView">
+  <div class="card" style="border-radius:12px">
+    <div style="background:var(--navy);padding:24px 32px;border-radius:12px 12px 0 0;">
+      <div style="color:#fff;font-size:18px;font-weight:700;">Expense Repository</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-top:4px;">The Loomex Group -- Admin Access</div>
     </div>
-    <button class="eoc-login-btn" id="eocLoginBtn" onclick="handleEocLoginClick()">EOC Staff Login</button>
-  </div>
-
-  <div class="card">
-
-    <div class="intro">
-      <p>This portal provides tools for the activation as well as tools for contractors deployed under Loomex activations. Contact <strong style="color:var(--green)">eocadmin [at] loomex.ca</strong> for support.</p>
-    </div>
-
-    <div class="tools-list">
-      <div class="section-label">EOC Tools</div>
-
-      <a class="tool-card" href="https://tools.loomex.ca/occupancy-map">
-        <div class="tool-icon icon-green">&#128506;</div>
-        <div class="tool-info">
-          <h3>Occupancy Map <span class="tool-badge badge-live">Live</span></h3>
-          <p>View real-time occupancy levels across active Loomex sites in Ontario.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <a class="tool-card" href="https://tools.loomex.ca/incident-report.html">
-        <div class="tool-icon icon-green">&#128203;</div>
-        <div class="tool-info">
-          <h3>Incident Report <span class="tool-badge badge-live">Live</span></h3>
-          <p>Submit a report for incidents, injuries, or noteworthy events occurring at your site during the activation.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <a class="tool-card" href="https://evacscheduling.loomex-it.workers.dev/203">
-        <div class="tool-icon icon-green">&#127963;</div>
-        <div class="tool-info">
-          <h3>IMS 207 <span class="tool-badge badge-live">Live</span></h3>
-          <p>Live organization assignment list showing EOC section staffing by day.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <div class="section-label" style="margin-top: 8px;">Contractor Forms</div>
-
-      <a class="tool-card" href="https://tools.loomex.ca/availability">
-        <div class="tool-icon icon-green">&#128197;</div>
-        <div class="tool-info">
-          <h3>Availability Form <span class="tool-badge badge-live">Live</span></h3>
-          <p>Submit your availability for upcoming deployment periods.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <a class="tool-card" href="./expense-form.html">
-        <div class="tool-icon icon-green">&#129534;</div>
-        <div class="tool-info">
-          <h3>Expense Report <span class="tool-badge badge-live">Live</span></h3>
-          <p>Submit expenses for hotel, meals, mileage, rental car, and miscellaneous items for EOC review and reimbursement. Contact your site IC or eocadmin [at] loomex.ca if unsure which form to use.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <a class="tool-card disabled" href="#" style="display:none">
-        <div class="tool-icon icon-navy">&#128196;</div>
-        <div class="tool-info">
-          <h3>Invoice Submission <span class="tool-badge badge-soon">Coming Soon</span></h3>
-          <p>Submit invoices for your hours for the current deployment period.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-    </div>
-
-    <div id="eocSection">
-      <div class="eoc-section-header">
-        <div class="section-label navy-label">EOC Staff Tools</div>
-        <button class="logout-btn" onclick="eocLogout()">Sign out</button>
+    <div class="card-section" style="border-radius:0 0 12px 12px">
+      <div class="field-group">
+        <label>Admin Password</label>
+        <input type="password" id="passwordInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()">
       </div>
-
-      <div class="hidden"><a class="tool-card navy-card" href="https://evacscheduling.loomex-it.workers.dev">
-        <div class="tool-icon icon-navy">&#128198;</div>
-        <div class="tool-info">
-          <h3>Scheduling</h3>
-          <p>View and manage staff scheduling assignments across all active sites.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-      </div>
-
-      <a class="tool-card navy-card" href="https://evacscheduling.loomex-it.workers.dev/masterlog">
-        <div class="tool-icon icon-navy">&#128221;</div>
-        <div class="tool-info">
-          <h3>Master Log</h3>
-          <p>Live log of key EOC tasks and 213s across the activation.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <a class="tool-card navy-card" href="https://tools.loomex.ca/expenseadmin.html">
-        <div class="tool-icon icon-navy">&#128188;</div>
-        <div class="tool-info">
-          <h3>Expense Administration</h3>
-          <p>Review, approve, and manage contractor expense submissions.</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-      <a class="tool-card navy-card" href="https://tools.loomex.ca/siteperformance.html">
-        <div class="tool-icon icon-navy">&#128202;</div>
-        <div class="tool-info">
-          <h3>Site Performance</h3>
-          <p>Site Command form for review of personnel and compliance to contract. To be submitted weekly</p>
-        </div>
-        <span class="tool-arrow">&#8250;</span>
-      </a>
-
-    </div>
-
-  </div>
-
-  <div class="page-footer">
-    <p>The Loomex Group Ltd &mdash; Response and Readiness Division &mdash; For support contact eocadmin [at] loomex.ca</p>
-  </div>
-
-</div>
-
-<!-- AVAILABILITY MODAL -->
-<div class="modal-overlay" id="availabilityModal" onclick="handleOverlayClick(event, 'availabilityModal')">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <h2>Availability Form</h2>
-        <p>Submit your availability for upcoming deployment periods</p>
-      </div>
-      <button class="modal-close" onclick="closeModal('availabilityModal')">&#x2715;</button>
-    </div>
-    <div class="modal-body">
-      <iframe src="https://airtable.com/embed/appAlbRdGIkHaTiI2/shrMLv62HqFJraV1v" frameborder="0" onmousewheel=""></iframe>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn-login" id="loginBtn" onclick="login()">Sign In</button>
     </div>
   </div>
 </div>
 
-<!-- EOC LOGIN MODAL -->
-<div class="modal-overlay" id="loginModal" onclick="handleOverlayClick(event, 'loginModal')">
-  <div class="modal login-modal">
-    <div class="modal-header">
-      <div>
-        <h2>EOC Staff Login</h2>
-        <p>Enter your EOC staff password to continue</p>
+<!-- REPOSITORY -->
+<div id="repoView">
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1>Expense Repository</h1>
+        <p>All submissions -- The Loomex Group</p>
       </div>
-      <button class="modal-close" onclick="closeModal('loginModal')">&#x2715;</button>
+      <div class="header-badge">Admin</div>
     </div>
-    <div class="login-body">
-      <label for="eocPassword">Password</label>
-      <input type="password" id="eocPassword" placeholder="Enter password" onkeydown="handlePasswordKey(event)">
-      <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
-      <button class="login-submit" id="loginSubmit" onclick="submitEocLogin()">Sign In</button>
+    <div class="card">
+      <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Search by name, report #, activation..." oninput="renderTable()">
+        <button class="filter-btn active" id="f-all"              onclick="setFilter('all')">All</button>
+        <button class="filter-btn"        id="f-pending"          onclick="setFilter('pending')">Pending</button>
+        <button class="filter-btn"        id="f-approved"         onclick="setFilter('approved')">Approved</button>
+        <button class="filter-btn"        id="f-finance-approved" onclick="setFilter('finance-approved')">Finance Approved</button>
+        <button class="filter-btn"        id="f-rejected"         onclick="setFilter('rejected')">Rejected</button>
+        <span class="count-badge" id="countBadge"></span>
+        <button class="refresh-btn" onclick="loadSubmissions()">&#8635; Refresh</button>
+      </div>
+
+      <div id="stateLoading" class="state-box">
+        <div class="spinner-lg"></div>
+        <p>Loading submissions...</p>
+      </div>
+      <div id="stateEmpty" class="state-box" style="display:none">
+        <p>No submissions match your filter.</p>
+      </div>
+      <div id="tableWrap" class="table-wrap" style="display:none">
+        <table>
+          <thead>
+            <tr>
+              <th>Report #</th>
+              <th>Contractor</th>
+              <th>Activation</th>
+              <th>Site</th>
+              <th>Period</th>
+              <th>Submitted</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Documents</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="page-footer">
+      <p>The Loomex Group Ltd -- Admin Portal -- For support contact eocadmin@loomex.ca</p>
     </div>
   </div>
 </div>
 
 <script>
-var AUTH_KEY = 'eoc_authed';
-var PW_HASH = 'cccf9594bbe788e33faca2a3d5662cf78b1182a72563ab435ee8ad050cc990ef';
+  const WORKER_URL = 'https://loomex-expense.loomex-it.workers.dev';
+  let sessionToken = null;
+  let sessionTs    = null;
+  let allData      = [];
+  let activeFilter = 'all';
 
-function hashPassword(pw) {
-  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw)).then(function(buf) {
-    return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-  });
-}
-
-window.addEventListener('DOMContentLoaded', function() {
-  if (localStorage.getItem(AUTH_KEY) === '1') showEocSection();
-});
-
-function handleEocLoginClick() {
-  if (localStorage.getItem(AUTH_KEY) === '1') {
-    document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' });
-  } else {
-    openModal('loginModal');
-    setTimeout(function() { document.getElementById('eocPassword').focus(); }, 100);
-  }
-}
-
-function submitEocLogin() {
-  var pw = document.getElementById('eocPassword').value;
-  if (!pw) return;
-  var btn = document.getElementById('loginSubmit');
-  var errEl = document.getElementById('loginError');
-  btn.disabled = true;
-  btn.textContent = 'Checking...';
-  errEl.classList.remove('visible');
-  hashPassword(pw).then(function(hash) {
-    if (hash === PW_HASH) {
-      localStorage.setItem(AUTH_KEY, '1');
-      closeModal('loginModal');
-      document.getElementById('eocPassword').value = '';
-      showEocSection();
-      setTimeout(function() { document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' }); }, 150);
-    } else {
-      errEl.textContent = 'Incorrect password. Please try again.';
-      errEl.classList.add('visible');
+  // ── LOGIN ────────────────────────────────────────────────────────────────────
+  async function login() {
+    const pwd   = document.getElementById('passwordInput').value;
+    const btn   = document.getElementById('loginBtn');
+    const errEl = document.getElementById('loginError');
+    errEl.textContent = '';
+    if (!pwd) { errEl.textContent = 'Please enter a password.'; return; }
+    btn.disabled = true; btn.textContent = 'Signing in...';
+    try {
+      const res  = await fetch(`${WORKER_URL}/expense-admin-auth`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) { errEl.textContent = 'Incorrect password.'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
+      sessionToken = data.token;
+      sessionTs    = data.ts;
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('repoView').style.display  = 'block';
+      loadSubmissions();
+    } catch(e) {
+      errEl.textContent = 'Connection error. Try again.';
+      btn.disabled = false; btn.textContent = 'Sign In';
     }
-    btn.disabled = false;
-    btn.textContent = 'Sign In';
-  });
-}
-
-function showEocSection() {
-  document.getElementById('eocSection').classList.add('visible');
-  var btn = document.getElementById('eocLoginBtn');
-  btn.textContent = 'EOC Staff';
-  btn.classList.add('authed');
-}
-
-function eocLogout() {
-  localStorage.removeItem(AUTH_KEY);
-  document.getElementById('eocSection').classList.remove('visible');
-  var btn = document.getElementById('eocLoginBtn');
-  btn.textContent = 'EOC Staff Login';
-  btn.classList.remove('authed');
-}
-
-function handlePasswordKey(e) {
-  if (e.key === 'Enter') submitEocLogin();
-}
-
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function handleOverlayClick(e, id) {
-  if (e.target === document.getElementById(id)) closeModal(id);
-}
-
-function openAvailabilityModal() {
-  openModal('availabilityModal');
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeModal('availabilityModal');
-    closeModal('loginModal');
   }
-});
-</script>
 
+  // ── LOAD ─────────────────────────────────────────────────────────────────────
+  async function loadSubmissions() {
+    document.getElementById('stateLoading').style.display = 'block';
+    document.getElementById('tableWrap').style.display    = 'none';
+    document.getElementById('stateEmpty').style.display   = 'none';
+    try {
+      const res = await fetch(`${WORKER_URL}/expense-admin-list`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}:${sessionTs}` }
+      });
+      if (res.status === 401) { document.getElementById('loginView').style.display = 'block'; document.getElementById('repoView').style.display = 'none'; return; }
+      const data = await res.json();
+      allData = data.submissions || [];
+      document.getElementById('stateLoading').style.display = 'none';
+      renderTable();
+    } catch(e) {
+      document.getElementById('stateLoading').style.display = 'none';
+      document.getElementById('stateEmpty').style.display   = 'block';
+      document.getElementById('stateEmpty').querySelector('p').textContent = 'Failed to load submissions. Try refreshing.';
+    }
+  }
+
+  // ── FILTER ───────────────────────────────────────────────────────────────────
+  function setFilter(f) {
+    activeFilter = f;
+    ['all','pending','approved','finance-approved','rejected'].forEach(id => {
+      document.getElementById(`f-${id}`).classList.toggle('active', id === f);
+    });
+    renderTable();
+  }
+
+  // ── DELETE ───────────────────────────────────────────────────────────────────
+  async function deleteReport(reportNumber) {
+    if (!confirm(`Remove ${reportNumber} from the tracker? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`${WORKER_URL}/expense-admin-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}:${sessionTs}` },
+        body: JSON.stringify({ reportNumber })
+      });
+      if (!res.ok) { alert('Failed to delete. Try again.'); return; }
+      allData = allData.filter(e => e.reportNumber !== reportNumber);
+      renderTable();
+    } catch(e) {
+      alert('Connection error.');
+    }
+  }
+
+  // ── MARK FINANCE APPROVED ────────────────────────────────────────────────────
+  async function markFinanceApproved(reportNumber) {
+    try {
+      const res = await fetch(`${WORKER_URL}/expense-admin-set-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}:${sessionTs}` },
+        body: JSON.stringify({ reportNumber, status: 'finance-approved' })
+      });
+      if (!res.ok) { alert('Failed to update status. Try again.'); return; }
+      const entry = allData.find(e => e.reportNumber === reportNumber);
+      if (entry) entry.status = 'finance-approved';
+      renderTable();
+    } catch(e) {
+      alert('Connection error.');
+    }
+  }
+
+  // ── RENDER TABLE ─────────────────────────────────────────────────────────────
+  function renderTable() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    let rows = allData.filter(s => {
+      if (activeFilter !== 'all' && s.status !== activeFilter) return false;
+      if (!q) return true;
+      return (s.reportNumber    || '').toLowerCase().includes(q)
+          || (s.contractorName  || '').toLowerCase().includes(q)
+          || (s.activation      || '').toLowerCase().includes(q)
+          || (s.site            || '').toLowerCase().includes(q);
+    });
+
+    document.getElementById('countBadge').textContent = `${rows.length} submission${rows.length !== 1 ? 's' : ''}`;
+
+    if (rows.length === 0) {
+      document.getElementById('tableWrap').style.display  = 'none';
+      document.getElementById('stateEmpty').style.display = 'block';
+      document.getElementById('stateEmpty').querySelector('p').textContent = 'No submissions match your filter.';
+      return;
+    }
+    document.getElementById('tableWrap').style.display  = 'block';
+    document.getElementById('stateEmpty').style.display = 'none';
+
+    const statusHTML = {
+      'pending':          '<span class="status-badge status-pending">&#9203; Pending</span>',
+      'approved':         '<span class="status-badge status-approved">&#10003; Approved</span>',
+      'rejected':         '<span class="status-badge status-rejected">&#10007; Rejected</span>',
+      'finance-approved': '<span class="status-badge status-finance-approved">&#10003;&#10003; Finance Approved</span>'
+    };
+
+    document.getElementById('tableBody').innerHTML = rows.map(s => {
+      const submitted  = s.submittedAt ? new Date(s.submittedAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      const period     = s.periodStart && s.periodEnd ? `${s.periodStart} to ${s.periodEnd}` : '—';
+      const total      = s.total != null ? `$${parseFloat(s.total).toFixed(2)}` : '—';
+      const status     = statusHTML[s.status] || `<span class="status-badge">${s.status}</span>`;
+      const approvedBy = s.approvedBy ? `<br><span style="font-size:11px;color:var(--text-muted)">${s.approvedBy}</span>` : '';
+      const financeBtn = s.status === 'approved'
+        ? `<br><button class="btn-finance" onclick="markFinanceApproved('${s.reportNumber}')">Mark Finance Approved</button>`
+        : '';
+      const spLink = s.spFolderUrl
+        ? `<a class="sp-link" href="${s.spFolderUrl}" target="_blank">&#128193; SharePoint</a>`
+        : `<span class="no-sp">—</span>`;
+      return `<tr>
+        <td class="mono">${s.reportNumber || '—'}</td>
+        <td><strong>${s.contractorName || '—'}</strong><br><span style="font-size:11px;color:var(--text-muted)">${s.contractorEmail || ''}</span></td>
+        <td>${s.activation || '—'}</td>
+        <td>${s.site || '—'}</td>
+        <td style="white-space:nowrap">${period}</td>
+        <td style="white-space:nowrap">${submitted}</td>
+        <td class="mono"><strong>${total}</strong></td>
+        <td>${status}${approvedBy}${financeBtn}</td>
+        <td>${spLink}</td>
+        <td><button class="btn-delete" onclick="deleteReport('${s.reportNumber}')" title="Remove from tracker">&times;</button></td>
+      </tr>`;
+    }).join('');
+  }
+</script>
 </body>
 </html>
