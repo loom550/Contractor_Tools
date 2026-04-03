@@ -317,22 +317,6 @@
 
 </div>
 
-<!-- AVAILABILITY MODAL -->
-<div class="modal-overlay" id="availabilityModal" onclick="handleOverlayClick(event, 'availabilityModal')">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <h2>Availability Form</h2>
-        <p>Submit your availability for upcoming deployment periods</p>
-      </div>
-      <button class="modal-close" onclick="closeModal('availabilityModal')">&#x2715;</button>
-    </div>
-    <div class="modal-body">
-      <iframe src="https://airtable.com/embed/appAlbRdGIkHaTiI2/shrMLv62HqFJraV1v" frameborder="0" onmousewheel=""></iframe>
-    </div>
-  </div>
-</div>
-
 <!-- EOC LOGIN MODAL -->
 <div class="modal-overlay" id="loginModal" onclick="handleOverlayClick(event, 'loginModal')">
   <div class="modal login-modal">
@@ -433,10 +417,6 @@ function closeModal(id) {
 
 function handleOverlayClick(e, id) {
   if (e.target === document.getElementById(id)) closeModal(id);
-}
-
-function openAvailabilityModal() {
-  openModal('availabilityModal');
 }
 
 document.addEventListener('keydown', function(e) {
