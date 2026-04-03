@@ -16,7 +16,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--grey-bg); color: var(--text); min-height: 100vh; padding: 32px 16px 64px; }
     body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 10%, rgba(0,166,81,0.06) 0%, transparent 50%); pointer-events: none; z-index: 0; }
-    .container { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+    .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
     .header { background: var(--navy); border-radius: 12px 12px 0 0; padding: 28px 36px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
     .header-left h1 { color: var(--white); font-size: 20px; font-weight: 700; }
     .header-left p  { color: rgba(255,255,255,0.55); font-size: 13px; margin-top: 4px; }
@@ -27,8 +27,6 @@
     /* Login */
     #loginView { max-width: 400px; margin: 60px auto; }
     #loginView .card-section { border-radius: 12px; border: none; }
-    .login-title { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-    .login-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
     .field-group { display: flex; flex-direction: column; gap: 6px; }
     label { font-size: 12px; font-weight: 600; color: var(--navy); }
     input[type="password"] {
@@ -71,15 +69,15 @@
 
     /* Table */
     .table-wrap { overflow-x: auto; padding: 0; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
     thead th {
-      background: var(--navy); color: rgba(255,255,255,0.8); padding: 10px 14px;
-      text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap;
+      background: var(--navy); color: rgba(255,255,255,0.8); padding: 9px 10px;
+      text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; white-space: nowrap;
     }
     tbody tr { border-bottom: 1px solid #eef0f3; }
     tbody tr:hover td { background: #fafbfc; }
     td { padding: 8px 10px; vertical-align: middle; white-space: nowrap; }
-    td.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+    td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 
     /* Status badges */
     .status-badge {
@@ -91,7 +89,6 @@
     .status-rejected         { background: #fef2f2; color: #9f1239; }
     .status-finance-approved { background: #eff6ff; color: #1d4ed8; }
 
-    /* Finance approve button -- only shown on approved rows */
     .btn-finance {
       display: inline-block; margin-top: 5px; padding: 3px 8px;
       border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer;
@@ -100,13 +97,11 @@
     }
     .btn-finance:hover { background: #dbeafe; }
 
-    /* Delete button */
     .btn-delete {
       display: inline-flex; align-items: center; justify-content: center;
       width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid #fecaca;
       background: #fff5f5; color: #dc2626; font-size: 14px; font-weight: 700;
-      cursor: pointer; font-family: inherit; line-height: 1;
-      transition: all 0.12s;
+      cursor: pointer; font-family: inherit; line-height: 1; transition: all 0.12s;
     }
     .btn-delete:hover { background: #fee2e2; border-color: #dc2626; }
 
@@ -118,7 +113,6 @@
     .spinner-lg { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: var(--navy); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
     .state-box { padding: 48px 36px; text-align: center; }
     .state-box p { color: var(--text-muted); font-size: 14px; }
-
     .page-footer { background: var(--grey-footer); border-radius: 0 0 12px 12px; padding: 14px 36px; text-align: center; }
     .page-footer p { color: rgba(255,255,255,0.7); font-size: 12px; }
 
@@ -173,7 +167,6 @@
         <span class="count-badge" id="countBadge"></span>
         <button class="refresh-btn" onclick="loadSubmissions()">&#8635; Refresh</button>
       </div>
-
       <div id="stateLoading" class="state-box">
         <div class="spinner-lg"></div>
         <p>Loading submissions...</p>
@@ -214,7 +207,6 @@
   let allData      = [];
   let activeFilter = 'all';
 
-  // ── LOGIN ────────────────────────────────────────────────────────────────────
   async function login() {
     const pwd   = document.getElementById('passwordInput').value;
     const btn   = document.getElementById('loginBtn');
@@ -240,7 +232,6 @@
     }
   }
 
-  // ── LOAD ─────────────────────────────────────────────────────────────────────
   async function loadSubmissions() {
     document.getElementById('stateLoading').style.display = 'block';
     document.getElementById('tableWrap').style.display    = 'none';
@@ -261,7 +252,6 @@
     }
   }
 
-  // ── FILTER ───────────────────────────────────────────────────────────────────
   function setFilter(f) {
     activeFilter = f;
     ['all','pending','approved','finance-approved','rejected'].forEach(id => {
@@ -270,7 +260,6 @@
     renderTable();
   }
 
-  // ── DELETE ───────────────────────────────────────────────────────────────────
   async function deleteReport(reportNumber) {
     if (!confirm(`Remove ${reportNumber} from the tracker? This cannot be undone.`)) return;
     try {
@@ -287,7 +276,6 @@
     }
   }
 
-  // ── MARK FINANCE APPROVED ────────────────────────────────────────────────────
   async function markFinanceApproved(reportNumber) {
     try {
       const res = await fetch(`${WORKER_URL}/expense-admin-set-status`, {
@@ -304,7 +292,6 @@
     }
   }
 
-  // ── RENDER TABLE ─────────────────────────────────────────────────────────────
   function renderTable() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     let rows = allData.filter(s => {
@@ -351,10 +338,10 @@
         <td><strong>${s.contractorName || '—'}</strong><br><span style="font-size:11px;color:var(--text-muted)">${s.contractorEmail || ''}</span></td>
         <td>${s.activation || '—'}</td>
         <td>${s.site || '—'}</td>
-        <td style="white-space:nowrap">${period}</td>
-        <td style="white-space:nowrap">${submitted}</td>
+        <td>${period}</td>
+        <td>${submitted}</td>
         <td class="mono"><strong>${total}</strong></td>
-       <td style="white-space:normal;min-width:160px">${status}${approvedBy}${financeBtn}</td>
+        <td style="white-space:normal;min-width:150px">${status}${approvedBy}${financeBtn}</td>
         <td>${spLink}</td>
         <td><button class="btn-delete" onclick="deleteReport('${s.reportNumber}')" title="Remove from tracker">&times;</button></td>
       </tr>`;
