@@ -1287,7 +1287,20 @@ setTimeout(() => {
   addRow();
 }, 4000);
     } catch (err) {
-      showStatus(`Submission failed: ${err.message}. Please try again or email eocadmin@loomex.ca directly.`, 'error');
+      let msg = 'Submission failed. Please try again or email eocadmin@loomex.ca directly.';
+      const e = err.message || '';
+      if (e.includes('413') || e.includes('too large') || e.includes('length')) {
+        msg = 'Submission failed: your receipts are too large to upload. Please reduce the file size or number of receipts and try again. If you need help, email eocadmin@loomex.ca.';
+      } else if (e.includes('Failed to fetch') || e.includes('NetworkError') || e.includes('network')) {
+        msg = 'Submission failed: could not reach the server. Please check your internet connection and try again.';
+      } else if (e.includes('timeout') || e.includes('Timeout')) {
+        msg = 'Submission timed out. Your receipts may be too large. Try reducing file sizes and resubmitting.';
+      } else if (e.includes('500') || e.includes('Internal')) {
+        msg = 'Submission failed due to a server error. Please try again in a few minutes or email eocadmin@loomex.ca.';
+      } else if (e.length > 0) {
+        msg = `Submission failed: ${e}. Please try again or email eocadmin@loomex.ca directly.`;
+      }
+      showStatus(msg, 'error');
       btn.disabled = false;
       btn.innerHTML = 'Submit Expense Report';
     }
