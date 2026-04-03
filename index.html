@@ -201,7 +201,7 @@
   <div class="card">
 
     <div class="intro">
-      <p>This portal provides tools for the activation as well as tools for contractors deployed under Loomex activations. Contact <strong style="color:var(--green)">eocadmin@loomex.ca</strong> for support.</p>
+      <p>This portal provides tools for the activation as well as tools for contractors deployed under Loomex activations. Contact <strong style="color:var(--green)">eocadmin [at] loomex.ca</strong> for support.</p>
     </div>
 
     <div class="tools-list">
@@ -228,8 +228,26 @@
       <a class="tool-card" href="https://tools.loomex.ca/203">
         <div class="tool-icon icon-green">&#127963;</div>
         <div class="tool-info">
-          <h3>ICS 207 <span class="tool-badge badge-live">Live</span></h3>
-          <p>Live organizational chart showing EOC section staffing by day.</p>
+          <h3>ICS 203 <span class="tool-badge badge-live">Live</span></h3>
+          <p>Live organization assignment list showing EOC section staffing by day. Auto-refreshes every 5 minutes.</p>
+        </div>
+        <span class="tool-arrow">&#8250;</span>
+      </a>
+
+      <a class="tool-card" href="https://apps.powerapps.com/play/e/default-f37e3a4c-5aaa-4bf9-93d2-cc21b157eb4c/a/7931aba6-deb3-46e1-adcf-8c6da94b685e?tenantId=f37e3a4c-5aaa-4bf9-93d2-cc21b157eb4c&hint=759f0376-6b17-47cd-b8da-7ce58489a79b&sourcetime=1774306351859&source=portal#" target="_blank">
+        <div class="tool-icon icon-green">&#128421;</div>
+        <div class="tool-info">
+          <h3>LOOMI <span class="tool-badge badge-live">Live</span></h3>
+          <p>Loomex Operational Oversight and Management Interface. Full evacuee and EOC management platform.</p>
+        </div>
+        <span class="tool-arrow">&#8250;</span>
+      </a>
+
+      <a class="tool-card" href="https://loomex.sharepoint.com/sites/21000-response" target="_blank">
+        <div class="tool-icon icon-green">&#128196;</div>
+        <div class="tool-info">
+          <h3>SharePoint</h3>
+          <p>21000-Response site. Documents, lists, and activation records.</p>
         </div>
         <span class="tool-arrow">&#8250;</span>
       </a>
@@ -244,16 +262,16 @@
         </div>
         <span class="tool-arrow">&#8250;</span>
       </a>
- 
+
       <a class="tool-card" href="./expense-form.html">
         <div class="tool-icon icon-green">&#129534;</div>
         <div class="tool-info">
           <h3>Expense Report <span class="tool-badge badge-live">Live</span></h3>
-          <p>Submit expenses for hotel, meals, mileage, rental car, and miscellaneous items for EOC review and reimbursement. Contact your site IC or eocadmin@loomex.ca if unsure which form to use.</p>
+          <p>Submit expenses for hotel, meals, mileage, rental car, and miscellaneous items for EOC review and reimbursement. Contact your site IC or eocadmin [at] loomex.ca if unsure which form to use.</p>
         </div>
         <span class="tool-arrow">&#8250;</span>
       </a>
-<!--
+
       <a class="tool-card disabled" href="#">
         <div class="tool-icon icon-navy">&#128196;</div>
         <div class="tool-info">
@@ -262,7 +280,7 @@
         </div>
         <span class="tool-arrow">&#8250;</span>
       </a>
--->
+
     </div>
 
     <div id="eocSection">
@@ -312,9 +330,25 @@
   </div>
 
   <div class="page-footer">
-    <p>The Loomex Group Ltd &mdash; Response and Readiness Division &mdash; For support contact eocadmin@loomex.ca</p>
+    <p>The Loomex Group Ltd &mdash; Response and Readiness Division &mdash; For support contact eocadmin [at] loomex.ca</p>
   </div>
 
+</div>
+
+<!-- AVAILABILITY MODAL -->
+<div class="modal-overlay" id="availabilityModal" onclick="handleOverlayClick(event, 'availabilityModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>Availability Form</h2>
+        <p>Submit your availability for upcoming deployment periods</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('availabilityModal')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <iframe src="https://airtable.com/embed/appAlbRdGIkHaTiI2/shrMLv62HqFJraV1v" frameborder="0" onmousewheel=""></iframe>
+    </div>
+  </div>
 </div>
 
 <!-- EOC LOGIN MODAL -->
@@ -417,6 +451,10 @@ function closeModal(id) {
 
 function handleOverlayClick(e, id) {
   if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+function openAvailabilityModal() {
+  openModal('availabilityModal');
 }
 
 document.addEventListener('keydown', function(e) {
