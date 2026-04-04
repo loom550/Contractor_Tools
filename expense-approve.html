@@ -562,7 +562,7 @@
 <script>
   const WORKER_URL      = 'https://loomex-expense.loomex-it.workers.dev';
   const SCHEDULER_URL   = 'https://evacscheduling.loomex-it.workers.dev';
-  const CHECK_SECRET    = 'sdfksdfh;afglasdgjlaskgjn;asufghpa9sd7fygsd87ftpq2398ryhq[wuhrfo;SDvjn;89FHSPEFH'; // replace with actual secret after wrangler secret put
+  const CHECK_SECRET    = 'EXPENSE_CHECK_PLACEHOLDER'; // replace with actual secret after wrangler secret put
   const token = new URLSearchParams(window.location.search).get('token');
   let submission = null;
   let rowDecisions = [];
@@ -688,7 +688,7 @@
     };
 
     // Init all decisions to approved
-    rowDecisions = (fd.rows || []).map((r, i) => ({ rowIndex: i, approved: true, reason: '', hst: r.hst || 0 }));
+    rowDecisions = (fd.rows || []).map((r, i) => ({ rowIndex: i, approved: true, reason: '', hst: r.hst || 0, approvedValue: parseFloat(r.value || 0) }));
 
     renderSummaryGrid();
     renderExpenseTable();
@@ -812,6 +812,13 @@
           <div class="decision-controls">
             <button class="btn-dec approve" id="abtn-${i}" onclick="setDecision(${i}, true)">&#10003; Approve</button>
             <button class="btn-dec reject" id="rbtn-${i}" onclick="setDecision(${i}, false)">&#10005; Reject</button>
+            <div id="approved-amount-wrap-${i}" style="display:flex;align-items:center;gap:6px;margin-left:8px;">
+              <label style="font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap;">Approved $</label>
+              <input type="number" id="approved-amount-${i}" step="0.01" min="0"
+                value="${parseFloat(r.value || 0).toFixed(2)}"
+                style="width:90px;border:1.5px solid var(--green);border-radius:6px;padding:5px 8px;font-size:13px;font-family:'DM Sans',sans-serif;"
+                oninput="updateApprovedAmount(${i})">
+            </div>
           </div>
           <div id="reason-wrap-${i}" style="display:none;width:100%;">
             <textarea class="reason-input" id="reason-${i}" placeholder="Rejection reason (required)" oninput="updateReason(${i})"></textarea>
@@ -870,6 +877,12 @@
   }
 
   // ---- PER-ROW DECISION ----
+  function updateApprovedAmount(idx) {
+    const val = parseFloat(document.getElementById(`approved-amount-${idx}`)?.value) || 0;
+    rowDecisions[idx].approvedValue = val;
+    renderSummaryGrid();
+  }
+
   function setDecision(index, approved) {
     rowDecisions[index].approved = approved;
     if (approved) rowDecisions[index].reason = '';
@@ -878,6 +891,8 @@
     document.getElementById(`rbtn-${index}`).classList.toggle('active', !approved);
     document.getElementById(`erow-${index}`).className = `expense-row ${approved ? 'row-approved' : 'row-rejected'}`;
     document.getElementById(`reason-wrap-${index}`).style.display = approved ? 'none' : 'block';
+    const amountWrap = document.getElementById(`approved-amount-wrap-${index}`);
+    if (amountWrap) amountWrap.style.display = approved ? 'flex' : 'none';
     if (approved && document.getElementById(`reason-${index}`)) {
       document.getElementById(`reason-${index}`).value = '';
     }
@@ -890,9 +905,11 @@
   }
 
   function calcApprovedTotal() {
-    return (submission.formData.rows || [])
-      .filter((_, i) => rowDecisions[i]?.approved !== false)
-      .reduce((s, r) => s + parseFloat(r.value || 0), 0);
+    return (submission.formData.rows || []).reduce((s, r, i) => {
+      if (rowDecisions[i]?.approved === false) return s;
+      const d = rowDecisions[i];
+      return s + (d?.approvedValue ?? parseFloat(r.value || 0));
+    }, 0);
   }
 
   // ── BUILD APPROVED EXCEL ─────────────────────────────────────────────────────
@@ -900,7 +917,7 @@
     const wb = XLSX.utils.book_new();
 
     const approvedRows = (fd.rows || [])
-      .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0 }))
+      .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0, value: rowDecisions[i]?.approvedValue ?? parseFloat(r.value || 0) }))
       .filter((_, i) => rowDecisions[i]?.approved !== false);
 
     let totalHotel=0, totalRental=0, totalMileage=0, totalMeals=0, totalHST=0, totalMisc=0;
@@ -957,7 +974,7 @@
     const W = 216, MARGIN = 15;
 
     const approvedRows = (fd.rows || [])
-      .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0 }))
+      .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0, value: rowDecisions[i]?.approvedValue ?? parseFloat(r.value || 0) }))
       .filter((_, i) => rowDecisions[i]?.approved !== false);
 
     const rejectedRows = (fd.rows || []).filter((_, i) => rowDecisions[i]?.approved === false);
