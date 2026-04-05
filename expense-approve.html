@@ -682,10 +682,25 @@
       document.getElementById('approveBtn').textContent = `${sub.status === 'approved' ? 'Approved' : 'Processed'} by ${sub.approvedBy}`;
     }
 
-    // Contact button
-    document.getElementById('contactBtn').onclick = () => {
-      window.location.href = `mailto:${fd.contractorEmail}?subject=Re: Expense Report - ${fd.activation} (${fd.periodStart} to ${fd.periodEnd})&body=Hi ${fd.contractorName},%0A%0ARegarding your expense submission (Ref: ${token}),%0A%0A`;
-    };
+    // Contact button -- use data attributes to avoid Cloudflare email obfuscation
+    const contactBtn = document.getElementById('contactBtn');
+    contactBtn.dataset.email      = fd.contractorEmail;
+    contactBtn.dataset.name       = fd.contractorName;
+    contactBtn.dataset.activation = fd.activation;
+    contactBtn.dataset.start      = fd.periodStart;
+    contactBtn.dataset.end        = fd.periodEnd;
+    contactBtn.dataset.token      = token;
+    contactBtn.addEventListener('click', function() {
+      const e = this.dataset.email;
+      const n = this.dataset.name;
+      const a = this.dataset.activation;
+      const s = this.dataset.start;
+      const en = this.dataset.end;
+      const t = this.dataset.token;
+      window.location.href = 'mailto:' + e
+        + '?subject=Re: Expense Report - ' + encodeURIComponent(a + ' (' + s + ' to ' + en + ')')
+        + '&body=' + encodeURIComponent('Hi ' + n + ',\n\nRegarding your expense submission (Ref: ' + t + '),\n\n');
+    });
 
     // Init all decisions to approved
     rowDecisions = (fd.rows || []).map((r, i) => ({ rowIndex: i, approved: true, reason: '', hst: r.hst || 0, approvedValue: parseFloat(r.value || 0) }));
