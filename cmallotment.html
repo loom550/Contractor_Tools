@@ -900,7 +900,7 @@ async function doFinalSubmit() {
         receiptUrl, receiptGraphPath: uploadData.graphPath,
         signatures, guardianName,
         minors: members.filter(m => m.isMinor).map(m => m.name),
-        paerSig
+        paperSig
       })
     }).then(r => r.json()).then(pdfData => {
       if (pdfData.pdfUrl && recordIds.length) {
