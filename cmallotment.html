@@ -951,7 +951,6 @@ function showSuccess({ submissionRef, members, staffName, pdfUrl, submissionDate
 function resetForm() {
   selectedIds.clear(); receiptFile = null; currentFilter = 'all';
   pendingMembers = []; signatures = {};
-  document.getElementById('staff-name').value = '';
   document.getElementById('ev-search').value  = '';
   document.getElementById('upload-filename').textContent = '';
   document.getElementById('upload-zone').classList.remove('has-file');
