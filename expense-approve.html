@@ -524,6 +524,10 @@
           <label for="adminName">Your Name <span class="req">*</span></label>
           <input type="text" id="adminName" placeholder="Full name of approving admin">
         </div>
+        <div class="field-group" style="max-width:100%;margin-top:14px;">
+          <label for="adminNotes">Admin Notes <span style="font-weight:400;color:var(--text-muted);">(optional -- included in Finance email)</span></label>
+          <textarea id="adminNotes" placeholder="Any notes for Finance regarding this approval..." style="border:1.5px solid var(--grey-border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;width:100%;color:var(--text);background:var(--white);resize:vertical;min-height:72px;transition:border-color 0.15s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--grey-border)'"></textarea>
+        </div>
         <div class="sig-container">
           <canvas id="sig-canvas"></canvas>
           <button class="sig-clear-btn" onclick="clearSig()">Clear</button>
@@ -1232,7 +1236,7 @@
       const res = await fetch(`${WORKER_URL}/expense-approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, adminName, adminSignatureBase64, approvedExcelBase64, approvedPDFBase64, rowDecisions })
+        body: JSON.stringify({ token, adminName, adminNotes: document.getElementById('adminNotes').value.trim(), adminSignatureBase64, approvedExcelBase64, approvedPDFBase64, rowDecisions })
       });
 
       const result = await res.json();
