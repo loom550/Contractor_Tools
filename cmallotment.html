@@ -888,19 +888,19 @@ async function doFinalSubmit() {
   const members        = pendingMembers;
 
   try {
-    setProgress('Uploading receipts...', 20);
-    const uploadedReceipts = [];
-    for (let i = 0; i < receiptFiles.length; i++) {
-      setProgress(`Uploading receipt ${i + 1} of ${receiptFiles.length}...`, 20 + Math.round((i / receiptFiles.length) * 15));
+    setProgress(`Uploading ${receiptFiles.length} receipt(s)...`, 20);
+    const uploadedReceipts = await Promise.all(receiptFiles.map((file, i) => {
       const fd = new FormData();
-      fd.append('file', receiptFiles[i]);
+      fd.append('file', file);
       fd.append('hub', currentHub);
       fd.append('submissionRef', submissionRef + (receiptFiles.length > 1 ? `-${i + 1}` : ''));
-      const uploadRes  = await fetch(`${WORKER}/upload-receipt`, { method: 'POST', body: fd });
-      const uploadData = await uploadRes.json();
-      if (!uploadData.fullUrl) throw new Error(`Receipt ${i + 1} upload failed`);
-      uploadedReceipts.push({ fullUrl: uploadData.fullUrl, graphPath: uploadData.graphPath });
-    }
+      return fetch(`${WORKER}/upload-receipt`, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.fullUrl) throw new Error(`Receipt ${i + 1} upload failed`);
+          return { fullUrl: data.fullUrl, graphPath: data.graphPath };
+        });
+    }));
     const receiptUrl = uploadedReceipts[0].fullUrl;
 
     setProgress('Creating allotment records...', 40);
