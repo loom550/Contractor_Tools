@@ -939,7 +939,7 @@
       .map((r, i) => ({ ...r, hst: rowDecisions[i]?.hst || 0, value: rowDecisions[i]?.approvedValue ?? parseFloat(r.value || 0) }))
       .filter((_, i) => rowDecisions[i]?.approved !== false);
 
-    let totalHotel=0, totalRental=0, totalMileage=0, totalMeals=0, totalHST=0, totalMisc=0;
+    let totalHotel=0, totalRental=0, totalMileage=0, totalMeals=0, totalEvacuee=0, totalHST=0, totalMisc=0;
 
     const dataRows = approvedRows.map(row => {
       let desc = row.description || '';
@@ -948,30 +948,31 @@
       if (row.type === 'evacuee') desc = row.evacueeCategory || '';
       const val  = parseFloat(row.value || 0);
       const hst  = ['hotel','rental','misc','evacuee'].includes(row.type) ? parseFloat(row.hst || 0) : 0;
-      let hotel=0, rental=0, mileage=0, meals=0, misc=0;
+      let hotel=0, rental=0, mileage=0, meals=0, evacuee=0, misc=0;
       if (row.type === 'hotel')                                { hotel   = val; }
       if (row.type === 'rental')                               { rental  = val; }
       if (row.type === 'mileage')                              { mileage = val; }
       if (row.type === 'meal')                                 { meals   = val; }
-      if (row.type === 'misc' || row.type === 'evacuee')       { misc    = val; }
+      if (row.type === 'misc')    { misc    = val; }
+      if (row.type === 'evacuee') { evacuee = val; }
       totalHotel+=hotel; totalRental+=rental; totalMileage+=mileage;
-      totalMeals+=meals; totalHST+=hst; totalMisc+=misc;
+      totalMeals+=meals; totalEvacuee+=evacuee; totalHST+=hst; totalMisc+=misc;
       return [row.date||'', desc,
-        hotel||'', rental||'', mileage||'', meals||'', hst||'', misc||''];
+        hotel||'', rental||'', mileage||'', meals||'', evacuee||'', misc||'', hst||''];
     });
 
-    const grandTotal = totalHotel + totalRental + totalMileage + totalMeals + totalHST + totalMisc;
+    const grandTotal = totalHotel + totalRental + totalMileage + totalMeals + totalEvacuee + totalHST + totalMisc;
 
     const aoa = [
       [submission.reportNumber || '', '', '', '', '', '', '', ''],
       ['Contractor:', fd.contractorName],
       ['Period:', fd.activation + ' | ' + fd.site + (fd.jobNumber ? ' | Job #' + fd.jobNumber : '') + ' | ' + fd.periodStart + ' to ' + fd.periodEnd],
       [],
-      ['Date', 'Description', 'Hotel/Accommodation', 'Rental Car', 'Mileage', 'Meals', 'HST', 'Misc/Other'],
+      ['Date', 'Description', 'Hotel/Accommodation', 'Rental Car', 'Mileage', 'Meals', 'Evacuee Costs', 'Misc/Other', 'HST'],
       ...dataRows,
       [],
-      ['APPROVED TOTAL', '', totalHotel, totalRental, totalMileage, totalMeals, totalHST, totalMisc],
-      ['GRAND TOTAL', '', '', '', '', '', '', grandTotal],
+      ['APPROVED TOTAL', '', totalHotel, totalRental, totalMileage, totalMeals, totalEvacuee, totalMisc, totalHST],
+      ['GRAND TOTAL', '', '', '', '', '', '', '', grandTotal],
       [],
       ['Approved By:', adminName],
       ['Approved On:', new Date().toLocaleDateString('en-CA')],
@@ -979,7 +980,7 @@
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws['!cols'] = [
-      {wch:12},{wch:38},{wch:20},{wch:14},{wch:12},{wch:10},{wch:10},{wch:14}
+      {wch:12},{wch:38},{wch:20},{wch:14},{wch:12},{wch:10},{wch:14},{wch:14},{wch:10}
     ];
     XLSX.utils.book_append_sheet(wb, ws, 'Expense Report');
     return XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
