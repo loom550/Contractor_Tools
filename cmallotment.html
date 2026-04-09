@@ -371,7 +371,23 @@
     <div style="height: 32px;"></div>
   </div>
 </div>
-
+<!-- ================================================================ -->
+<!-- PROCESSING SCREEN                                                  -->
+<!-- ================================================================ -->
+  <div id="screen-processing" class="screen">
+  <div class="page-header">
+    <div class="logo">L</div>
+    <h1>CM Shopping Allotment</h1>
+    <div class="hub-badge" id="hub-badge-processing">-</div>
+  </div>
+  <div class="form-wrap">
+    <div class="card" style="text-align:center;padding:40px 24px;">
+      <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+      <h2 style="color:#1a4e7e;margin-bottom:8px;">Submitting Allotment</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:24px;">Please wait while we process your submission.</p>
+    </div>
+  </div>
+</div>
 <!-- ================================================================ -->
 <!-- SIGNATURE SCREEN                                                  -->
 <!-- ================================================================ -->
@@ -685,6 +701,8 @@ function goToSignatures() {
   signatures = {};
 
   if (document.getElementById('paper-sig').checked) {
+    document.getElementById('hub-badge-processing').textContent = currentHub;
+    showScreen('screen-processing');
     doFinalSubmit();
   } else {
     buildSignatureCards(members);
