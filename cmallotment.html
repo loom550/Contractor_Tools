@@ -357,7 +357,7 @@
         <div class="upload-icon">📎</div>
         <div class="upload-text">Tap to attach receipt (photo or PDF)</div>
         <div class="upload-filename" id="upload-filename"></div>
-        <input type="file" id="receipt-file" accept="image/*,application/pdf" onchange="handleFileSelect(this)">
+        <input type="file" id="receipt-file" accept="image/*,application/pdf" multiple onchange="handleFileSelect(this)">
       </div>
     </div>
 
@@ -428,7 +428,7 @@ let currentHub      = null;
 let evacuees        = [];
 let allotmentTotals = {};
 let selectedIds     = new Set();
-let receiptFile     = null;
+let receiptFiles    = [];
 let currentFilter   = 'all';
 let pendingMembers  = [];   // members collected at validation step
 let signatures      = {};   // evacueeId -> base64 png, 'guardian' -> base64 png
@@ -630,9 +630,12 @@ function checkOver(input, evacueeId) {
 // ---- FILE UPLOAD ----
 
 function handleFileSelect(input) {
-  if (input.files[0]) {
-    receiptFile = input.files[0];
-    document.getElementById('upload-filename').textContent = receiptFile.name;
+  if (input.files.length > 0) {
+    receiptFiles = Array.from(input.files);
+    const label = receiptFiles.length === 1
+      ? receiptFiles[0].name
+      : receiptFiles.length + ' receipts selected';
+    document.getElementById('upload-filename').textContent = label;
     document.getElementById('upload-zone').classList.add('has-file');
   }
 }
@@ -642,8 +645,12 @@ uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.cl
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
 uploadZone.addEventListener('drop', e => {
   e.preventDefault(); uploadZone.classList.remove('drag');
-  const f = e.dataTransfer.files[0];
-  if (f) { receiptFile = f; document.getElementById('upload-filename').textContent = f.name; uploadZone.classList.add('has-file'); }
+  if (e.dataTransfer.files.length > 0) {
+    receiptFiles = Array.from(e.dataTransfer.files);
+    const label = receiptFiles.length === 1 ? receiptFiles[0].name : receiptFiles.length + ' receipts selected';
+    document.getElementById('upload-filename').textContent = label;
+    uploadZone.classList.add('has-file');
+  }
 });
 
 // ---- VALIDATE AND GO TO SIGNATURES ----
@@ -652,7 +659,7 @@ function goToSignatures() {
   const staffName = document.getElementById('staff-name').value.trim();
   if (!staffName)         { alert('Please enter your name.'); return; }
   if (selectedIds.size === 0) { alert('Please select at least one community member.'); return; }
-  if (!receiptFile)       { alert('Please attach a receipt.'); return; }
+  if (receiptFiles.length === 0) { alert('Please attach at least one receipt.'); return; }
 
   const members = [];
   const lineItems = document.querySelectorAll('.line-item');
@@ -861,15 +868,20 @@ async function doFinalSubmit() {
   const members        = pendingMembers;
 
   try {
-    setProgress('Uploading receipt...', 20);
-    const fd = new FormData();
-    fd.append('file', receiptFile);
-    fd.append('hub', currentHub);
-    fd.append('submissionRef', submissionRef);
-    const uploadRes  = await fetch(`${WORKER}/upload-receipt`, { method: 'POST', body: fd });
-    const uploadData = await uploadRes.json();
-    if (!uploadData.fullUrl) throw new Error('Receipt upload failed');
-    const receiptUrl = uploadData.fullUrl;
+    setProgress('Uploading receipts...', 20);
+    const uploadedReceipts = [];
+    for (let i = 0; i < receiptFiles.length; i++) {
+      setProgress(`Uploading receipt ${i + 1} of ${receiptFiles.length}...`, 20 + Math.round((i / receiptFiles.length) * 15));
+      const fd = new FormData();
+      fd.append('file', receiptFiles[i]);
+      fd.append('hub', currentHub);
+      fd.append('submissionRef', submissionRef + (receiptFiles.length > 1 ? `-${i + 1}` : ''));
+      const uploadRes  = await fetch(`${WORKER}/upload-receipt`, { method: 'POST', body: fd });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.fullUrl) throw new Error(`Receipt ${i + 1} upload failed`);
+      uploadedReceipts.push({ fullUrl: uploadData.fullUrl, graphPath: uploadData.graphPath });
+    }
+    const receiptUrl = uploadedReceipts[0].fullUrl;
 
     setProgress('Creating allotment records...', 40);
     const records = members.map(m => ({
@@ -897,7 +909,9 @@ async function doFinalSubmit() {
       body: JSON.stringify({
         submissionRef, hub: currentHub, submittedBy: staffName,
         submissionDate, submissionTime, members,
-        receiptUrl, receiptGraphPath: uploadData.graphPath,
+        receiptUrl,
+        receiptUrls:       uploadedReceipts.map(r => r.fullUrl),
+        receiptGraphPaths: uploadedReceipts.map(r => r.graphPath),
         signatures, guardianName,
         minors: members.filter(m => m.isMinor).map(m => m.name),
         paperSig
@@ -949,7 +963,7 @@ function showSuccess({ submissionRef, members, staffName, pdfUrl, submissionDate
 // ---- RESET ----
 
 function resetForm() {
-  selectedIds.clear(); receiptFile = null; currentFilter = 'all';
+  selectedIds.clear(); receiptFiles = []; currentFilter = 'all';
   pendingMembers = []; signatures = {};
   document.getElementById('ev-search').value  = '';
   document.getElementById('upload-filename').textContent = '';
