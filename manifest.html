@@ -1274,7 +1274,7 @@ function renderReviewTable() {
     var c = row.confidence || {};
     var firstClass = !row.firstName ? 'conf-missing' : c.firstName === 'low' ? 'conf-low' : '';
     var lastClass = !row.lastName ? 'conf-missing' : c.lastName === 'low' ? 'conf-low' : '';
-    var dobClass = !row.dob ? 'conf-missing' : c.dob === 'low' ? 'conf-low' : '';
+    var dobClass = c.dob === 'low' ? 'conf-low' : '';
     var ptClass = !row.passengerType ? 'conf-missing' : c.passengerType === 'low' ? 'conf-low' : '';
 
     // Count flags
@@ -1299,9 +1299,9 @@ function renderReviewTable() {
 
   // Update flag counts
   document.getElementById('review-count').textContent = uploadRows.length + ' passenger' + (uploadRows.length === 1 ? '' : 's') + ' extracted';
-  document.getElementById('flag-high').textContent = high ? '&#10003; ' + high + ' confident' : '';
-  document.getElementById('flag-low').textContent = low ? '&#9888; ' + low + ' uncertain' : '';
-  document.getElementById('flag-missing').textContent = missing ? '&#9888; ' + missing + ' missing' : '';
+  document.getElementById('flag-high').textContent = high ? '\u2713 ' + high + ' confident' : '';
+  document.getElementById('flag-low').textContent = low ? '\u26A0 ' + low + ' uncertain' : '';
+  document.getElementById('flag-missing').textContent = missing ? '\u26A0 ' + missing + ' missing' : '';
 
   // Wire input changes back to uploadRows
   tbody.querySelectorAll('.rt-input,.rt-select').forEach(function(input) {
