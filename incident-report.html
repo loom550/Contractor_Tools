@@ -790,7 +790,7 @@
     selectedFiles.forEach((f, i) => payload.append(`attachment_${i}`, f, f.name));
 
     try {
-      const res = await fetch('https://super-violet-90e9.loomex-it.workers.dev/incident-submit', { method: 'POST', body: payload });
+      const res = await fetch('https://super-violet-90e9.loomex-it.workers.dev/incident-submit', { method: 'POST', body: payload, headers: { 'X-Submit-Secret': '7ce93d730211ce20724195fb7d0f2918b95d0497db03acbb1e668107d0a8cc38' } });
       if (res.ok) {
         document.getElementById('form-area').style.display = 'none';
         document.getElementById('confirmation').style.display = 'block';
