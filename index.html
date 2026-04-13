@@ -398,8 +398,7 @@
 </div>
 
 <script>
-var AUTH_KEY = 'eoc_authed';
-var WORKER_URL = 'https://loomi-data.loomex-it.workers.dev/eoc-auth';
+var EOC_WORKER = 'https://evacscheduling.loomex-it.workers.dev';
 
 (function() {
   var e = 'eocadmin' + '@' + 'loomex.ca';
@@ -416,16 +415,29 @@ var WORKER_URL = 'https://loomi-data.loomex-it.workers.dev/eoc-auth';
 })();
 
 window.addEventListener('DOMContentLoaded', function() {
-  if (localStorage.getItem(AUTH_KEY) === '1') showEocSection();
+  fetch(EOC_WORKER + '/eoc-session', {
+    method: 'GET',
+    credentials: 'include'
+  }).then(function(res) { return res.json(); }).then(function(data) {
+    if (data.ok) showEocSection();
+  }).catch(function() {});
 });
 
 function handleEocLoginClick() {
-  if (localStorage.getItem(AUTH_KEY) === '1') {
-    document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' });
-  } else {
+  fetch(EOC_WORKER + '/eoc-session', {
+    method: 'GET',
+    credentials: 'include'
+  }).then(function(res) { return res.json(); }).then(function(data) {
+    if (data.ok) {
+      document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' });
+    } else {
+      openModal('loginModal');
+      setTimeout(function() { document.getElementById('eocPassword').focus(); }, 100);
+    }
+  }).catch(function() {
     openModal('loginModal');
     setTimeout(function() { document.getElementById('eocPassword').focus(); }, 100);
-  }
+  });
 }
 
 function submitEocLogin() {
@@ -436,13 +448,13 @@ function submitEocLogin() {
   btn.disabled = true;
   btn.textContent = 'Checking...';
   errEl.classList.remove('visible');
-  fetch(WORKER_URL, {
+  fetch(EOC_WORKER + '/eoc-auth', {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password: pw })
   }).then(function(res) { return res.json(); }).then(function(data) {
     if (data.ok) {
-      localStorage.setItem(AUTH_KEY, '1');
       closeModal('loginModal');
       document.getElementById('eocPassword').value = '';
       showEocSection();
@@ -469,11 +481,15 @@ function showEocSection() {
 }
 
 function eocLogout() {
-  localStorage.removeItem(AUTH_KEY);
-  document.getElementById('eocSection').classList.remove('visible');
-  var btn = document.getElementById('eocLoginBtn');
-  btn.textContent = 'EOC Staff Login';
-  btn.classList.remove('authed');
+  fetch(EOC_WORKER + '/eoc-logout', {
+    method: 'POST',
+    credentials: 'include'
+  }).catch(function() {}).finally(function() {
+    document.getElementById('eocSection').classList.remove('visible');
+    var btn = document.getElementById('eocLoginBtn');
+    btn.textContent = 'EOC Login';
+    btn.classList.remove('authed');
+  });
 }
 
 function handlePasswordKey(e) {
