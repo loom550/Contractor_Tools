@@ -568,7 +568,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
           <div class="upload-drop-icon">&#128196;</div>
           <div class="upload-drop-label">Drop manifest here or tap to browse</div>
           <div class="upload-drop-sub">PDF, JPG, or PNG &bull; Max 15 MB</div>
-          <input type="file" class="upload-file-input" id="upload-file-input" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.doc,.docx,.xls,.xlsx">
+          <input type="file" class="upload-file-input" id="upload-file-input" accept=".pdf,.jpg,.jpeg,.png">
         </div>
         <div class="upload-selected-file" id="upload-selected-file">
           <span>&#128196;</span>
@@ -581,7 +581,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
         <div class="upload-processing">
           <div class="upload-processing-spinner"></div>
           <div class="upload-processing-label">Extracting passengers...</div>
-          <div class="upload-processing-sub">This may take 1-2 minutes for large manifests (over 50 Pax)</div>
+          <div class="upload-processing-sub">This may take 10-20 seconds</div>
         </div>
       </div>
       <div id="upload-state-review" style="display:none">
@@ -666,6 +666,37 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
       <div class="modal-field">
         <label>Special Requirements</label>
         <textarea id="edit-special" rows="2"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>Medical / Assistive Devices</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="checkbox" id="edit-med-wheelchair" style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;"> Wheelchair
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="checkbox" id="edit-med-walker" style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;"> Walker
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="checkbox" id="edit-med-oxygen" style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;"> Oxygen
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="checkbox" id="edit-med-cpap" style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;"> CPAP
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="checkbox" id="edit-med-hearingaid" style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;"> Hearing Aid
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;cursor:pointer;">
+            <input type="checkbox" id="edit-med-other" style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;"> Other
+          </label>
+        </div>
+      </div>
+      <div class="modal-field" style="display:flex;align-items:center;gap:12px;height:44px;">
+        <label style="margin:0;flex:1">Prescriptions Required</label>
+        <input type="checkbox" id="edit-rx" style="width:22px;height:22px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;">
+      </div>
+      <div class="modal-field">
+        <label>Destination Hub</label>
+        <input type="text" id="edit-dest-hub" placeholder="e.g. Kingston (Kingston)">
       </div>
       <div class="modal-actions">
         <button class="btn-modal-save" id="modal-save">Save Changes</button>
@@ -843,10 +874,30 @@ function renderPaxPanel(flightId) {
     '<div class="flt-stat"><span class="flt-stat-val">' + totalCarry + '</span><span class="flt-stat-lbl">Carry lbs</span></div>' +
   '</div>';
 
+  // Pool destination filter bar
+  var destCounts = {};
+  unassigned.forEach(function(p) {
+    var d = p.destinationHub || 'Unknown';
+    destCounts[d] = (destCounts[d] || 0) + 1;
+  });
+  var destKeys = Object.keys(destCounts);
+  if (!departed && unassigned.length && destKeys.length > 1) {
+    html += '<div style="padding:8px 16px;background:#f8f9fb;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+      '<span style="font-size:11px;color:var(--text-muted);font-weight:600">POOL FILTER:</span>' +
+      '<button onclick="filterPoolDest(\'\')" id="pool-filter-all" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:var(--navy);color:#fff;cursor:pointer;">All (' + unassigned.length + ')</button>' +
+      destKeys.map(function(d) {
+        return '<button onclick="filterPoolDest(\'' + esc(d) + '\')" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--text-dim);cursor:pointer;">' + esc(d) + ' (' + destCounts[d] + ')</button>';
+      }).join('') +
+    '</div>';
+  }
+
   // Unassigned pax (only if flight is active)
   if (!departed && unassigned.length) {
-    html += '<div class="section-label">Unassigned Passengers <span class="section-badge">' + unassigned.length + '</span> <span style="font-size:11px;font-weight:400;color:var(--text-muted);">— tap to assign</span></div>';
-    unassigned.forEach(function(p) {
+    var filteredUnassigned = poolDestFilter
+      ? unassigned.filter(function(p) { return (p.destinationHub || 'Unknown') === poolDestFilter; })
+      : unassigned;
+    html += '<div class="section-label">Unassigned Passengers <span class="section-badge">' + filteredUnassigned.length + '</span> <span style="font-size:11px;font-weight:400;color:var(--text-muted);">— tap to assign</span></div>';
+    filteredUnassigned.forEach(function(p) {
       html += renderPaxRow(p, true, flightId);
     });
   }
@@ -906,11 +957,20 @@ function renderPaxPanel(flightId) {
 }
 
 function renderPaxRow(p, isUnassigned, targetFlightId) {
-  var wt = (Number(p.luggageWeight)||0) + (Number(p.carryOnWeight)||0);
+  var medFlags = [];
+  if (p.medWheelchair) medFlags.push('Wheelchair');
+  if (p.medWalker) medFlags.push('Walker');
+  if (p.medOxygen) medFlags.push('Oxygen');
+  if (p.medCPAP) medFlags.push('CPAP');
+  if (p.medHearingAid) medFlags.push('Hearing Aid');
+  if (p.medOther) medFlags.push('Other');
+  var medFlag = medFlags.length ? '<span style="color:var(--yellow);margin-right:3px" title="' + esc(medFlags.join(', ')) + '">&#9888;</span>' : '';
+  var rxFlag = p.prescriptionsRequired ? '<span style="color:var(--red);margin-right:3px" title="Prescriptions required">&#8982;</span>' : '';
+  var destBadge = p.destinationHub ? '<span style="font-size:10px;background:var(--navy-lt);color:var(--navy);padding:1px 6px;border-radius:8px;margin-left:4px">' + esc(p.destinationHub) + '</span>' : '';
   return '<div class="pax-row' + (isUnassigned ? ' unassigned-row' : '') + '">' +
     '<div class="ptype-badge b-' + p.passengerType + '">' + p.passengerType + '</div>' +
     '<div class="pax-info">' +
-      '<div class="pax-name">' + esc(p.firstName) + ' ' + esc(p.lastName) + '</div>' +
+      '<div class="pax-name">' + medFlag + rxFlag + esc(p.firstName) + ' ' + esc(p.lastName) + destBadge + '</div>' +
       '<div class="pax-sub">' + (p.dob ? p.dob + ' &bull; ' : '') + (p.specialRequirements ? '&#9888; Special req.' : '') + '</div>' +
     '</div>' +
     '<div class="pax-wt">' +
@@ -1084,6 +1144,14 @@ function openEditModal(paxId) {
   document.getElementById('edit-lug').value = pax.luggageWeight || '';
   document.getElementById('edit-carry').value = pax.carryOnWeight || '';
   document.getElementById('edit-special').value = pax.specialRequirements || '';
+  document.getElementById('edit-med-wheelchair').checked = pax.medWheelchair || false;
+  document.getElementById('edit-med-walker').checked = pax.medWalker || false;
+  document.getElementById('edit-med-oxygen').checked = pax.medOxygen || false;
+  document.getElementById('edit-med-cpap').checked = pax.medCPAP || false;
+  document.getElementById('edit-med-hearingaid').checked = pax.medHearingAid || false;
+  document.getElementById('edit-med-other').checked = pax.medOther || false;
+  document.getElementById('edit-rx').checked = pax.prescriptionsRequired || false;
+  document.getElementById('edit-dest-hub').value = pax.destinationHub || '';
 
   // Populate flight dropdown
   var flightSel = document.getElementById('edit-flight');
@@ -1114,6 +1182,14 @@ function saveEditedPax() {
     luggageWeight: Number(document.getElementById('edit-lug').value) || 0,
     carryOnWeight: Number(document.getElementById('edit-carry').value) || 0,
     specialRequirements: document.getElementById('edit-special').value.trim(),
+    medWheelchair: document.getElementById('edit-med-wheelchair').checked,
+    medWalker: document.getElementById('edit-med-walker').checked,
+    medOxygen: document.getElementById('edit-med-oxygen').checked,
+    medCPAP: document.getElementById('edit-med-cpap').checked,
+    medHearingAid: document.getElementById('edit-med-hearingaid').checked,
+    medOther: document.getElementById('edit-med-other').checked,
+    prescriptionsRequired: document.getElementById('edit-rx').checked,
+    destinationHub: document.getElementById('edit-dest-hub').value.trim(),
     flightId: document.getElementById('edit-flight').value,
   };
 
@@ -1125,7 +1201,7 @@ function saveEditedPax() {
       btn.disabled = false; btn.textContent = 'Save Changes';
       if (data.error) { showToast('Error: ' + data.error, 'err'); return; }
       var pax = allPax.find(function(p) { return p.id === editingPaxId; });
-      if (pax) Object.assign(pax, { firstName:body.firstName, lastName:body.lastName, dob:body.dob, passengerType:body.passengerType, luggageWeight:body.luggageWeight, carryOnWeight:body.carryOnWeight, specialRequirements:body.specialRequirements, flightId:body.flightId });
+      if (pax) Object.assign(pax, { firstName:body.firstName, lastName:body.lastName, dob:body.dob, passengerType:body.passengerType, luggageWeight:body.luggageWeight, carryOnWeight:body.carryOnWeight, specialRequirements:body.specialRequirements, medWheelchair:body.medWheelchair, medWalker:body.medWalker, medOxygen:body.medOxygen, medCPAP:body.medCPAP, medHearingAid:body.medHearingAid, medOther:body.medOther, prescriptionsRequired:body.prescriptionsRequired, destinationHub:body.destinationHub, flightId:body.flightId });
       closeModal();
       renderFlights();
       if (selectedFlightId) renderPaxPanel(selectedFlightId);
@@ -1217,10 +1293,10 @@ function setupUploadModal() {
 }
 
 function selectFile(file) {
+  var allowed = ['application/pdf','image/jpeg','image/jpg','image/png'];
   var ext = (file.name || '').toLowerCase();
-  var allowedExts = ['.pdf','.jpg','.jpeg','.png','.heic','.heif','.webp','.bmp','.tiff','.tif','.doc','.docx','.xls','.xlsx'];
-  if (!allowedExts.some(function(e) { return ext.endsWith(e); })) {
-    showToast('Unsupported file type', 'err'); return;
+  if (!allowed.includes(file.type) && !ext.endsWith('.pdf') && !ext.endsWith('.jpg') && !ext.endsWith('.jpeg') && !ext.endsWith('.png')) {
+    showToast('PDF, JPG, or PNG only', 'err'); return;
   }
   if (file.size > 15 * 1024 * 1024) { showToast('File too large (max 15 MB)', 'err'); return; }
   uploadSelectedFile = file;
@@ -1254,14 +1330,7 @@ function doUpload() {
   fetch(url, { method: 'POST', body: formData })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.error) {
-        setUploadState('picker');
-        var msg = data.error.includes('truncated') || data.error.includes('JSON') || data.error.includes('token')
-          ? 'Extraction incomplete — tap Extract again to retry'
-          : 'Extraction error — please try again';
-        showToast(msg, 'err');
-        return;
-      }
+      if (data.error) { setUploadState('picker'); showToast('Extraction error: ' + data.error, 'err'); return; }
       uploadId = data.uploadId;
       uploadRows = data.rows || [];
       renderReviewTable();
@@ -1269,7 +1338,7 @@ function doUpload() {
     })
     .catch(function(e) {
       setUploadState('picker');
-      showToast('Upload failed — please try again', 'err');
+      showToast('Upload failed: ' + e.message, 'err');
     });
 }
 
@@ -1281,7 +1350,7 @@ function renderReviewTable() {
     var c = row.confidence || {};
     var firstClass = !row.firstName ? 'conf-missing' : c.firstName === 'low' ? 'conf-low' : '';
     var lastClass = !row.lastName ? 'conf-missing' : c.lastName === 'low' ? 'conf-low' : '';
-    var dobClass = c.dob === 'low' ? 'conf-low' : '';
+    var dobClass = !row.dob ? 'conf-missing' : c.dob === 'low' ? 'conf-low' : '';
     var ptClass = !row.passengerType ? 'conf-missing' : c.passengerType === 'low' ? 'conf-low' : '';
 
     // Count flags
@@ -1306,9 +1375,9 @@ function renderReviewTable() {
 
   // Update flag counts
   document.getElementById('review-count').textContent = uploadRows.length + ' passenger' + (uploadRows.length === 1 ? '' : 's') + ' extracted';
-  document.getElementById('flag-high').textContent = high ? '\u2713 ' + high + ' confident' : '';
-  document.getElementById('flag-low').textContent = low ? '\u26A0 ' + low + ' uncertain' : '';
-  document.getElementById('flag-missing').textContent = missing ? '\u26A0 ' + missing + ' missing' : '';
+  document.getElementById('flag-high').textContent = high ? '&#10003; ' + high + ' confident' : '';
+  document.getElementById('flag-low').textContent = low ? '&#9888; ' + low + ' uncertain' : '';
+  document.getElementById('flag-missing').textContent = missing ? '&#9888; ' + missing + ' missing' : '';
 
   // Wire input changes back to uploadRows
   tbody.querySelectorAll('.rt-input,.rt-select').forEach(function(input) {
@@ -1370,6 +1439,13 @@ function doCommit() {
     btn.disabled = false; btn.textContent = '\u2713 Commit to Pool';
     showToast('Commit failed: ' + e.message, 'err');
   });
+}
+
+// ── POOL DESTINATION FILTER ───────────────────────────────────────────────────
+var poolDestFilter = '';
+function filterPoolDest(dest) {
+  poolDestFilter = dest;
+  if (selectedFlightId) renderPaxPanel(selectedFlightId);
 }
 
 function api(method, path, body) {
