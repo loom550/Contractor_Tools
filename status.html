@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Loomex Emergency Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-900:#0A1929; --navy-800:#1A2B35; --navy-700:#1A4E7E; --navy-600:#2D6A9F;
+    --teal-500:#2F9879;  --teal-400:#42A278;
+    --amber-500:#D9860F; --red-500:#C0392B;
+    --host-green:#2F9879; --home-blue:#2D6A9F; --partner:#D9860F;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:linear-gradient(135deg,var(--navy-900) 0%,var(--navy-800) 100%);color:white;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(47,152,121,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(47,152,121,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+  /* ── HEADER ── */
+  .header{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:2px solid rgba(47,152,121,0.2);position:sticky;top:0;z-index:10;flex-shrink:0;background:rgba(10,25,41,0.95);backdrop-filter:blur(8px)}
+  .header::after{content:'';position:absolute;bottom:-2px;left:0;width:220px;height:2px;background:linear-gradient(90deg,var(--teal-500) 0%,transparent 100%)}
+  .header-left{display:flex;flex-direction:column;gap:2px}
+  .header-title{font-family:'Epilogue',sans-serif;font-size:1.4rem;font-weight:900;letter-spacing:-0.02em;text-transform:uppercase;color:#fff}
+  .header-sub{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase}
+  .header-right{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap}
+  .event-badge{display:flex;align-items:center;gap:0.6rem;padding:0.6rem 1.2rem;background:rgba(47,152,121,0.1);border:1px solid rgba(47,152,121,0.3);border-left:4px solid var(--teal-500);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+  .pulse-dot{width:8px;height:8px;background:var(--teal-500);border-radius:50%;box-shadow:0 0 8px var(--teal-500),0 0 16px var(--teal-500);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.2)}}
+  .badge-text{font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:600;color:var(--teal-500);letter-spacing:0.05em}
+  .timestamp-box{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.5);padding:0.6rem 1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;white-space:nowrap}
+  .admin-header-btn{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.6rem 1.2rem;background:rgba(47,152,121,0.15);border:1px solid rgba(47,152,121,0.3);color:var(--teal-500);border-radius:6px;cursor:pointer;transition:all .2s}
+  .admin-header-btn:hover{background:rgba(47,152,121,0.25);border-color:var(--teal-500);color:#fff}
+  .export-header-btn{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.6rem 1.2rem;background:var(--teal-500);border:none;color:#fff;border-radius:6px;cursor:pointer;transition:all .2s}
+  .export-header-btn:hover{background:var(--teal-400)}
+  .login-btn{font-family:'JetBrains Mono',monospace;font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.55rem 1rem;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.4);border-radius:6px;cursor:pointer;transition:all .2s}
+  .login-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.7)}
+  .logout-btn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:rgba(255,255,255,0.3);background:none;border:none;cursor:pointer;padding:0.4rem 0.6rem;letter-spacing:0.05em}
+  .logout-btn:hover{color:rgba(255,255,255,0.6)}
+
+  /* override indicator in timestamp box */
+  .ts-live{color:var(--teal-500);font-weight:700;letter-spacing:.05em}
+  .ts-override{color:var(--amber-500)}
+
+  /* ── MAIN LAYOUT ── */
+  .main{display:grid;grid-template-columns:900px 320px;flex:1;min-height:calc(100vh - 70px);position:relative;z-index:1}
+
+  /* ── MAP ── */
+  .map-container{position:relative;width:900px;height:740px}
+  .map-img{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92%;height:92%;object-fit:contain;filter:brightness(0.45) sepia(1) hue-rotate(175deg) saturate(0.8) brightness(1.6);opacity:0.9}
+  .map-overlay{position:absolute;inset:0}
+
+  /* ── PINS ── */
+  .site-pin{position:absolute;transform:translate(-50%,-50%);z-index:5;cursor:default}
+  .pin-dot{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,0.85);box-shadow:0 0 0 3px rgba(0,0,0,0.25),0 4px 12px rgba(0,0,0,0.5);position:relative;z-index:2;transition:transform .2s}
+  .site-pin:hover .pin-dot{transform:scale(1.3)}
+  .pin-dot::after{content:'';position:absolute;inset:-6px;border-radius:50%;animation:pinPulse 2.5s infinite}
+  @keyframes pinPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0.15)}50%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
+  .type-home .pin-dot{background:var(--home-blue)}.type-host .pin-dot{background:var(--host-green)}.type-partner .pin-dot{background:var(--partner)}.type-kingston .pin-dot{background:var(--host-green)}
+  .pin-card{position:absolute;left:26px;top:50%;transform:translateY(-50%);background:rgba(10,25,41,0.95);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-left:3px solid;padding:8px 12px;white-space:nowrap;pointer-events:none;min-width:160px;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));transition:opacity .2s}
+  .site-pin.clickable .pin-card{pointer-events:all;cursor:pointer}
+  .pin-card.above{left:50%;top:auto;bottom:28px;transform:translateX(-50%)}
+  .pin-card.below{left:50%;top:28px;transform:translateX(0)}
+  .pin-card.left{left:auto;right:26px;top:50%;transform:translateY(-50%)}
+  .type-host .pin-card{border-left-color:var(--host-green)}.type-home .pin-card{border-left-color:var(--home-blue)}.type-partner .pin-card{border-left-color:var(--partner)}.type-kingston .pin-card{border-left-color:var(--host-green)}
+  .pin-city{font-family:'Epilogue',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#fff;margin-bottom:3px}
+  .pin-count{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;line-height:1}
+  .pin-count.green{color:var(--host-green)}
+  .pin-cap{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:.04em;margin-top:1px}
+  .pin-phone{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal-500);margin-top:4px;letter-spacing:.03em;text-decoration:none;display:block;pointer-events:all}
+  .pin-phone:hover{color:#fff}
+  .pin-address{font-size:9px;color:rgba(255,255,255,0.28);font-family:'DM Sans',sans-serif;margin-top:3px;letter-spacing:.01em}
+  .pin-badge{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-bottom:3px;display:inline-block}
+  .pin-badge.partner{background:rgba(217,134,15,0.2);color:var(--partner);border:1px solid rgba(217,134,15,0.4)}
+  .pin-dual-row{display:flex;gap:10px;align-items:flex-start}
+  .pin-dual-site{flex:1}
+  .pin-dual-site+.pin-dual-site{padding-left:10px;border-left:1px solid rgba(255,255,255,0.1)}
+  .pin-dual-label{font-size:9px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+  .pin-dual-num{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--host-green)}
+  .pin-dual-cap{font-size:9px;color:rgba(255,255,255,0.35)}
+  .pin-dual-phone{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal-500);margin-top:3px;text-decoration:none;display:block;pointer-events:all}
+  .pin-dual-phone:hover{color:#fff}
+  .pin-drill{font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.35);letter-spacing:.04em;margin-top:3px}
+
+  /* ── SIDEBAR ── */
+  .sidebar{background:rgba(10,25,41,0.7);backdrop-filter:blur(12px);border-left:1px solid rgba(47,152,121,0.15);display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100vh - 70px);position:sticky;top:70px;align-self:start}
+  .sidebar::-webkit-scrollbar{width:4px}.sidebar::-webkit-scrollbar-thumb{background:rgba(47,152,121,0.3);border-radius:2px}
+  .section-header{display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem .5rem;flex-shrink:0}
+  .section-title{font-family:'Epilogue',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
+  .section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,0.15) 0%,transparent 100%)}
+  .totals-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:.5rem 1.25rem .75rem}
+  .total-block{background:linear-gradient(135deg,rgba(26,78,126,0.3) 0%,rgba(47,152,121,0.2) 100%);border:1px solid rgba(47,152,121,0.25);border-left:4px solid var(--teal-500);padding:.85rem 1rem;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+  .total-block.cap{background:linear-gradient(135deg,rgba(26,78,126,0.3) 0%,rgba(26,78,126,0.2) 100%);border-color:rgba(45,106,159,0.25);border-left-color:var(--navy-600)}
+  .total-label{font-size:.62rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+  .total-num{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:#fff;line-height:1}
+  .total-sub{font-size:.65rem;color:rgba(255,255,255,0.4);margin-top:3px}
+  .site-list{padding:0 1.25rem 1rem;display:flex;flex-direction:column;gap:.5rem}
+  .site-card{background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.02) 100%);border:1px solid rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;transition:border-color .2s,box-shadow .2s;animation:fadeIn .5s ease-out backwards}
+  .site-card:hover{border-color:rgba(47,152,121,0.35);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+  .site-card.partner-card{border-color:rgba(217,134,15,0.2)}.site-card.partner-card:hover{border-color:rgba(217,134,15,0.5)}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .site-card-header{background:linear-gradient(90deg,rgba(26,78,126,0.25) 0%,rgba(47,152,121,0.15) 100%);border-bottom:1px solid rgba(255,255,255,0.07);padding:.6rem .9rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+  .site-card-header.partner{background:linear-gradient(90deg,rgba(217,134,15,0.15) 0%,rgba(217,134,15,0.05) 100%)}
+  .site-card-left{display:flex;align-items:center;gap:.5rem}
+  .site-card-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .site-card-name{font-family:'Epilogue',sans-serif;font-size:.85rem;font-weight:700;color:#fff}
+  .site-card-address{font-size:.57rem;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:.02em;margin-top:1px}
+  .site-card-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:rgba(47,152,121,0.2);border:1px solid rgba(47,152,121,0.35);color:var(--teal-500)}
+  .site-card-badge.partner{background:rgba(217,134,15,0.15);border-color:rgba(217,134,15,0.4);color:var(--partner)}
+  .site-card-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,0.04)}
+  .site-metric{background:rgba(255,255,255,0.02);padding:.55rem .7rem}
+  .site-metric-label{font-size:.58rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  .site-metric-val{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:#fff;line-height:1}
+  .site-metric-sub{font-size:.6rem;color:rgba(255,255,255,0.35);margin-top:2px}
+  .site-card-phone{padding:.4rem .9rem .6rem;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--teal-500);border-top:1px solid rgba(255,255,255,0.05)}
+  .site-card-phone a{color:var(--teal-500);text-decoration:none}.site-card-phone a:hover{color:#fff}
+  .site-card-phone.partner{color:var(--partner)}.site-card-phone.partner a{color:var(--partner)}
+  .site-bar-wrap{padding:.5rem .9rem .65rem}
+  .site-bar-row{display:flex;justify-content:space-between;font-size:.6rem;color:rgba(255,255,255,0.45);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;font-family:'JetBrains Mono',monospace}
+  .site-bar-pct{color:var(--teal-500);font-weight:700}
+  .site-bar-track{height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+  .site-bar-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+  .partner-ref{padding:.75rem .9rem;display:flex;align-items:center;justify-content:space-between}
+  .partner-ref-info{display:flex;flex-direction:column;gap:2px}
+  .partner-ref-label{font-size:.58rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em}
+  .partner-ref-phone{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--partner)}
+  .partner-ref-phone a{color:var(--partner);text-decoration:none}.partner-ref-phone a:hover{color:#fff}
+  .legend-block{padding:.75rem 1.25rem;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:1rem;flex-wrap:wrap;flex-shrink:0}
+  .legend-item{display:flex;align-items:center;gap:6px}
+  .legend-dot{width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,0.5)}
+  .legend-text{font-size:.65rem;color:rgba(255,255,255,0.45);letter-spacing:.04em}
+
+  /* ── MASTER VIEW ── */
+  #master-view{flex:1;padding:2rem;position:relative;z-index:1}
+  .master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;max-width:1100px;margin:0 auto}
+  .master-card{background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.02) 100%);border:1px solid rgba(47,152,121,0.2);border-radius:8px;padding:1.25rem;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .15s}
+  .master-card:hover{border-color:rgba(47,152,121,0.5);box-shadow:0 8px 24px rgba(0,0,0,0.4);transform:translateY(-2px)}
+  .master-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:1rem}
+  .master-card-name{font-family:'Epilogue',sans-serif;font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;color:#fff}
+  .master-live-badge{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:3px;background:rgba(47,152,121,0.15);border:1px solid rgba(47,152,121,0.35);color:var(--teal-500);white-space:nowrap;flex-shrink:0}
+  .master-pulse{width:6px;height:6px;border-radius:50%;background:var(--teal-500);box-shadow:0 0 6px var(--teal-500);animation:pulse 2s ease-in-out infinite}
+  .master-manual-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:3px;background:rgba(217,134,15,0.15);border:1px solid rgba(217,134,15,0.35);color:var(--amber-500);white-space:nowrap;flex-shrink:0}
+  .master-card-stat{margin-bottom:.75rem}
+  .master-stat-num{font-family:'JetBrains Mono',monospace;font-size:2.4rem;font-weight:700;color:#fff;line-height:1}
+  .master-stat-label{font-size:.65rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+  .master-card-footer{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(255,255,255,0.35);padding-top:.75rem;border-top:1px solid rgba(255,255,255,0.06)}
+  .master-loading,.master-empty{grid-column:1/-1;text-align:center;padding:4rem;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:rgba(255,255,255,0.3);letter-spacing:.1em}
+
+  /* ── MODALS ── */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;backdrop-filter:blur(6px);align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--navy-800);border:1px solid rgba(255,255,255,0.1);border-top:3px solid var(--teal-500);border-radius:10px;padding:2rem;width:460px;max-width:96vw;max-height:90vh;overflow-y:auto}
+  .modal::-webkit-scrollbar{width:4px}.modal::-webkit-scrollbar-thumb{background:rgba(47,152,121,0.3);border-radius:2px}
+  .modal-title{font-family:'Epilogue',sans-serif;font-size:1.2rem;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;color:#fff;margin-bottom:4px}
+  .modal-sub{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(255,255,255,0.35);letter-spacing:.08em;text-transform:uppercase;margin-bottom:1.5rem}
+  .form-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:1rem;margin-bottom:.75rem}
+  .form-block-title{display:flex;align-items:center;gap:8px;font-family:'Epilogue',sans-serif;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#fff;margin-bottom:.75rem}
+  .form-block-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .form-block-type{font-size:.6rem;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;font-weight:400}
+  .form-fields{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .form-field label{font-size:.6rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px;font-family:'JetBrains Mono',monospace}
+  .form-input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.875rem;padding:7px 10px;outline:none;transition:border-color .2s}
+  .form-input:focus{border-color:var(--teal-500)}
+  .modal-actions{display:flex;gap:.75rem;margin-top:1.5rem;align-items:center}
+  .btn-save{flex:1;background:var(--teal-500);border:none;color:#fff;font-family:'Epilogue',sans-serif;font-size:.875rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.75rem;border-radius:6px;cursor:pointer;transition:background .2s}
+  .btn-save:hover{background:var(--teal-400)}
+  .btn-cancel{background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);font-family:'Epilogue',sans-serif;font-size:.875rem;font-weight:700;text-transform:uppercase;padding:.75rem 1.25rem;border-radius:6px;cursor:pointer;transition:all .2s}
+  .btn-cancel:hover{border-color:rgba(255,255,255,0.3);color:#fff}
+  .btn-danger{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);color:#E74C3C;font-family:'Epilogue',sans-serif;font-size:.75rem;font-weight:700;text-transform:uppercase;padding:.6rem 1rem;border-radius:6px;cursor:pointer;margin-right:auto;transition:all .2s}
+  .btn-danger:hover{background:rgba(192,57,43,.25)}
+
+  /* duration selector */
+  .dur-opts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+  .dur-opt{display:flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(255,255,255,0.5);cursor:pointer;transition:all .15s}
+  .dur-opt input{width:0;height:0;position:absolute;opacity:0}
+  .dur-opt.selected{background:rgba(47,152,121,0.15);border-color:rgba(47,152,121,0.4);color:var(--teal-500)}
+
+  /* ── HOTEL MODAL ── */
+  .hotel-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:150;backdrop-filter:blur(8px);align-items:center;justify-content:center}
+  .hotel-modal-overlay.open{display:flex}
+  .hotel-modal{background:var(--navy-800);border:1px solid rgba(255,255,255,0.1);border-top:3px solid var(--teal-500);border-radius:10px;padding:1.5rem;width:520px;max-width:96vw;max-height:90vh;overflow-y:auto}
+  .hotel-modal::-webkit-scrollbar{width:4px}.hotel-modal::-webkit-scrollbar-thumb{background:rgba(47,152,121,0.3);border-radius:2px}
+  .hotel-modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem}
+  .hotel-modal-title{font-family:'Epilogue',sans-serif;font-size:1.1rem;font-weight:900;text-transform:uppercase;letter-spacing:-.01em;color:#fff}
+  .hotel-modal-sub{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(255,255,255,0.35);letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+  .hotel-modal-close{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center}
+  .hotel-modal-close:hover{background:rgba(255,255,255,0.12);color:#fff}
+  .hotel-section-label{font-family:'Epilogue',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:.5rem;padding-bottom:.4rem;border-bottom:1px solid rgba(255,255,255,0.06)}
+  .hotel-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.75rem;padding:.6rem .75rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:6px;margin-bottom:.4rem}
+  .hotel-row-name{font-family:'Epilogue',sans-serif;font-size:.85rem;font-weight:700;color:#fff}
+  .hotel-row-bar{margin-top:4px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+  .hotel-row-bar-fill{height:100%;border-radius:2px}
+  .hotel-row-count{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--host-green);text-align:right;white-space:nowrap}
+  .hotel-row-cap{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(255,255,255,0.35);text-align:right;white-space:nowrap}
+  .hotel-modal-loomi{display:flex;align-items:center;gap:6px;margin-top:1rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,0.06)}
+  .hotel-modal-loomi-badge{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;background:rgba(47,152,121,0.1);border:1px solid rgba(47,152,121,0.2);color:rgba(47,152,121,0.5)}
+  .hotel-modal-loomi-text{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(255,255,255,0.2)}
+  .site-pin.clickable{cursor:pointer}
+  .hotel-admin-section{margin-top:.75rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,0.06)}
+  .hotel-admin-label{font-size:.58rem;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;font-family:'JetBrains Mono',monospace}
+  .hotel-admin-row{display:grid;grid-template-columns:1fr 90px 90px;gap:.4rem;align-items:center;margin-bottom:.35rem}
+  .hotel-admin-name{font-size:.75rem;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif;padding-left:2px}
+  .form-input-sm{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:4px;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.8rem;padding:5px 8px;outline:none;transition:border-color .2s}
+  .form-input-sm:focus{border-color:var(--teal-500)}
+
+  /* ── ERROR / LOADING VIEWS ── */
+  #error-view{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:4rem;position:relative;z-index:1}
+  #error-msg{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:rgba(255,255,255,0.4);text-align:center}
+  #error-link{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--teal-500);text-decoration:none}
+  #error-link:hover{color:#fff}
+
+  /* ── RESPONSIVE / MOBILE ── */
+  @media (max-width:960px){
+    body{overflow-x:hidden}
+    .header{padding:.65rem 1rem;gap:.45rem}
+    .header-left{flex:1;min-width:0}
+    .header-title{font-size:1.15rem}
+    .header-sub{font-size:.58rem}
+    .timestamp-box{display:none}
+    .admin-header-btn,.export-header-btn{font-size:.63rem;padding:.5rem .9rem}
+    .main{display:flex;flex-direction:column;min-height:unset}
+    .map-container{width:100%;height:clamp(260px,52vw,420px)}
+    .pin-card{display:none !important}
+    .pin-dot{width:20px;height:20px}
+    .sidebar{position:static;max-height:none;width:100%;border-left:none;border-top:1px solid rgba(47,152,121,.15)}
+    .total-num{font-size:1.65rem}
+    .export-header-btn{display:none !important}
+  }
+  @media (max-width:520px){
+    .header-title{font-size:1rem}
+    .header-sub{display:none}
+    .badge-text{font-size:.6rem;letter-spacing:.03em}
+    .event-badge{padding:.45rem .7rem;gap:.4rem}
+    .admin-header-btn,.login-btn{font-size:.58rem;padding:.42rem .65rem;letter-spacing:.04em}
+    .map-container{height:clamp(200px,58vw,310px)}
+    .totals-row{gap:.4rem;margin:.4rem .75rem .6rem}
+    .total-num{font-size:1.4rem}
+    .section-header{padding:.7rem .85rem .35rem}
+    .site-list{padding:0 .85rem .75rem}
+    .legend-block{padding:.55rem .85rem;gap:.7rem}
+    .site-card-name{font-size:.8rem}
+    .site-metric-val{font-size:1rem}
+    .modal{padding:1.1rem}
+    .form-fields{grid-template-columns:1fr}
+    .hotel-admin-row{grid-template-columns:1fr 80px 80px}
+    #master-view{padding:1rem}
+    .master-stat-num{font-size:2rem}
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-title" id="header-title">Loomex Emergency Operations</div>
+    <div class="header-sub" id="header-sub">Loading…</div>
+  </div>
+  <div class="header-right">
+    <div class="event-badge" id="active-badge" style="display:none">
+      <div class="pulse-dot"></div>
+      <div class="badge-text">ACTIVE EVACUATION</div>
+    </div>
+    <div class="timestamp-box" id="ts-box" style="display:none">As of <span id="ts-display">—</span></div>
+    <span id="save-status" style="display:none;font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:.4rem .75rem;border-radius:4px;"></span>
+    <div id="auth-controls"></div>
+    <button class="export-header-btn" id="export-btn" onclick="exportImage()" style="display:none">⬇ Export</button>
+  </div>
+</header>
+
+<!-- MASTER VIEW -->
+<div id="master-view" style="display:none">
+  <div class="master-grid" id="master-grid"></div>
+</div>
+
+<!-- ACTIVATION VIEW -->
+<div id="activation-view" class="main" style="display:none">
+  <div class="map-container">
+    <img class="map-img" id="map-img" src="" alt="Ontario Map">
+    <div class="map-overlay" id="map-overlay"></div>
+  </div>
+  <aside class="sidebar">
+    <div class="section-header"><div class="section-title">System-Wide Total</div><div class="section-line"></div></div>
+    <div class="totals-row">
+      <div class="total-block">
+        <div class="total-label">Evacuees</div>
+        <div class="total-num" id="total-num">—</div>
+        <div class="total-sub">across all sites</div>
+      </div>
+      <div class="total-block cap">
+        <div class="total-label">Capacity</div>
+        <div class="total-num" id="total-cap">—</div>
+        <div class="total-sub">remaining spots</div>
+      </div>
+    </div>
+    <div class="section-header"><div class="section-title">Host Sites — by Occupancy</div><div class="section-line"></div></div>
+    <div class="site-list" id="site-list"></div>
+    <div class="legend-block">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--host-green)"></div><div class="legend-text">Loomex Host Site</div></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--partner)"></div><div class="legend-text">Partner Site</div></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--home-blue)"></div><div class="legend-text">Home Community</div></div>
+    </div>
+  </aside>
+</div>
+
+<!-- ERROR VIEW -->
+<div id="error-view" style="display:none">
+  <div id="error-msg">Activation not found.</div>
+  <a href="?" id="error-link">← View all activations</a>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">Admin Login</div>
+    <div class="modal-sub">Loomex EOC // Authorized Personnel Only</div>
+    <div class="form-block">
+      <div class="form-field">
+        <label>Password</label>
+        <input class="form-input" type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div id="login-error" style="display:none;color:#E74C3C;font-size:.7rem;font-family:'JetBrains Mono',monospace;margin-top:.5rem;letter-spacing:.03em">Incorrect password.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeLoginModal()">Cancel</button>
+      <button class="btn-save" id="login-btn" onclick="doLogin()">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal">
+    <div class="modal-title">Update Numbers</div>
+    <div class="modal-sub" id="admin-modal-sub">Manual Override</div>
+    <div id="form-blocks"></div>
+    <div class="form-block">
+      <div class="form-block-title">
+        <div class="form-block-dot" style="background:var(--amber-500)"></div>
+        Override Duration
+        <span class="form-block-type">Reverts to live data after expiry</span>
+      </div>
+      <div class="dur-opts" id="dur-opts">
+        <label class="dur-opt" data-val="4">4 hrs<input type="radio" name="dur" value="4"></label>
+        <label class="dur-opt" data-val="8">8 hrs<input type="radio" name="dur" value="8"></label>
+        <label class="dur-opt" data-val="12">12 hrs<input type="radio" name="dur" value="12"></label>
+        <label class="dur-opt selected" data-val="24">24 hrs<input type="radio" name="dur" value="24" checked></label>
+        <label class="dur-opt" data-val="48">48 hrs<input type="radio" name="dur" value="48"></label>
+        <label class="dur-opt" data-val="72">72 hrs<input type="radio" name="dur" value="72"></label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button id="clear-override-btn" class="btn-danger" style="display:none" onclick="doClearOverride()">Clear Override</button>
+      <button class="btn-cancel" onclick="closeAdmin()">Cancel</button>
+      <button class="btn-save" onclick="saveAdmin()">Save &amp; Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOTEL BREAKDOWN MODAL -->
+<div class="hotel-modal-overlay" id="hotel-modal">
+  <div class="hotel-modal">
+    <div class="hotel-modal-header">
+      <div>
+        <div class="hotel-modal-title" id="hotel-modal-title">Site Breakdown</div>
+        <div class="hotel-modal-sub" id="hotel-modal-sub">Occupancy by Property</div>
+      </div>
+      <button class="hotel-modal-close" onclick="closeHotelModal()">✕</button>
+    </div>
+    <div id="hotel-modal-body"></div>
+    <div class="hotel-modal-loomi">
+      <span class="hotel-modal-loomi-badge">LOOMI</span>
+      <span class="hotel-modal-loomi-text">Data sourced from LOOMI activation records</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG — update WORKER_BASE after deploying the worker
+// ─────────────────────────────────────────────────────────────────────────────
+const WORKER_BASE = 'https://loomi-status.loomex-it.workers.dev';
+
+// ─── ONTARIO MAP ─────────────────────────────────────────────────────────────
+// Paste the full  data:image/png;base64,...  string from your existing
+// dashboard as the value of MAP_SRC below.
+// ─────────────────────────────────────────────────────────────────────────────
+const MAP_SRC = '';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+const activationId = new URLSearchParams(location.search).get('id');
+let cfg          = null;   // activation config from worker
+let liveData     = null;   // data from worker
+let sites        = [];     // merged config+data
+let hotels       = {};     // merged config+data
+let dataSource   = 'loomi';
+let lastUpdated  = null;
+let overrideExpiry = null;
+let adminToken   = sessionStorage.getItem('loomi_admin_token') || null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function isTokenValid(t) {
+  try { const p = JSON.parse(atob(t.split('.')[0])); return p.exp > Date.now(); }
+  catch { return false; }
+}
+function getFillColor(p){ return p>85?'#C0392B':p>60?'#D9860F':'#2F9879'; }
+function fillPct(s){ const t=s.count+s.capacity; return t?Math.min(100,Math.round(s.count/t*100)):0; }
+
+function applyData() {
+  if (!cfg) return;
+  sites = (cfg.sites||[]).map(s => {
+    const d = (liveData?.sites||[]).find(x=>x.id===s.id);
+    return { ...s, count:d?.count||0, capacity:d?.capacity||0 };
+  });
+  hotels = {};
+  Object.keys(cfg.hotels||{}).forEach(sid => {
+    hotels[sid] = (cfg.hotels[sid]||[]).map(h => {
+      const d = ((liveData?.hotels||{})[sid]||[]).find(x=>x.id===h.id);
+      return { ...h, count:d?.count||0, capacity:d?.capacity||0 };
+    });
+  });
+  dataSource     = liveData?.dataSource     || 'loomi';
+  lastUpdated    = liveData?.lastUpdated    || null;
+  overrideExpiry = liveData?.overrideExpiry || null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API
+// ─────────────────────────────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(WORKER_BASE+path, {
+    ...opts,
+    headers: {
+      'Content-Type':'application/json',
+      ...(adminToken?{'Authorization':'Bearer '+adminToken}:{}),
+      ...(opts.headers||{}),
+    },
+  });
+  const data = await r.json();
+  if (!r.ok) throw Object.assign(new Error(data.error||'API error'),{status:r.status});
+  return data;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderAuthControls() {
+  const el = document.getElementById('auth-controls');
+  if (!el) return;
+  if (adminToken && isTokenValid(adminToken)) {
+    el.innerHTML = `<button class="admin-header-btn" onclick="openAdmin()">⚙ Admin</button><button class="logout-btn" onclick="doLogout()">Logout</button>`;
+  } else {
+    el.innerHTML = `<button class="login-btn" onclick="openLoginModal()">Login</button>`;
+  }
+}
+function doLogout(){
+  adminToken=null; sessionStorage.removeItem('loomi_admin_token'); renderAuthControls();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOGIN MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function openLoginModal(){document.getElementById('login-modal').classList.add('open');}
+function closeLoginModal(){
+  document.getElementById('login-modal').classList.remove('open');
+  document.getElementById('login-password').value='';
+  document.getElementById('login-error').style.display='none';
+}
+async function doLogin(){
+  const pw  = document.getElementById('login-password').value.trim();
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  if (!pw) return;
+  btn.textContent='…'; btn.disabled=true;
+  try {
+    const {token} = await api('/auth/login',{method:'POST',body:JSON.stringify({password:pw})});
+    adminToken=token;
+    sessionStorage.setItem('loomi_admin_token',token);
+    closeLoginModal();
+    renderAuthControls();
+  } catch {
+    err.style.display='block';
+  } finally {
+    btn.textContent='Login'; btn.disabled=false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function openAdmin(){
+  if (!adminToken||!isTokenValid(adminToken)){openLoginModal();return;}
+  // Sub-header
+  const sub=document.getElementById('admin-modal-sub');
+  sub.textContent = dataSource==='manual'&&overrideExpiry
+    ? `Override active · expires ${new Date(overrideExpiry).toLocaleString('en-CA',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'})}`
+    : `${cfg?.name||activationId} // Manual Override`;
+  // Clear button visibility
+  document.getElementById('clear-override-btn').style.display=dataSource==='manual'?'':'none';
+
+  const container=document.getElementById('form-blocks');
+  container.innerHTML='';
+  sites.filter(s=>s.type==='host'||s.type==='host-kingston').forEach(site=>{
+    const block=document.createElement('div');
+    block.className='form-block';
+    const sh=hotels[site.id];
+    let hotelHTML='';
+    if(sh?.length){
+      const rows=sh.map(h=>`
+        <div class="hotel-admin-row">
+          <div class="hotel-admin-name">${h.name}</div>
+          <input class="form-input-sm" type="number" min="0" id="hc-${h.id}" value="${h.count}" placeholder="0">
+          <input class="form-input-sm" type="number" min="0" id="hk-${h.id}" value="${h.capacity}" placeholder="0">
+        </div>`).join('');
+      hotelHTML=`<div class="hotel-admin-section">
+        <div class="hotel-admin-label" style="display:grid;grid-template-columns:1fr 90px 90px;gap:.4rem;margin-bottom:.25rem;"><span>Property</span><span style="text-align:center">Evacuees</span><span style="text-align:center">Avail</span></div>
+        ${rows}</div>`;
+    }
+    block.innerHTML=`
+      <div class="form-block-title">
+        <div class="form-block-dot" style="background:var(--host-green)"></div>${site.name}
+        <span class="form-block-type">Loomex Host Site</span>
+      </div>
+      <div class="form-fields">
+        <div class="form-field"><label>Total Evacuees</label><input class="form-input" type="number" min="0" id="fc-${site.id}" value="${site.count}" placeholder="0"></div>
+        <div class="form-field"><label>Available Capacity</label><input class="form-input" type="number" min="0" id="fk-${site.id}" value="${site.capacity}" placeholder="0"></div>
+        <div class="form-field" style="grid-column:1/-1"><label>Address</label><input class="form-input" type="text" id="fa-${site.id}" value="${site.address||''}" placeholder="123 Main St, City, ON"></div>
+      </div>${hotelHTML}`;
+    container.appendChild(block);
+  });
+
+  // Duration selector — reset to 24h default each open
+  document.querySelectorAll('.dur-opt').forEach(l=>{
+    const v=l.dataset.val;
+    const radio=l.querySelector('input');
+    const selected=(v==='24');
+    radio.checked=selected; l.classList.toggle('selected',selected);
+    l.onclick=()=>{
+      document.querySelectorAll('.dur-opt').forEach(x=>x.classList.remove('selected'));
+      l.classList.add('selected'); radio.checked=true;
+    };
+  });
+  document.getElementById('admin-modal').classList.add('open');
+}
+function closeAdmin(){document.getElementById('admin-modal').classList.remove('open');}
+
+async function saveAdmin(){
+  if (!activationId) return;
+  const durEl=document.querySelector('input[name="dur"]:checked');
+  const durationHours=durEl?parseInt(durEl.value):24;
+
+  const updSites=sites.filter(s=>s.type==='host'||s.type==='host-kingston').map(site=>{
+    const cfgSite=(cfg.sites||[]).find(s2=>s2.id===site.id);
+    const a=document.getElementById('fa-'+site.id);
+    if(cfgSite&&a) cfgSite.address=a.value.trim();
+    return {id:site.id,count:parseInt(document.getElementById('fc-'+site.id)?.value)||0,capacity:parseInt(document.getElementById('fk-'+site.id)?.value)||0};
+  });
+
+  const updHotels={};
+  Object.keys(hotels).forEach(sid=>{
+    updHotels[sid]=hotels[sid].map(h=>({id:h.id,count:parseInt(document.getElementById('hc-'+h.id)?.value)||0,capacity:parseInt(document.getElementById('hk-'+h.id)?.value)||0}));
+  });
+
+  const btn=document.querySelector('#admin-modal .btn-save');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    const result=await api(`/activation/${activationId}/data`,{method:'PUT',body:JSON.stringify({sites:updSites,hotels:updHotels,durationHours})});
+    liveData={dataSource:'manual',lastUpdated:new Date().toISOString(),overrideExpiry:result.expiresAt,sites:updSites,hotels:updHotels};
+    applyData(); closeAdmin(); renderAll();
+  } catch(e){ alert('Failed to save: '+e.message); }
+  finally { btn.textContent='Save & Update'; btn.disabled=false; }
+}
+
+async function doClearOverride(){
+  if (!activationId) return;
+  const btn=document.getElementById('clear-override-btn');
+  btn.textContent='Clearing…'; btn.disabled=true;
+  try {
+    await api(`/activation/${activationId}/data`,{method:'DELETE'});
+    liveData=await api(`/activation/${activationId}/data`);
+    applyData(); closeAdmin(); renderAll();
+  } catch(e){ alert('Failed to clear: '+e.message); }
+  finally { btn.textContent='Clear Override'; btn.disabled=false; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TIMESTAMP
+// ─────────────────────────────────────────────────────────────────────────────
+function renderTimestamp(){
+  const el=document.getElementById('ts-display');
+  const box=document.getElementById('ts-box');
+  if (!el) return;
+  if (box) box.style.display='';
+  if (dataSource==='loomi'){
+    el.innerHTML=`<span class="ts-live">● LIVE</span>`;
+  } else if (lastUpdated){
+    const d=new Date(lastUpdated);
+    const ds=d.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+    const ts=d.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+    el.innerHTML=`<span class="ts-override">${ds} · ${ts}</span>`;
+  } else {
+    el.textContent='Not yet updated';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER PINS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderPins(){
+  const overlay=document.getElementById('map-overlay');
+  overlay.innerHTML='';
+  sites.forEach(site=>{
+    if (site.skipPin) return;
+    const pin=document.createElement('div');
+    pin.className='site-pin type-'+(site.type==='host-kingston'?'kingston':site.type);
+    if (site.type==='host'||site.type==='host-kingston'){ pin.classList.add('clickable'); pin.addEventListener('click',()=>openHotelModal(site.id)); }
+    pin.style.left=site.x+'%'; pin.style.top=site.y+'%';
+    const dir=site.cardDir||'right';
+    const cc=dir==='above'?'above':dir==='below'?'below':dir==='left'?'left':'';
+    const phoneHTML=site.phone?`<a class="pin-phone" href="tel:${site.phone}" onclick="event.stopPropagation()">${site.phone}</a>`:'';
+    const addrHTML=site.address?`<div class="pin-address">${site.address}</div>`:'';
+    let cardHTML='';
+    if (site.type==='home'){
+      cardHTML=`<div class="pin-card ${cc}" style="border-left-color:var(--home-blue)"><div class="pin-city">${site.name}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">Origin Community</div>${addrHTML}</div>`;
+    } else if (site.type==='partner'){
+      cardHTML=`<div class="pin-card ${cc}" style="border-left-color:var(--partner)"><div class="pin-badge partner">Partner Site</div><div class="pin-city">${site.name}</div>${phoneHTML}${addrHTML}</div>`;
+    } else if (site.type==='host-kingston'){
+      const k0=sites.find(s=>s.id==='kingston')||{count:0,capacity:0,phone:'',address:''};
+      const k1=sites.find(s=>s.id==='kingston-west')||{count:0,capacity:0,address:''};
+      const p0=k0.phone?`<a class="pin-dual-phone" href="tel:${k0.phone}" onclick="event.stopPropagation()">${k0.phone}</a>`:'';
+      const a0=k0.address?`<div class="pin-address">${k0.address}</div>`:'';
+      const a1=k1.address?`<div class="pin-address">${k1.address}</div>`:'';
+      cardHTML=`<div class="pin-card ${cc}" style="border-left-color:var(--host-green);min-width:200px"><div class="pin-city" style="margin-bottom:5px">Kingston Area</div><div class="pin-dual-row"><div class="pin-dual-site"><div class="pin-dual-label">Kingston</div><div class="pin-dual-num">${k0.count.toLocaleString()}</div><div class="pin-dual-cap">${k0.capacity} avail · ${fillPct(k0)}%</div>${p0}${a0}</div><div class="pin-dual-site"><div class="pin-dual-label">Kingston West</div><div class="pin-dual-num">${k1.count.toLocaleString()}</div><div class="pin-dual-cap">${k1.capacity} avail · ${fillPct(k1)}%</div>${a1}</div></div></div>`;
+    } else {
+      const pct=fillPct(site);
+      cardHTML=`<div class="pin-card ${cc}" style="border-left-color:var(--host-green)"><div class="pin-city">${site.name}</div><div class="pin-count green">${site.count.toLocaleString()}</div><div class="pin-cap">${site.capacity} avail · ${pct}%</div>${phoneHTML}${addrHTML}<div class="pin-drill">▸ tap for breakdown</div></div>`;
+    }
+    pin.innerHTML=`<div class="pin-dot"></div>${cardHTML}`;
+    overlay.appendChild(pin);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER SIDEBAR
+// ─────────────────────────────────────────────────────────────────────────────
+function renderSidebar(){
+  const hostSites=sites.filter(s=>s.type==='host'||s.type==='host-kingston');
+  const partnerSites=sites.filter(s=>s.type==='partner');
+  const sorted=[...hostSites].sort((a,b)=>fillPct(b)-fillPct(a));
+  document.getElementById('total-num').textContent=hostSites.reduce((s,x)=>s+x.count,0).toLocaleString();
+  document.getElementById('total-cap').textContent=hostSites.reduce((s,x)=>s+x.capacity,0).toLocaleString();
+  const list=document.getElementById('site-list');
+  list.innerHTML='';
+  sorted.forEach((site,i)=>{
+    const pct=fillPct(site);
+    const fc=getFillColor(pct);
+    const card=document.createElement('div');
+    card.className='site-card'; card.style.animationDelay=(i*0.07)+'s';
+    const phoneRow=site.phone?`<div class="site-card-phone"><a href="tel:${site.phone}">${site.phone}</a></div>`:'';
+    const addrHTML=site.address?`<div class="site-card-address">${site.address}</div>`:'';
+    card.innerHTML=`
+      <div class="site-card-header">
+        <div class="site-card-left"><div class="site-card-dot" style="background:var(--host-green)"></div><div><div class="site-card-name">${site.name}</div>${addrHTML}</div></div>
+        <div class="site-card-badge">LOOMEX</div>
+      </div>
+      <div class="site-card-metrics">
+        <div class="site-metric"><div class="site-metric-label">Evacuees</div><div class="site-metric-val" style="color:var(--host-green)">${site.count.toLocaleString()}</div></div>
+        <div class="site-metric"><div class="site-metric-label">Available</div><div class="site-metric-val">${site.capacity.toLocaleString()}</div><div class="site-metric-sub">remaining</div></div>
+        <div class="site-metric"><div class="site-metric-label">Utilization</div><div class="site-metric-val">${pct}%</div><div class="site-metric-sub">occupied</div></div>
+      </div>
+      <div class="site-bar-wrap">
+        <div class="site-bar-row"><span>Occupancy</span><span class="site-bar-pct">${pct}%</span></div>
+        <div class="site-bar-track"><div class="site-bar-fill" style="width:${pct}%;background:${fc}"></div></div>
+      </div>${phoneRow}`;
+    list.appendChild(card);
+  });
+  if (partnerSites.length){
+    const ph=document.createElement('div'); ph.className='section-header'; ph.style.marginTop='.5rem';
+    ph.innerHTML=`<div class="section-title" style="color:rgba(217,134,15,0.7)">Partner Sites</div><div class="section-line"></div>`;
+    list.appendChild(ph);
+    partnerSites.forEach((site,i)=>{
+      const card=document.createElement('div');
+      card.className='site-card partner-card'; card.style.animationDelay=((sorted.length+i)*0.07)+'s';
+      const addrRow=site.address?`<div style="padding:0 .9rem .55rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(255,255,255,.35)">${site.address}</div>`:'';
+      card.innerHTML=`
+        <div class="site-card-header partner">
+          <div class="site-card-left"><div class="site-card-dot" style="background:var(--partner)"></div><div class="site-card-name">${site.name}</div></div>
+          <div class="site-card-badge partner">PARTNER</div>
+        </div>
+        <div class="partner-ref"><div class="partner-ref-info"><div class="partner-ref-label">Contact</div><div class="partner-ref-phone"><a href="tel:${site.phone}">${site.phone}</a></div></div></div>
+        ${addrRow}`;
+      list.appendChild(card);
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOTEL BREAKDOWN MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+function openHotelModal(siteId){
+  const site=sites.find(s=>s.id===siteId);
+  if (!site) return;
+  const isKingston=site.type==='host-kingston';
+  document.getElementById('hotel-modal-title').textContent=isKingston?'Kingston Area':site.name;
+  document.getElementById('hotel-modal-sub').textContent='Occupancy by Property';
+  const body=document.getElementById('hotel-modal-body');
+  body.innerHTML='';
+  const siteIds=isKingston?['kingston','kingston-west']:[siteId];
+  siteIds.forEach(sid=>{
+    const s=sites.find(x=>x.id===sid);
+    const props=hotels[sid];
+    if (!props?.length) return;
+    if (isKingston){const sl=document.createElement('div');sl.className='hotel-section-label';sl.style.marginTop='.75rem';sl.textContent=s?.name||sid;body.appendChild(sl);}
+    props.forEach(h=>{
+      const total=h.count+h.capacity;
+      const pct=total?Math.min(100,Math.round(h.count/total*100)):0;
+      const fc=pct>85?'#C0392B':pct>60?'#D9860F':'#2F9879';
+      const row=document.createElement('div');row.className='hotel-row';
+      row.innerHTML=`<div><div class="hotel-row-name">${h.name}</div><div class="hotel-row-bar"><div class="hotel-row-bar-fill" style="width:${pct}%;background:${fc}"></div></div></div><div style="text-align:right"><div class="hotel-row-count">${h.count.toLocaleString()}</div><div class="hotel-row-cap">evacuees</div></div><div style="text-align:right"><div class="hotel-row-count" style="color:rgba(255,255,255,0.5);font-size:.95rem">${h.capacity}</div><div class="hotel-row-cap">avail</div></div>`;
+      body.appendChild(row);
+    });
+  });
+  document.getElementById('hotel-modal').classList.add('open');
+}
+function closeHotelModal(){document.getElementById('hotel-modal').classList.remove('open');}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER ALL
+// ─────────────────────────────────────────────────────────────────────────────
+function renderAll(){
+  renderTimestamp();
+  renderPins();
+  renderSidebar();
+  renderAuthControls();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MASTER VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+async function renderMasterView(){
+  document.getElementById('master-view').style.display='';
+  document.getElementById('activation-view').style.display='none';
+  document.getElementById('error-view').style.display='none';
+  document.getElementById('active-badge').style.display='none';
+  document.getElementById('ts-box').style.display='none';
+  document.getElementById('export-btn').style.display='none';
+  document.getElementById('header-title').textContent='Loomex Emergency Operations';
+  document.getElementById('header-sub').textContent='Active Activations';
+  document.title='Loomex EOC — Activations';
+  renderAuthControls();
+  const grid=document.getElementById('master-grid');
+  grid.innerHTML='<div class="master-loading">Loading activations…</div>';
+  try {
+    const list=await api('/activations');
+    if (!list.length){ grid.innerHTML='<div class="master-empty">No active activations.</div>'; return; }
+    grid.innerHTML='';
+    list.forEach(a=>{
+      const card=document.createElement('div'); card.className='master-card';
+      card.onclick=()=>location.href='?id='+a.id;
+      const isLive=a.dataSource==='loomi';
+      const badge=isLive
+        ?`<span class="master-live-badge"><span class="master-pulse"></span>LIVE</span>`
+        :`<span class="master-manual-badge">MANUAL</span>`;
+      const last=a.lastUpdated?new Date(a.lastUpdated).toLocaleString('en-CA',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'}):'—';
+      card.innerHTML=`
+        <div class="master-card-header"><div class="master-card-name">${a.name}</div>${badge}</div>
+        <div class="master-card-stat"><div class="master-stat-num">${(a.totalEvacuees||0).toLocaleString()}</div><div class="master-stat-label">Total Evacuees</div></div>
+        <div class="master-card-footer"><span>${a.hostSiteCount} host site${a.hostSiteCount!==1?'s':''}</span><span>Updated ${last}</span></div>`;
+      grid.appendChild(card);
+    });
+  } catch(e){ grid.innerHTML=`<div class="master-empty">Failed to load: ${e.message}</div>`; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT (desktop only — hidden on mobile via CSS)
+// ─────────────────────────────────────────────────────────────────────────────
+function exportImage(){
+  if (typeof html2canvas==='undefined'){ alert('Export requires an internet connection.'); return; }
+  const EXPORT_W=1400,EXPORT_H=900,SIDEBAR_W=320,MAP_W=EXPORT_W-SIDEBAR_W,HEADER_H=62,MAP_H=EXPORT_H-HEADER_H;
+  const hostSites=sites.filter(s=>s.type==='host'||s.type==='host-kingston');
+  const partnerSites=sites.filter(s=>s.type==='partner');
+  const sorted=[...hostSites].sort((a,b)=>fillPct(b)-fillPct(a));
+  const total=hostSites.reduce((s,x)=>s+x.count,0);
+  const totalCap=hostSites.reduce((s,x)=>s+x.capacity,0);
+  let tsStr='Not yet updated';
+  if (dataSource==='loomi') tsStr='● LIVE';
+  else if (lastUpdated){ const d=new Date(lastUpdated); tsStr=d.toLocaleDateString('en-CA',{weekday:'short',year:'numeric',month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}); }
+
+  let cardsHTML='';
+  sorted.forEach(site=>{
+    const pct=fillPct(site);
+    const fc=getFillColor(pct);
+    const ph=site.phone?`<div style="padding:4px 10px 6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#2F9879;border-top:1px solid rgba(255,255,255,.05)">${site.phone}</div>`:'';
+    cardsHTML+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;margin-bottom:6px"><div style="background:linear-gradient(90deg,rgba(26,78,126,0.25),rgba(47,152,121,0.15));border-bottom:1px solid rgba(255,255,255,.07);padding:6px 10px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#2F9879"></div><span style="font-family:Epilogue,sans-serif;font-size:12px;font-weight:700;color:#fff">${site.name}</span></div><span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;background:rgba(47,152,121,0.2);border:1px solid rgba(47,152,121,.35);color:#2F9879">LOOMEX</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,.04)"><div style="background:rgba(255,255,255,.02);padding:7px 8px"><div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Evacuees</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#2F9879">${site.count.toLocaleString()}</div></div><div style="background:rgba(255,255,255,.02);padding:7px 8px"><div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Available</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#fff">${site.capacity.toLocaleString()}</div></div><div style="background:rgba(255,255,255,.02);padding:7px 8px"><div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Utilization</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#fff">${pct}%</div></div></div><div style="padding:5px 10px 7px"><div style="display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,.45);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;font-family:'JetBrains Mono',monospace"><span>Occupancy</span><span style="color:#2F9879">${pct}%</span></div><div style="height:4px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${fc};border-radius:3px"></div></div></div>${ph}</div>`;
+  });
+  let partnerHTML='';
+  partnerSites.forEach(site=>{
+    partnerHTML+=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(217,134,15,.2);border-radius:6px;overflow:hidden;margin-bottom:6px"><div style="background:linear-gradient(90deg,rgba(217,134,15,.15),rgba(217,134,15,.05));border-bottom:1px solid rgba(255,255,255,.07);padding:6px 10px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#D9860F"></div><span style="font-family:Epilogue,sans-serif;font-size:12px;font-weight:700;color:#fff">${site.name}</span></div><span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;background:rgba(217,134,15,.15);border:1px solid rgba(217,134,15,.4);color:#D9860F">PARTNER</span></div><div style="padding:8px 10px"><div style="font-size:8px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Contact</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#D9860F">${site.phone}</div></div></div>`;
+  });
+
+  const frame=document.createElement('div');
+  frame.id='export-frame';
+  frame.style.cssText=`position:fixed;top:-9999px;left:0;width:${EXPORT_W}px;height:${EXPORT_H}px;background:linear-gradient(135deg,#0A1929 0%,#1A2B35 100%);font-family:'DM Sans',sans-serif;color:white;overflow:hidden;z-index:-1`;
+  frame.innerHTML=`<div style="position:absolute;inset:0;background-image:linear-gradient(rgba(47,152,121,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(47,152,121,.03) 1px,transparent 1px);background-size:40px 40px"></div><div style="position:absolute;top:0;left:0;right:0;height:${HEADER_H}px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;border-bottom:2px solid rgba(47,152,121,.2);z-index:2;background:rgba(10,25,41,.95)"><div><div style="font-family:Epilogue,sans-serif;font-size:1.4rem;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;color:#fff">Loomex Emergency Operations</div><div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(255,255,255,.4);letter-spacing:.15em;text-transform:uppercase">Evacuation Status – ${cfg?.name||activationId||''}</div></div><div style="display:flex;align-items:center;gap:.75rem"><div style="display:flex;align-items:center;gap:.6rem;padding:.6rem 1.2rem;background:rgba(47,152,121,.1);border:1px solid rgba(47,152,121,.3);border-left:4px solid #2F9879"><div style="width:8px;height:8px;background:#2F9879;border-radius:50%;box-shadow:0 0 8px #2F9879"></div><span style="font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:600;color:#2F9879;letter-spacing:.05em">ACTIVE EVACUATION</span></div><div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:rgba(255,255,255,.5);padding:.6rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px">As of ${tsStr}</div></div></div><div style="position:absolute;top:${HEADER_H}px;left:0;width:${MAP_W}px;height:${MAP_H}px;overflow:hidden"><img src="${MAP_SRC}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92%;height:92%;object-fit:contain;filter:brightness(.45) sepia(1) hue-rotate(175deg) saturate(.8) brightness(1.6);opacity:.9"><div id="ef-pins" style="position:absolute;inset:0"></div></div><div style="position:absolute;top:${HEADER_H}px;right:0;width:${SIDEBAR_W}px;height:${MAP_H}px;background:rgba(10,25,41,.7);border-left:1px solid rgba(47,152,121,.15);overflow:hidden"><div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1.25rem .4rem"><span style="font-family:Epilogue,sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)">System-Wide Total</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.15),transparent)"></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.25rem 1rem .6rem"><div style="background:linear-gradient(135deg,rgba(26,78,126,.3),rgba(47,152,121,.2));border:1px solid rgba(47,152,121,.25);border-left:4px solid #2F9879;padding:.7rem .9rem"><div style="font-size:.6rem;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Evacuees</div><div style="font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;color:#fff;line-height:1">${total.toLocaleString()}</div></div><div style="background:linear-gradient(135deg,rgba(26,78,126,.3),rgba(26,78,126,.2));border:1px solid rgba(45,106,159,.25);border-left:4px solid #2D6A9F;padding:.7rem .9rem"><div style="font-size:.6rem;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Capacity</div><div style="font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;color:#fff;line-height:1">${totalCap.toLocaleString()}</div></div></div><div style="display:flex;align-items:center;gap:.75rem;padding:.2rem 1.25rem .4rem"><span style="font-family:Epilogue,sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)">Host Sites</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.15),transparent)"></div></div><div style="padding:0 1rem .5rem">${cardsHTML}</div>${partnerHTML?`<div style="display:flex;align-items:center;gap:.75rem;padding:.2rem 1.25rem .4rem"><span style="font-family:Epilogue,sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(217,134,15,.7)">Partner Sites</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.15),transparent)"></div></div><div style="padding:0 1rem">${partnerHTML}</div>`:''}<div style="position:absolute;bottom:0;left:0;right:0;padding:.6rem 1.25rem;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:1rem;background:rgba(10,25,41,.7)"><div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#2F9879;border:2px solid rgba(255,255,255,.5)"></div><span style="font-size:.6rem;color:rgba(255,255,255,.45)">Loomex Host</span></div><div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#D9860F;border:2px solid rgba(255,255,255,.5)"></div><span style="font-size:.6rem;color:rgba(255,255,255,.45)">Partner</span></div><div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#2D6A9F;border:2px solid rgba(255,255,255,.5)"></div><span style="font-size:.6rem;color:rgba(255,255,255,.45)">Home Community</span></div></div></div>`;
+
+  document.body.appendChild(frame);
+
+  // Render pins into export frame
+  const efPins=frame.querySelector('#ef-pins');
+  function efPin(x,y,dotColor,cHTML){
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,-50%);z-index:5`;
+    el.innerHTML=`<div style="width:18px;height:18px;border-radius:50%;background:${dotColor};border:2.5px solid rgba(255,255,255,.85);box-shadow:0 0 0 3px rgba(0,0,0,.25);position:relative;z-index:2"></div>${cHTML}`;
+    efPins.appendChild(el);
+  }
+  const kash=sites.find(s=>s.id==='kashechewan');
+  if (kash) efPin(kash.x,kash.y,'#2D6A9F',`<div style="position:absolute;left:26px;top:50%;transform:translateY(-50%);background:rgba(10,25,41,.93);border:1px solid rgba(255,255,255,.1);border-left:3px solid #2D6A9F;padding:7px 11px;white-space:nowrap"><div style="font-family:Epilogue,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:2px">${kash.name}</div><div style="font-size:10px;color:rgba(255,255,255,.5)">Origin Community</div></div>`);
+  sites.filter(s=>s.type==='host').forEach(site=>{
+    const pct=fillPct(site);
+    const ph=site.phone?`<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2F9879;margin-top:3px">${site.phone}</div>`:'';
+    const cardPos=site.cardDir==='above'?`position:absolute;left:50%;bottom:26px;transform:translateX(-50%)`:site.cardDir==='below'?`position:absolute;left:50%;top:26px;transform:translateX(0)`:`position:absolute;left:26px;top:50%;transform:translateY(-50%)`;
+    efPin(site.x,site.y,'#2F9879',`<div style="${cardPos};background:rgba(10,25,41,.93);border:1px solid rgba(255,255,255,.1);border-left:3px solid #2F9879;padding:7px 11px;white-space:nowrap"><div style="font-family:Epilogue,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:2px">${site.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#2F9879">${site.count.toLocaleString()}</div><div style="font-size:9px;color:rgba(255,255,255,.4)">${site.capacity} avail · ${pct}%</div>${ph}</div>`);
+  });
+  const k0=sites.find(s=>s.id==='kingston')||{count:0,capacity:0,phone:'',x:60,y:62};
+  const k1=sites.find(s=>s.id==='kingston-west')||{count:0,capacity:0};
+  efPin(k0.x,k0.y,'#2F9879',`<div style="position:absolute;left:26px;top:50%;transform:translateY(-50%);background:rgba(10,25,41,.93);border:1px solid rgba(255,255,255,.1);border-left:3px solid #2F9879;padding:7px 11px;white-space:nowrap;min-width:190px"><div style="font-family:Epilogue,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:4px">Kingston Area</div><div style="display:flex;gap:10px"><div style="flex:1"><div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px">Kingston</div><div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#2F9879">${k0.count}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">${k0.capacity} avail · ${fillPct(k0)}%</div></div><div style="flex:1;padding-left:8px;border-left:1px solid rgba(255,255,255,.1)"><div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:1px">Kingston West</div><div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#2F9879">${k1.count}</div><div style="font-size:8px;color:rgba(255,255,255,.35)">${k1.capacity} avail · ${fillPct(k1)}%</div></div></div></div>`);
+  sites.filter(s=>s.type==='partner').forEach(site=>{
+    efPin(site.x,site.y,'#D9860F',`<div style="position:absolute;left:26px;top:50%;transform:translateY(-50%);background:rgba(10,25,41,.93);border:1px solid rgba(255,255,255,.1);border-left:3px solid #D9860F;padding:7px 11px;white-space:nowrap"><div style="font-size:8px;font-weight:700;color:#D9860F;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px">Partner Site</div><div style="font-family:Epilogue,sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:2px">${site.name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#D9860F">${site.phone}</div></div>`);
+  });
+
+  setTimeout(()=>{
+    html2canvas(frame,{scale:2,useCORS:true,backgroundColor:'#0A1929',logging:false,width:EXPORT_W,height:EXPORT_H,windowWidth:EXPORT_W,windowHeight:EXPORT_H}).then(canvas=>{
+      document.body.removeChild(frame);
+      const _d=new Date();
+      const a=document.createElement('a');
+      a.download=`Evacuation-Status-${_d.toISOString().slice(0,10)}-${String(_d.getHours()).padStart(2,'0')}${String(_d.getMinutes()).padStart(2,'0')}hrs.jpg`;
+      a.href=canvas.toDataURL('image/jpeg',0.95);
+      a.click();
+    });
+  },200);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL BACKDROPS
+// ─────────────────────────────────────────────────────────────────────────────
+document.getElementById('login-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeLoginModal();});
+document.getElementById('admin-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAdmin();});
+document.getElementById('hotel-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHotelModal();});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+async function init(){
+  const mapEl=document.getElementById('map-img');
+  if (mapEl&&MAP_SRC) mapEl.src=MAP_SRC;
+
+  // Validate stored token
+  if (adminToken&&!isTokenValid(adminToken)){ adminToken=null; sessionStorage.removeItem('loomi_admin_token'); }
+
+  if (!activationId){ await renderMasterView(); return; }
+
+  try {
+    [cfg,liveData]=await Promise.all([
+      api(`/activation/${activationId}/config`),
+      api(`/activation/${activationId}/data`),
+    ]);
+    applyData();
+
+    document.getElementById('header-title').textContent='Loomex Emergency Operations';
+    document.getElementById('header-sub').textContent=`Evacuation Status — ${cfg.name||activationId}`;
+    document.title=`${cfg.name||activationId} | Loomex Emergency Operations`;
+    document.getElementById('active-badge').style.display='';
+    document.getElementById('export-btn').style.display='';
+    document.getElementById('activation-view').style.display='';
+    renderAll();
+
+    // Poll data every 30 s — worker handles override expiry server-side
+    setInterval(async()=>{
+      try {
+        const fresh=await api(`/activation/${activationId}/data`);
+        liveData=fresh; applyData(); renderAll();
+      } catch(e){ console.warn('Poll error:',e.message); }
+    },30000);
+
+  } catch(e){
+    document.getElementById('error-msg').textContent=
+      e.status===404?'Activation not found.':'Failed to load activation: '+e.message;
+    document.getElementById('error-view').style.display='';
+    document.getElementById('header-sub').textContent='Error';
+    renderAuthControls();
+  }
+}
+
+init();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
