@@ -842,6 +842,7 @@ async function setContractorStatus(contractorRecordId, status, btn) {
     document.querySelector(`[data-record-id="${contractorRecordId}"]`)?.remove();
     execData = null;
     showToast(`Contractor marked as ${status}`, 'success');
+    loadExecSummary();
   } catch (e) {
     btn.disabled = false; btn.textContent = status === 'Inactive' ? 'Inactive' : 'Remove';
     showToast('Error: ' + e.message, 'error');
