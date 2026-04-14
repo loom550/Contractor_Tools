@@ -188,6 +188,55 @@
     .upload-text { font-size: 13px; color: #555; }
     .upload-filename { font-size: 13px; font-weight: bold; color: var(--green); margin-top: 6px; }
 
+    /* ---- TAB BAR ---- */
+    .tab-bar {
+      background: white; display: flex; border-bottom: 2px solid #f0f0f0;
+      position: sticky; top: 62px; z-index: 99;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .tab {
+      flex: 1; padding: 12px; border: none; background: none;
+      font-size: 13px; font-weight: bold; color: var(--grey);
+      cursor: pointer; border-bottom: 3px solid transparent;
+      transition: all 0.15s; margin-bottom: -2px;
+    }
+    .tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+    /* ---- REIMBURSEMENT LIST ---- */
+    .reimb-group { margin-bottom: 20px; }
+    .reimb-group-title {
+      font-size: 11px; font-weight: bold; color: var(--grey);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 8px; padding: 4px 0;
+    }
+    .reimb-card {
+      background: white; border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-left: 4px solid var(--warn);
+    }
+    .reimb-card.issued   { border-left-color: #3498db; }
+    .reimb-card.handedout { border-left-color: var(--green); }
+    .reimb-card.processed { border-left-color: var(--green); }
+    .reimb-name { font-size: 15px; font-weight: bold; color: var(--navy); margin-bottom: 2px; }
+    .reimb-meta { font-size: 12px; color: var(--grey); margin-bottom: 8px; }
+    .reimb-badge {
+      display: inline-block; font-size: 11px; font-weight: bold;
+      padding: 3px 9px; border-radius: 10px; margin-bottom: 10px;
+    }
+    .badge-pending   { background: #fff8e1; color: #c8810a; }
+    .badge-issued    { background: #e3f2fd; color: #1565c0; }
+    .badge-handedout { background: #e8f5ee; color: #00A651; }
+    .badge-processed { background: #e8f5ee; color: #00A651; }
+    .reimb-action {
+      width: 100%; padding: 11px; background: var(--navy); color: white;
+      border: none; border-radius: 8px; font-size: 14px;
+      font-weight: bold; cursor: pointer; margin-top: 4px;
+    }
+    .reimb-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ---- CONSENT SCREEN ---- */
+    .consent-wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
+
     /* ---- PROGRESS ---- */
     .progress-wrap {
       display: none; background: white; border-radius: 10px;
@@ -310,10 +359,14 @@
 <!-- MAIN FORM SCREEN                                                  -->
 <!-- ================================================================ -->
 <div id="screen-form" class="screen">
-  <div class="page-header">
+  <<div class="page-header">
     <div class="logo">L</div>
     <h1>CM Shopping Allotment</h1>
     <div class="hub-badge" id="hub-badge">-</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" id="tab-submit" onclick="switchTab('submit')">Submission</button>
+    <button class="tab" id="tab-reimbursements" onclick="switchTab('reimbursements')">Reimbursements</button>
   </div>
 
   <div class="form-wrap">
@@ -437,6 +490,75 @@
   </div>
 </div>
 <!-- ================================================================ -->
+<!-- REIMBURSEMENTS SCREEN                                            -->
+<!-- ================================================================ -->
+<div id="screen-reimbursements" class="screen">
+  <div class="page-header">
+    <div class="logo">L</div>
+    <h1>CM Shopping Allotment</h1>
+    <div class="hub-badge" id="hub-badge-reimb">-</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab" id="tab-submit-r" onclick="switchTab('submit')">Submission</button>
+    <button class="tab active" id="tab-reimbursements-r" onclick="switchTab('reimbursements')">Reimbursements</button>
+  </div>
+  <div class="form-wrap">
+    <div id="reimb-content">
+      <div class="ev-empty">Loading reimbursements...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- CONSENT SCREEN                                                    -->
+<!-- ================================================================ -->
+<div id="screen-consent" class="screen">
+  <div class="page-header">
+    <div class="logo">L</div>
+    <h1>Reimbursement Acknowledgement</h1>
+    <div class="hub-badge" id="hub-badge-consent">-</div>
+  </div>
+  <div class="consent-wrap">
+    <div class="card">
+      <div class="card-title">Recipient Details</div>
+      <div id="consent-summary" style="margin-bottom:14px;font-size:14px;color:#333;line-height:1.6;"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Staff Name</div>
+      <input type="text" id="consent-staff-name" placeholder="Your full name">
+    </div>
+    <div class="card">
+      <div class="card-title">Acknowledgement Signature</div>
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:12px;">
+        <input type="checkbox" id="consent-paper-sig" style="width:22px;height:22px;cursor:pointer;accent-color:var(--navy);flex-shrink:0;" onchange="toggleConsentSig(this)">
+        <label for="consent-paper-sig" style="font-size:13px;color:#444;cursor:pointer;margin:0;">
+          Signature collected on paper
+        </label>
+      </div>
+      <div id="consent-sig-wrap">
+        <div class="sig-declaration" style="margin-bottom:12px;">
+          I confirm that I have received the reimbursement payment for the clothing purchased on my behalf.
+        </div>
+        <div class="canvas-wrap" id="consent-canvas-wrap">
+          <canvas id="consent-canvas" height="160"></canvas>
+        </div>
+        <div class="canvas-actions">
+          <span class="canvas-hint">Sign above with your finger</span>
+          <button class="btn-clear" onclick="clearConsentCanvas()">Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="progress-wrap" id="consent-progress-wrap">
+      <div class="progress-label" id="consent-progress-label">Processing...</div>
+      <div class="progress-bar"><div class="progress-fill" id="consent-progress-fill" style="width:0%"></div></div>
+    </div>
+    <button class="submit-btn" id="consent-submit-btn" onclick="submitConsent()">Confirm Handout & Generate Receipt</button>
+    <button class="btn-secondary" style="margin-top:8px;" onclick="switchTab('reimbursements')">Cancel</button>
+    <div style="height:32px;"></div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
 <!-- SIGNATURE SCREEN                                                  -->
 <!-- ================================================================ -->
 <div id="screen-signatures" class="screen">
@@ -519,7 +641,7 @@ async function doAuth() {
     if (data.hub) {
       currentHub = data.hub;
       const label = currentHub.charAt(0).toUpperCase() + currentHub.slice(1);
-      ['hub-badge','hub-badge-sig','hub-badge-success'].forEach(id => {
+      ['hub-badge','hub-badge-sig','hub-badge-success','hub-badge-reimb','hub-badge-consent'].forEach(id => {
         document.getElementById(id).textContent = label;
       });
       showScreen('screen-form');
@@ -556,6 +678,249 @@ function handleDDFileSelect(input) {
     ddFile = input.files[0];
     document.getElementById('dd-upload-filename').textContent = ddFile.name;
     document.getElementById('dd-upload-zone').classList.add('has-file');
+  }
+}
+
+// ---- TAB SWITCHING ----
+
+function switchTab(tab) {
+  if (tab === 'submit') {
+    showScreen('screen-form');
+  } else {
+    document.getElementById('hub-badge-reimb').textContent =
+      currentHub.charAt(0).toUpperCase() + currentHub.slice(1);
+    showScreen('screen-reimbursements');
+    loadReimbursements();
+  }
+}
+
+// ---- REIMBURSEMENTS ----
+
+let reimbursementData   = [];
+let activeConsent       = null;
+let consentSignature    = null;
+
+async function loadReimbursements() {
+  document.getElementById('reimb-content').innerHTML =
+    '<div class="ev-empty">Loading reimbursements...</div>';
+  try {
+    const res   = await fetch(`${WORKER}/reimbursements?hub=${currentHub}`);
+    const items = await res.json();
+
+    // Group by submissionRef - one card per submission
+    const grouped = {};
+    for (const item of items) {
+      if (!grouped[item.submissionRef]) {
+        grouped[item.submissionRef] = {
+          submissionRef:       item.submissionRef,
+          chequeName:          item.chequeName,
+          paymentRouting:      item.paymentRouting,
+          isLoomexVendor:      item.isLoomexVendor,
+          reimbursementStatus: item.reimbursementStatus,
+          submissionDate:      item.submissionDate,
+          submittedBy:         item.submittedBy,
+          folderUrl:           item.folderUrl,
+          consentPdfUrl:       item.consentPdfUrl,
+          chequeIssuedDate:    item.chequeIssuedDate,
+          chequeIssuedBy:      item.chequeIssuedBy,
+          chequeHandedOutDate: item.chequeHandedOutDate,
+          chequeHandedOutBy:   item.chequeHandedOutBy,
+          members:             [],
+          total:               0
+        };
+      }
+      grouped[item.submissionRef].members.push({
+        name:   item.evacueeName,
+        id:     item.evacueeId,
+        amount: item.amount
+      });
+      grouped[item.submissionRef].total += item.amount;
+    }
+
+    reimbursementData = Object.values(grouped);
+
+    if (reimbursementData.length === 0) {
+      document.getElementById('reimb-content').innerHTML =
+        '<div class="ev-empty" style="padding:40px 16px;">No reimbursements for this hub.</div>';
+      return;
+    }
+
+    const statusOrder  = ['Cheque Issued', 'Pending', 'Cheque Handed Out', 'Payment Processed'];
+    const statusLabels = {
+      'Pending':            'Pending',
+      'Cheque Issued':      'Cheque Issued',
+      'Cheque Handed Out':  'Cheque Handed Out',
+      'Payment Processed':  'Payment Processed'
+    };
+    const statusClass = {
+      'Pending':            'pending',
+      'Cheque Issued':      'issued',
+      'Cheque Handed Out':  'handedout',
+      'Payment Processed':  'processed'
+    };
+    const badgeClass = {
+      'Pending':            'badge-pending',
+      'Cheque Issued':      'badge-issued',
+      'Cheque Handed Out':  'badge-handedout',
+      'Payment Processed':  'badge-processed'
+    };
+
+    let html = '';
+    for (const status of statusOrder) {
+      const group = reimbursementData.filter(r => (r.reimbursementStatus || 'Pending') === status);
+      if (group.length === 0) continue;
+      html += `<div class="reimb-group">
+        <div class="reimb-group-title">${statusLabels[status]} (${group.length})</div>`;
+      for (const r of group) {
+        const sc   = statusClass[r.reimbursementStatus] || 'pending';
+        const bc   = badgeClass[r.reimbursementStatus]  || 'badge-pending';
+        const date = r.submissionDate
+          ? new Date(r.submissionDate).toLocaleDateString('en-CA', { year:'numeric', month:'short', day:'numeric' })
+          : '';
+        const routing = r.paymentRouting || 'Cheque';
+        const memberNames = r.members.map(m => m.name).join(', ');
+        let actionBtn = '';
+        if (r.reimbursementStatus === 'Cheque Issued') {
+          actionBtn = `<button class="reimb-action" data-ref="${r.submissionRef}" onclick="startConsent('${r.submissionRef}')">
+            ✍️ Mark as Handed Out
+          </button>`;
+        } else if (r.consentPdfUrl) {
+          actionBtn = `<a href="${r.consentPdfUrl}" target="_blank" style="display:block;font-size:12px;color:var(--navy);margin-top:6px;">View Consent PDF</a>`;
+        }
+        html += `<div class="reimb-card ${sc}">
+          <div class="reimb-name">${r.chequeName || 'Unknown'}</div>
+          <div class="reimb-meta">${memberNames} &nbsp;·&nbsp; $${r.total.toFixed(2)} &nbsp;·&nbsp; ${routing}</div>
+          <div class="reimb-meta">${r.submissionRef} &nbsp;·&nbsp; ${date}</div>
+          <span class="reimb-badge ${bc}">${statusLabels[r.reimbursementStatus] || 'Pending'}</span>
+          ${r.chequeIssuedDate ? `<div style="font-size:11px;color:var(--grey);">Issued: ${new Date(r.chequeIssuedDate).toLocaleDateString('en-CA')} by ${r.chequeIssuedBy}</div>` : ''}
+          ${r.chequeHandedOutDate ? `<div style="font-size:11px;color:var(--grey);">Handed out: ${new Date(r.chequeHandedOutDate).toLocaleDateString('en-CA')} by ${r.chequeHandedOutBy}</div>` : ''}
+          ${actionBtn}
+        </div>`;
+      }
+      html += '</div>';
+    }
+    document.getElementById('reimb-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('reimb-content').innerHTML =
+      `<div class="ev-empty">Error loading reimbursements: ${e.message}</div>`;
+  }
+}
+
+function startConsent(submissionRef) {
+  activeConsent    = reimbursementData.find(r => r.submissionRef === submissionRef);
+  consentSignature = null;
+  if (!activeConsent) return;
+
+  document.getElementById('hub-badge-consent').textContent =
+    currentHub.charAt(0).toUpperCase() + currentHub.slice(1);
+  document.getElementById('consent-staff-name').value   = '';
+  document.getElementById('consent-paper-sig').checked  = false;
+  document.getElementById('consent-sig-wrap').style.display = 'block';
+  document.getElementById('consent-progress-wrap').classList.remove('active');
+  document.getElementById('consent-submit-btn').disabled = false;
+
+  const memberRows = activeConsent.members.map(m =>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;">
+      <span>${m.name}</span><span style="font-weight:bold;">$${parseFloat(m.amount).toFixed(2)}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('consent-summary').innerHTML = `
+    <div style="margin-bottom:12px;">
+      <strong style="font-size:16px;color:var(--navy);">${activeConsent.chequeName}</strong><br>
+      <span style="font-size:12px;color:var(--grey);">${activeConsent.paymentRouting} &nbsp;·&nbsp; ${activeConsent.submissionRef}</span>
+    </div>
+    ${memberRows}
+    <div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:bold;color:var(--navy);">
+      <span>Total</span><span>$${activeConsent.total.toFixed(2)}</span>
+    </div>`;
+
+  showScreen('screen-consent');
+  setTimeout(() => initConsentCanvas(), 100);
+}
+
+function toggleConsentSig(cb) {
+  document.getElementById('consent-sig-wrap').style.display = cb.checked ? 'none' : 'block';
+}
+
+function initConsentCanvas() {
+  const canvas = document.getElementById('consent-canvas');
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.offsetWidth;
+  canvas.height = 160;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1a3a5c'; ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  let drawing = false;
+
+  function getPos(e) {
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  }
+  function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+  function move(e)  { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+  function end(e)   { if (!drawing) return; e.preventDefault(); drawing = false; consentSignature = canvas.toDataURL('image/png'); }
+
+  canvas.addEventListener('mousedown',  start);
+  canvas.addEventListener('mousemove',  move);
+  canvas.addEventListener('mouseup',    end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove',  move,  { passive: false });
+  canvas.addEventListener('touchend',   end,   { passive: false });
+}
+
+function clearConsentCanvas() {
+  const canvas = document.getElementById('consent-canvas');
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  consentSignature = null;
+}
+
+async function submitConsent() {
+  const paperSig  = document.getElementById('consent-paper-sig').checked;
+  const staffName = document.getElementById('consent-staff-name').value.trim();
+  if (!staffName) { alert('Please enter your name.'); return; }
+  if (!paperSig && !consentSignature) { alert('Please collect a signature or check the paper signature box.'); return; }
+
+  const btn = document.getElementById('consent-submit-btn');
+  btn.disabled = true;
+  const progressWrap = document.getElementById('consent-progress-wrap');
+  progressWrap.classList.add('active');
+  document.getElementById('consent-progress-label').textContent = 'Generating consent PDF...';
+  document.getElementById('consent-progress-fill').style.width = '40%';
+
+  try {
+    const handedOutDate = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+    const res  = await fetch(`${WORKER}/reimbursements/hand-out`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        submissionRef: activeConsent.submissionRef,
+        handedOutBy:   staffName,
+        handedOutDate,
+        signature:     paperSig ? null : consentSignature,
+        paperSig,
+        members:       activeConsent.members,
+        chequeName:    activeConsent.chequeName,
+        totalAmount:   activeConsent.total,
+        hub:           currentHub,
+        paymentRouting: activeConsent.paymentRouting
+      })
+    });
+    const data = await res.json();
+    document.getElementById('consent-progress-fill').style.width = '100%';
+    document.getElementById('consent-progress-label').textContent = 'Done!';
+    setTimeout(() => {
+      progressWrap.classList.remove('active');
+      switchTab('reimbursements');
+    }, 1200);
+  } catch(e) {
+    btn.disabled = false;
+    progressWrap.classList.remove('active');
+    alert('Failed: ' + e.message);
   }
 }
 
