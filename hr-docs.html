@@ -757,7 +757,7 @@ function renderContractorTable(list, context) {
           </span>
         </span>`;
 
-    return `<tr id="execrow-${c.recordId}">
+    return `<tr id="execrow-${c.recordId}" data-record-id="${c.recordId}">
       <td class="mono">${c.contractorId}</td>
       <td><strong>${c.name}</strong>${deployedHtml ? '<br>' + deployedHtml : ''}</td>
       <td>
@@ -790,8 +790,8 @@ function renderContractorTable(list, context) {
 }
 
 async function markReceived(contractorRecordId, checkboxField, btn) {
-  btn.disabled = true; btn.textContent = '…';
   try {
+    const res  = await fetch(`${WORKER}/hr-set-status`, {
     const res  = await fetch(`${WORKER}/hr-mark-received`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: sessionToken, contractorRecordId, checkboxField }),
@@ -839,7 +839,7 @@ async function setContractorStatus(contractorRecordId, status, btn) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     // Remove the row from the table immediately
-    document.getElementById(`execrow-${contractorRecordId}`)?.remove();
+    document.querySelector(`[data-record-id="${contractorRecordId}"]`)?.remove();
     showToast(`Contractor marked as ${status}`, 'success');
   } catch (e) {
     btn.disabled = false; btn.textContent = status === 'Inactive' ? 'Inactive' : 'Remove';
