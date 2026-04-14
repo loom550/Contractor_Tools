@@ -1119,14 +1119,13 @@ function goToSignatures() {
   const paidBy                 = document.querySelector('input[name="paid-by"]:checked').value;
   const reimbursementRequired  = paidBy === 'Community Member';
   const chequeName             = reimbursementRequired ? document.getElementById('cm-cheque-name').value.trim() : null;
-  const paymentRouting         = reimbursementRequired ? document.querySelector('input[name="payment-routing"]:checked').value : null;
+  const paymentRouting         = reimbursementRequired ? document.querySelector('input[name="payment-routing"]:checked').value : 'Cheque';
   const isLoomexVendor         = paymentRouting === 'LoomexVendor';
   if (reimbursementRequired && !chequeName) {
     btn.disabled = false;
     alert('Please enter the full name for cheque reimbursement.');
     return;
   }
-const paymentRouting = reimbursementRequired ? document.querySelector('input[name="payment-routing"]:checked').value : 'Cheque';
   if (reimbursementRequired && paymentRouting === 'DirectDeposit' && !ddFile) {
     btn.disabled = false;
     alert('Please attach banking information or a void cheque for direct deposit.');
