@@ -840,6 +840,7 @@ async function setContractorStatus(contractorRecordId, status, btn) {
     if (!data.success) throw new Error(data.error);
     // Remove the row from the table immediately
     document.querySelector(`[data-record-id="${contractorRecordId}"]`)?.remove();
+    execData = null;
     showToast(`Contractor marked as ${status}`, 'success');
   } catch (e) {
     btn.disabled = false; btn.textContent = status === 'Inactive' ? 'Inactive' : 'Remove';
