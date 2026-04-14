@@ -736,16 +736,26 @@ function renderContractorTable(list, context) {
     const docPips = docKeys.map(d => {
       const done = c.docs[d.key];
       if (done) return `<span class="doc-pip done">✓ ${d.label}</span>`;
-      return `<span class="doc-pip missing" style="cursor:pointer" title="Click to upload ${d.label}"
-        onclick="openUploadModal('${c.contractorId}','${escStr(c.name)}','${c.recordId}','${docTypeMap[d.key]}','${escStr(docLabelMap[d.key])}',false)">
-        ⬆ ${d.label}</span>`;
+      return `<span class="doc-pip missing">✗ ${d.label}
+        <span style="margin-left:4px;display:inline-flex;gap:3px">
+          <button onclick="openUploadModal('${c.contractorId}','${escStr(c.name)}','${c.recordId}','${docTypeMap[d.key]}','${escStr(docLabelMap[d.key])}',false)"
+            style="font-size:10px;padding:1px 5px;border-radius:3px;border:none;background:#1a4e7e;color:white;cursor:pointer" title="Upload file">⬆</button>
+          <button onclick="markReceived('${c.recordId}','${escStr(docLabelMap[d.key])}',this)"
+            style="font-size:10px;padding:1px 5px;border-radius:3px;border:none;background:#2f9879;color:white;cursor:pointer" title="Mark as received without uploading">✓</button>
+        </span>
+      </span>`;
     }).join('');
 
     const crjmPip = c.crjm
       ? `<span class="doc-pip done">✓ CRJM</span>`
-      : `<span class="doc-pip missing" style="cursor:pointer" title="Click to upload CRJM"
-          onclick="openUploadModal('${c.contractorId}','${escStr(c.name)}','${c.recordId}','crjm','CRJM Check',true)">
-          ⬆ CRJM</span>`;
+      : `<span class="doc-pip missing">✗ CRJM
+          <span style="margin-left:4px;display:inline-flex;gap:3px">
+            <button onclick="openUploadModal('${c.contractorId}','${escStr(c.name)}','${c.recordId}','crjm','CRJM Check',true)"
+              style="font-size:10px;padding:1px 5px;border-radius:3px;border:none;background:#1a4e7e;color:white;cursor:pointer" title="Upload file">⬆</button>
+            <button onclick="markReceivedCrjm('${c.recordId}',this)"
+              style="font-size:10px;padding:1px 5px;border-radius:3px;border:none;background:#2f9879;color:white;cursor:pointer" title="Mark as received without uploading">✓</button>
+          </span>
+        </span>`;
 
     return `<tr>
       <td class="mono">${c.contractorId}</td>
@@ -767,6 +777,45 @@ function renderContractorTable(list, context) {
     </thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+async function markReceived(contractorRecordId, checkboxField, btn) {
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res  = await fetch(`${WORKER}/hr-mark-received`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: sessionToken, contractorRecordId, checkboxField }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    // Replace the whole pip with a done pip
+    const pip = btn.closest('.doc-pip');
+    pip.className = 'doc-pip done';
+    pip.innerHTML = '✓ ' + checkboxField.replace(' Certificate', '').replace(' & Safety', ' H&S');
+    showToast(`${checkboxField} marked as received`, 'success');
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '✓';
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function markReceivedCrjm(contractorRecordId, btn) {
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res  = await fetch(`${WORKER}/hr-mark-received`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: sessionToken, contractorRecordId, checkboxField: 'CRJM Check Completed' }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const pip = btn.closest('.doc-pip');
+    pip.className = 'doc-pip done';
+    pip.innerHTML = '✓ CRJM';
+    showToast('CRJM marked as received', 'success');
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '✓';
+    showToast('Error: ' + e.message, 'error');
+  }
 }
 
 // ── MODAL ─────────────────────────────────────────────────────
