@@ -676,42 +676,51 @@ function renderPins(){
 // RENDER SIDEBAR
 // ─────────────────────────────────────────────────────────────────────────────
 function renderSidebar(){
-  const hostSites=sites.filter(s=>s.type==='host'||s.type==='host-kingston');
+  const allHost=sites.filter(s=>s.type==='host'||s.type==='host-kingston');
   const partnerSites=sites.filter(s=>s.type==='partner');
-
-  // Combine host-kingston sites into one display item
-  const kingstonSites=sites.filter(s=>s.type==='host-kingston');
   const regularHosts=sites.filter(s=>s.type==='host');
-  const kCombined=kingstonSites.length?{_combined:true,name:'Kingston Area',count:kingstonSites.reduce((s,x)=>s+x.count,0),capacity:kingstonSites.reduce((s,x)=>s+x.capacity,0),sites:kingstonSites}:null;
-  const displayItems=[...regularHosts,...(kCombined?[kCombined]:[])].sort((a,b)=>fillPct(b)-fillPct(a));
+  const kSites=sites.filter(s=>s.type==='host-kingston');
 
-  document.getElementById('total-num').textContent=hostSites.reduce((s,x)=>s+x.count,0).toLocaleString();
-  document.getElementById('total-cap').textContent=hostSites.reduce((s,x)=>s+x.capacity,0).toLocaleString();
+  document.getElementById('total-num').textContent=allHost.reduce((s,x)=>s+x.count,0).toLocaleString();
+  document.getElementById('total-cap').textContent=allHost.reduce((s,x)=>s+x.capacity,0).toLocaleString();
+
   const list=document.getElementById('site-list');
   list.innerHTML='';
+
+  // Build display list — regular hosts + one combined Kingston entry
+  const kCombined=kSites.length?{
+    _kingston:true,
+    name:'Kingston Area',
+    count:kSites.reduce((s,x)=>s+x.count,0),
+    capacity:kSites.reduce((s,x)=>s+x.capacity,0),
+    _sites:kSites
+  }:null;
+
+  const displayItems=[...regularHosts,...(kCombined?[kCombined]:[])].sort((a,b)=>fillPct(b)-fillPct(a));
 
   displayItems.forEach((item,i)=>{
     const pct=fillPct(item);
     const fc=getFillColor(pct);
     const card=document.createElement('div');
-    card.className='site-card'; card.style.animationDelay=(i*0.07)+'s';
+    card.className='site-card';
+    card.style.animationDelay=(i*0.07)+'s';
 
-    if(item._combined){
-      const subsites=item.sites.map(s=>{
+    if(item._kingston){
+      const rows=item._sites.map(s=>{
         const sp=fillPct(s);
-        return `<div style="padding:.55rem .7rem;flex:1">
-          <div style="font-size:.58rem;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">${s.name}</div>
+        return `<div style="flex:1;padding:.55rem .7rem;">
+          <div style="font-size:.58rem;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${s.name}</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--host-green);line-height:1">${s.count.toLocaleString()}</div>
           <div style="font-size:.58rem;color:rgba(255,255,255,.35);margin-top:2px">${s.capacity} avail · ${sp}%</div>
-          ${s.phone?`<div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--teal-500);margin-top:4px">${s.phone}</div>`:''}
+          ${s.phone?`<div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--teal-500);margin-top:3px">${s.phone}</div>`:''}
         </div>`;
-      }).join('<div style="width:1px;background:rgba(255,255,255,.06);align-self:stretch"></div>');
+      }).join('<div style="width:1px;background:rgba(255,255,255,.06)"></div>');
       card.innerHTML=`
         <div class="site-card-header">
           <div class="site-card-left"><div class="site-card-dot" style="background:var(--host-green)"></div><div class="site-card-name">Kingston Area</div></div>
           <div class="site-card-badge">LOOMEX</div>
         </div>
-        <div style="display:flex;background:rgba(255,255,255,.04)">${subsites}</div>
+        <div style="display:flex;background:rgba(255,255,255,.02)">${rows}</div>
         <div class="site-bar-wrap">
           <div class="site-bar-row"><span>Combined Occupancy</span><span class="site-bar-pct">${pct}%</span></div>
           <div class="site-bar-track"><div class="site-bar-fill" style="width:${pct}%;background:${fc}"></div></div>
@@ -738,12 +747,15 @@ function renderSidebar(){
   });
 
   if(partnerSites.length){
-    const ph=document.createElement('div'); ph.className='section-header'; ph.style.marginTop='.5rem';
+    const ph=document.createElement('div');
+    ph.className='section-header';
+    ph.style.marginTop='.5rem';
     ph.innerHTML=`<div class="section-title" style="color:rgba(217,134,15,0.7)">Partner Sites</div><div class="section-line"></div>`;
     list.appendChild(ph);
     partnerSites.forEach((site,i)=>{
       const card=document.createElement('div');
-      card.className='site-card partner-card'; card.style.animationDelay=((displayItems.length+i)*0.07)+'s';
+      card.className='site-card partner-card';
+      card.style.animationDelay=((displayItems.length+i)*0.07)+'s';
       const addrRow=site.address?`<div style="padding:0 .9rem .55rem;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(255,255,255,.35)">${site.address}</div>`:'';
       card.innerHTML=`
         <div class="site-card-header partner">
