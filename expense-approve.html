@@ -745,6 +745,18 @@
         <div class="s-val">${i.v}</div>
       </div>`
     ).join('');
+
+    const foot = document.getElementById('expTableFoot');
+    if (foot) {
+      const rejCount = rowDecisions.filter(d => !d.approved).length;
+      const label = rejCount > 0
+        ? `Approved Total (${rowDecisions.length - rejCount} of ${rowDecisions.length} items)`
+        : 'Total Approved';
+      foot.innerHTML = `<tr>
+        <td colspan="7" style="text-align:right">${label}</td>
+        <td>$${fmtNum(calcApprovedTotal())}</td>
+      </tr>`;
+    }
   }
 
   function renderExpenseTable() {
