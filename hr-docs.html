@@ -430,6 +430,7 @@ const DOC_FIELDS = [
   { key: 'molhs',          field: 'MOL H&S Certificate', label: 'MOL H&S Certificate' },
   { key: 'whmis',          field: 'WHMIS Certificate',   label: 'WHMIS Certificate' },
   { key: 'driversLicense', field: "Driver's License",    label: "Driver's License" },
+  { key: 'ims100',         field: 'IMS 100',             label: 'IMS 100' },
 ];
 
 function renderUploadRecord(u, c) {
@@ -592,6 +593,7 @@ function renderContractorDetail(c) {
     { key: 'resume', label: 'Resume' }, { key: 'aoda', label: 'AODA' },
     { key: 'molhs',  label: 'MOL H&S' }, { key: 'whmis', label: 'WHMIS' },
     { key: 'driversLicense', label: "Driver's Lic." }, { key: 'crjm', label: 'CRJM' },
+    { key: 'ims100', label: 'IMS 100' }, { key: 'leadership', label: 'Leadership' },
   ];
   const tiles = [
     { type: 'resume', icon: '📄', label: 'Resume',    crjm: false },
@@ -600,9 +602,11 @@ function renderContractorDetail(c) {
     { type: 'whmis',  icon: '⚗️', label: 'WHMIS Cert',crjm: false },
     { type: 'drivers',icon: '🪪', label: 'Driver Lic.',crjm: false },
     { type: 'crjm',   icon: '🔍', label: 'CRJM Check',crjm: true  },
-    { type: 'other',  icon: '📁', label: 'Other Doc', crjm: false },
+    { type: 'ims100',     icon: '🎓', label: 'IMS 100',     crjm: false },
+    { type: 'leadership', icon: '⭐', label: 'Leadership',   crjm: false },
+    { type: 'other',      icon: '📁', label: 'Other Doc',    crjm: false },
   ];
-  const labelMap = { resume: 'Resume', aoda: 'AODA Certificate', molhs: 'MOL H&S Certificate', whmis: 'WHMIS Certificate', drivers: "Driver's License", other: 'Document' };
+  const labelMap = { resume: 'Resume', aoda: 'AODA Certificate', molhs: 'MOL H&S Certificate', whmis: 'WHMIS Certificate', drivers: "Driver's License", ims100: 'IMS 100', leadership: 'Leadership Training', other: 'Document' };
   const uploadsHtml = c.uploads.length
     ? c.uploads.map(u => renderUploadRecord(u, c)).join('')
     : '<div class="state-box" style="padding:24px">No document submissions on file.</div>';
@@ -734,12 +738,16 @@ function switchInnerTab(tab) {
 function renderContractorTable(list, context) {
   if (!list.length) return '<div class="state-box" style="padding:32px"><div class="big-icon">✅</div>None in this category.</div>';
 
-  const docKeys = [
+ const docKeys = [
     { key: 'resume', label: 'Resume' },
     { key: 'aoda',   label: 'AODA' },
     { key: 'molhs',  label: 'H&S' },
     { key: 'whmis',  label: 'WHMIS' },
     { key: 'driversLicense', label: 'DL' },
+  ];
+  const trainingKeys = [
+    { key: 'ims100',    label: 'IMS 100' },
+    { key: 'leadership',label: 'Leadership' },
   ];
 
   const sorted = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -749,8 +757,8 @@ function renderContractorTable(list, context) {
       ? `<span class="deployed-badge"><span class="warn-icon">⚠️</span> Deployed</span>`
       : c.isDeployed ? `<span class="deployed-badge" style="background:#e8f5ee;color:#1a6640">✓ Deployed</span>` : '';
 
-    const docTypeMap = { resume: 'resume', aoda: 'aoda', molhs: 'molhs', whmis: 'whmis', driversLicense: 'drivers' };
-    const docLabelMap = { resume: 'Resume', aoda: 'AODA Certificate', molhs: 'MOL H&S Certificate', whmis: 'WHMIS Certificate', driversLicense: "Driver's License" };
+    const docTypeMap  = { resume: 'resume', aoda: 'aoda', molhs: 'molhs', whmis: 'whmis', driversLicense: 'drivers', ims100: 'ims100', leadership: 'leadership' };
+    const docLabelMap = { resume: 'Resume', aoda: 'AODA Certificate', molhs: 'MOL H&S Certificate', whmis: 'WHMIS Certificate', driversLicense: "Driver's License", ims100: 'IMS 100', leadership: 'Leadership Training' };
 
     const docPips = docKeys.map(d => {
       const done = c.docs[d.key];
@@ -776,6 +784,18 @@ function renderContractorTable(list, context) {
           </span>
         </span>`;
 
+    const trainingPips = trainingKeys.map(d => {
+      const done = c[d.key];
+      if (done) return `<span class="doc-pip done">✓ ${d.label}</span>`;
+      return `<span class="doc-pip missing" style="cursor:pointer" title="Mark ${d.label} as received"
+        onclick="markReceived('${c.recordId}','${escStr(docLabelMap[d.key])}',this)">
+        <span style="margin-left:2px;display:inline-flex;gap:3px">
+          <button onclick="event.stopPropagation();markReceived('${c.recordId}','${escStr(docLabelMap[d.key])}',this.closest('.doc-pip').querySelector('button')||this)"
+            style="font-size:10px;padding:1px 5px;border-radius:3px;border:none;background:#2f9879;color:white;cursor:pointer" title="Mark as received">✓</button>
+        </span>
+        ✗ ${d.label}</span>`;
+    }).join('');
+
     return `<tr id="execrow-${c.recordId}" data-record-id="${c.recordId}">
       <td class="mono">${c.contractorId}</td>
       <td><strong>${c.name}</strong>${deployedHtml ? '<br>' + deployedHtml : ''}</td>
@@ -790,7 +810,7 @@ function renderContractorTable(list, context) {
             Remove</button>
         </div>
       </td>
-      <td>${docPips}${context === 'missingcrjm' || context === 'complete' ? crjmPip : ''}</td>
+      <td>${docPips}${context === 'missingcrjm' || context === 'complete' ? crjmPip : ''}<br>${trainingPips}</td>
     </tr>`;
   }).join('');
 
@@ -955,11 +975,13 @@ async function doModalUpload() {
         other:   `${modalCtx.contractorName} - ${modalFile.name}`,
       };
       const checkboxMap = {
-        resume:  'Resume',
-        aoda:    'AODA Certificate',
-        molhs:   'Health & Safety Certificate',
-        whmis:   'WHMIS Certificate',
-        drivers: "Driver's License",
+        resume:     'Resume',
+        aoda:       'AODA Certificate',
+        molhs:      'Health & Safety Certificate',
+        whmis:      'WHMIS Certificate',
+        drivers:    "Driver's License",
+        ims100:     'IMS 100',
+        leadership: 'Leadership Training',
       };
       const base     = labelMap[modalCtx.docType] || `${modalCtx.contractorName} - ${modalCtx.docLabel}`;
       const fileName = `${base}.${ext}`;
