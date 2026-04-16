@@ -872,6 +872,7 @@ function resetForm() {
   var on = document.getElementById('dest-other-name'); if (on) on.value = '';
   var oe = document.getElementById('dest-other-email'); if (oe) oe.value = '';
   document.getElementById('err-dest').classList.remove('show');
+  if (mode === 'in') document.getElementById('flight-select').value = '';
   document.getElementById('flight-select').classList.remove('invalid');
   selectedPtype = '';
   document.querySelectorAll('.ptype-btn').forEach(function(btn) { btn.className = 'ptype-btn'; });
