@@ -943,6 +943,34 @@ function onModalFileSelected() {
   }
 }
 
+// Drag and drop on modal file zone
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('modalFileZone');
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--navy)';
+    zone.style.background  = 'var(--row)';
+  });
+
+  zone.addEventListener('dragleave', () => {
+    zone.style.borderColor = '';
+    zone.style.background  = '';
+  });
+
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    zone.style.background  = '';
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    modalFile = file;
+    document.getElementById('modalFileName').textContent = file.name;
+    zone.classList.add('has-file');
+    document.getElementById('modalUploadBtn').disabled = false;
+  });
+});
+
 function setModalStatus(msg, type) {
   const el = document.getElementById('modalStatus');
   el.className = `modal-status ${type}`; el.textContent = msg; el.style.display = msg ? 'block' : 'none';
