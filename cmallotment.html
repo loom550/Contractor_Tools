@@ -1504,6 +1504,7 @@ function resetForm() {
   document.getElementById('upload-zone').classList.remove('has-file');
   document.getElementById('receipt-file').value = '';
   document.getElementById('submit-btn').disabled = false;
+  document.getElementById('continue-btn').disabled = false;
   document.querySelectorAll('.filter-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
   showProgress(false); setProgress('', 0);
   loadData();
