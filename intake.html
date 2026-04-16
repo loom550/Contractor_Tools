@@ -446,6 +446,7 @@ function authHub() {
       updateSyncBanner();
       startSyncTimer();
       setupForm();
+      setMode('in');
     })
     .catch(function() {
       var cached = loadJSON('loomi_hub_context', null);
