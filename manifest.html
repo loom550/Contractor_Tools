@@ -568,7 +568,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
           <div class="upload-drop-icon">&#128196;</div>
           <div class="upload-drop-label">Drop manifest here or tap to browse</div>
           <div class="upload-drop-sub">PDF, JPG, or PNG &bull; Max 15 MB</div>
-          <input type="file" class="upload-file-input" id="upload-file-input" accept=".pdf,.jpg,.jpeg,.png">
+          <input type="file" class="upload-file-input" id="upload-file-input" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,.bmp,.tiff,.tif,.doc,.docx,.xls,.xlsx">
         </div>
         <div class="upload-selected-file" id="upload-selected-file">
           <span>&#128196;</span>
@@ -1293,10 +1293,10 @@ function setupUploadModal() {
 }
 
 function selectFile(file) {
-  var allowed = ['application/pdf','image/jpeg','image/jpg','image/png'];
-  var ext = (file.name || '').toLowerCase();
-  if (!allowed.includes(file.type) && !ext.endsWith('.pdf') && !ext.endsWith('.jpg') && !ext.endsWith('.jpeg') && !ext.endsWith('.png')) {
-    showToast('PDF, JPG, or PNG only', 'err'); return;
+ var ext = (file.name || '').toLowerCase();
+  var allowedExts = ['.pdf','.jpg','.jpeg','.png','.heic','.heif','.webp','.bmp','.tiff','.tif','.doc','.docx','.xls','.xlsx'];
+  if (!allowedExts.some(function(e) { return ext.endsWith(e); })) {
+    showToast('Unsupported file type', 'err'); return;
   }
   if (file.size > 15 * 1024 * 1024) { showToast('File too large (max 15 MB)', 'err'); return; }
   uploadSelectedFile = file;
