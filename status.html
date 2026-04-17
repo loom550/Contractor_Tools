@@ -589,7 +589,7 @@ async function saveAdmin(){
     const capEl=document.getElementById('fk-'+site.id);
     const count=countEl&&countEl.value!==''?parseInt(countEl.value):site.count;
     const capacity=capEl&&capEl.value!==''?parseInt(capEl.value):site.capacity;
-    return {id:site.id,count:count||0,capacity:capacity||0};
+    return {id:site.id,count:isNaN(count)?site.count:count,capacity:isNaN(capacity)?site.capacity:capacity};
   });
 
   const updHotels={};
@@ -599,7 +599,7 @@ async function saveAdmin(){
       const hkEl=document.getElementById('hk-'+h.id);
       const count=hcEl&&hcEl.value!==''?parseInt(hcEl.value):h.count;
       const capacity=hkEl&&hkEl.value!==''?parseInt(hkEl.value):h.capacity;
-      return {id:h.id,count:count||0,capacity:capacity||0};
+      return {id:h.id,count:isNaN(count)?h.count:count,capacity:isNaN(capacity)?h.capacity:capacity};
     });
   });
 
