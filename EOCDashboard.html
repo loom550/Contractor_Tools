@@ -501,196 +501,132 @@
   </div>
 
   <script>
-    // Update timestamp
-    function updateTimestamp() {
-      const now = new Date();
-      const formatted = now.toLocaleString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
-      document.getElementById('timestamp').textContent = formatted;
-    }
+  function updateTimestamp() {
+    const now = new Date();
+    document.getElementById('timestamp').textContent = now.toLocaleString('en-US', {
+      weekday:'short', year:'numeric', month:'short', day:'numeric',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+    });
+  }
+  updateTimestamp();
+  setInterval(updateTimestamp, 1000);
 
-    updateTimestamp();
-    setInterval(updateTimestamp, 1000);
-
-    // Fetch data from Power Automate
-// Fetch data from Power Automate
-async function fetchData() {
-  const WORKER_BASE = 'https://loomi-status.loomex-it.workers.dev';
-  const ACTIVATION_ID = '2026-KASH-HUBHOST';
-
-  const [cfg, liveData] = await Promise.all([
-    fetch(`${WORKER_BASE}/activation/${ACTIVATION_ID}/config`).then(r => r.json()),
-    fetch(`${WORKER_BASE}/activation/${ACTIVATION_ID}/data`).then(r => r.json()),
-  ]);
-
-  const configSites = (cfg.sites || []).filter(s => s.type === 'host' || s.type === 'host-kingston');
-  const liveSites = liveData.sites || [];
-
-  const hubs = configSites.map(s => {
-    const live = liveSites.find(x => x.id === s.id) || {};
-    const totalRooms = live.totalRooms || 0;
-    const maxCapacity = Math.round(totalRooms * 2.5);
+  async function fetchData() {
+    const WORKER_BASE = 'https://loomi-status.loomex-it.workers.dev';
+    const ACTIVATION_ID = '2026-KASH-HUBHOST';
+    const [cfg, liveData] = await Promise.all([
+      fetch(`${WORKER_BASE}/activation/${ACTIVATION_ID}/config`).then(r => r.json()),
+      fetch(`${WORKER_BASE}/activation/${ACTIVATION_ID}/data`).then(r => r.json()),
+    ]);
+    const configSites = (cfg.sites || []).filter(s => s.type === 'host' || s.type === 'host-kingston');
+    const liveSites = liveData.sites || [];
+    const hubs = configSites.map(s => {
+      const live = liveSites.find(x => x.id === s.id) || {};
+      const totalRooms = live.totalRooms || 0;
+      const maxCapacity = Math.round(totalRooms * 2.5);
+      return {
+        name: s.name,
+        status: 'Active',
+        rooms: totalRooms,
+        occupied: live.occupiedRooms || 0,
+        vacant: live.vacantRooms || 0,
+        evacuees: live.count || 0,
+        capacity: live.capacity || 0,
+        utilization: maxCapacity > 0 ? Math.round((live.count || 0) / maxCapacity * 100) : 0,
+      };
+    });
+    const totalEvacuees = hubs.reduce((sum, h) => sum + h.evacuees, 0);
+    const summary = liveData.summary || {};
     return {
-      name: s.name,
-      status: 'Active',
-      rooms: totalRooms,
-      occupied: live.occupiedRooms || 0,
-      vacant: live.vacantRooms || 0,
-      evacuees: live.count || 0,
-      capacity: live.capacity || 0,
-      utilization: maxCapacity > 0 ? Math.round((live.count || 0) / maxCapacity * 100) : 0,
+      summary: {
+        totalHubs: hubs.length,
+        totalRooms: hubs.reduce((s, h) => s + h.rooms, 0),
+        occupied: hubs.reduce((s, h) => s + h.occupied, 0),
+        vacant: hubs.reduce((s, h) => s + h.vacant, 0),
+        totalEvacuees: summary.totalEvacuees || totalEvacuees,
+        open213s: summary.open213s || 0,
+        pendingTransfers: summary.pendingTransfers || 0,
+        activeTransfers: summary.activeTransfers || 0,
+        completedToday: summary.completedToday || 0,
+      },
+      hubs,
     };
+  }
 
-  const totalEvacuees = hubs.reduce((sum, h) => sum + h.evacuees, 0);
-  const summary = liveData.summary || {};
-
-  return {
-    summary: {
-      totalHubs: hubs.length,
-      totalRooms: 0,
-      occupied: 0,
-      vacant: 0,
-      totalEvacuees: summary.totalEvacuees || totalEvacuees,
-      open213s: summary.open213s || 0,
-      pendingTransfers: summary.pendingTransfers || 0,
-      activeTransfers: summary.activeTransfers || 0,
-      completedToday: summary.completedToday || 0,
-    },
-    hubs,
-  };
-
-// Render summary cards
-function renderSummary(data, hubs) {
-  // Calculate available capacity by summing all hub capacities (already vacant × 2.5)
-  const availableCapacity = hubs
-    .filter(hub => hub.name !== "Main EOC")
-    .reduce((sum, hub) => sum + hub.capacity, 0);
-
-  const summaryHTML = `
-    <div class="summary-card" style="border-left-color: var(--teal-500)">
-      <div class="card-label">Active Sites</div>
-      <div class="card-value">${data.totalHubs}</div>
-      <div class="card-context">operational sites</div>
-    </div>
-    <div class="summary-card" style="border-left-color: var(--navy-600)">
-      <div class="card-label">Total Rooms</div>
-      <div class="card-value">${data.totalRooms}</div>
-      <div class="card-context">${data.occupied} occupied, ${data.vacant} vacant</div>
-    </div>
-    <div class="summary-card" style="border-left-color: var(--lime-500)">
-      <div class="card-label">Current Occupancy</div>
-      <div class="card-value">${data.totalEvacuees}</div>
-      <div class="card-context">community members sheltered</div>
-    </div>
-    <div class="summary-card" style="border-left-color: var(--navy-600)">
-      <div class="card-label">Available Capacity</div>
-      <div class="card-value">${Math.round(availableCapacity)}</div>
-      <div class="card-context">(Rooms x 2.5)</div>
-    </div>
-    <div class="summary-card" style="border-left-color: var(--red-500)">
-      <div class="card-label">Open IMS 213s</div>
-      <div class="card-value">${data.open213s}</div>
-      <div class="card-context">messages pending</div>
-    </div>
-    <div class="summary-card" style="border-left-color: var(--amber-500)">
-      <div class="card-label">Pending Transfers</div>
-      <div class="card-value">${data.pendingTransfers}</div>
-      <div class="card-context">${data.activeTransfers} in progress</div>
-    </div>
-    <div class="summary-card" style="border-left-color: var(--teal-500)">
-      <div class="card-label">Completed Today</div>
-      <div class="card-value">${data.completedToday}</div>
-      <div class="card-context">transfers finalized</div>
-    </div>
-  `;
-
-  document.getElementById('summaryGrid').innerHTML = summaryHTML;
-}
-    
-// Render hub cards
-function renderHubs(hubs) {
-  // Filter out Main EOC
-  hubs = hubs.filter(hub => hub.name !== "Main EOC");
-  
-  const hubsHTML = hubs.map(hub => {
-    const occupancyRate = hub.utilization || 0;
-  ? Math.round((hub.occupied / hub.rooms) * 100) 
-  : 0;
-
-    return `
-      <div class="hub-card">
-        <div class="hub-header">
-          <div class="hub-name">${hub.name}</div>
-          <div class="hub-status">${hub.status}</div>
-        </div>
-        <div class="hub-metrics">
-          <div class="hub-metric">
-            <div class="metric-label">Total Rooms</div>
-            <div class="metric-value">${hub.rooms}</div>
-          </div>
-          <div class="hub-metric">
-            <div class="metric-label">Occupied</div>
-            <div class="metric-value">${hub.occupied}</div>
-            <div class="metric-sub">rooms in use</div>
-          </div>
-          <div class="hub-metric">
-            <div class="metric-label">Vacant</div>
-            <div class="metric-value">${hub.vacant}</div>
-            <div class="metric-sub">available</div>
-          </div>
-          <div class="hub-metric">
-            <div class="metric-label">Community Members</div>
-            <div class="metric-value">${hub.evacuees}</div>
-            <div class="metric-sub">current</div>
-          </div>
-          <div class="hub-metric">
-            <div class="metric-label">Capacity</div>
-            <div class="metric-value">${hub.capacity}</div>
-            <div class="metric-sub">max (2.5x rooms)</div>
-          </div>
-          <div class="hub-metric">
-            <div class="metric-label">Utilization</div>
-            <div class="metric-value">${occupancyRate}%</div>
-            <div class="metric-sub">occupied</div>
-          </div>
-        </div>
-        <div class="occupancy-bar">
-          <div class="bar-label">
-            <span>Occupancy Rate</span>
-            <span class="bar-percentage">${occupancyRate}%</span>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill" style="width: ${occupancyRate}%"></div>
-          </div>
-        </div>
+  function renderSummary(data, hubs) {
+    const availableCapacity = hubs.reduce((sum, hub) => sum + hub.capacity, 0);
+    document.getElementById('summaryGrid').innerHTML = `
+      <div class="summary-card" style="border-left-color:var(--teal-500)">
+        <div class="card-label">Active Sites</div>
+        <div class="card-value">${data.totalHubs}</div>
+        <div class="card-context">operational sites</div>
       </div>
-    `;
-  }).join('');
+      <div class="summary-card" style="border-left-color:var(--navy-600)">
+        <div class="card-label">Total Rooms</div>
+        <div class="card-value">${data.totalRooms}</div>
+        <div class="card-context">${data.occupied} occupied, ${data.vacant} vacant</div>
+      </div>
+      <div class="summary-card" style="border-left-color:var(--lime-500)">
+        <div class="card-label">Current Occupancy</div>
+        <div class="card-value">${data.totalEvacuees}</div>
+        <div class="card-context">community members sheltered</div>
+      </div>
+      <div class="summary-card" style="border-left-color:var(--navy-600)">
+        <div class="card-label">Available Capacity</div>
+        <div class="card-value">${Math.round(availableCapacity)}</div>
+        <div class="card-context">Rooms x 2.5</div>
+      </div>
+      <div class="summary-card" style="border-left-color:var(--red-500)">
+        <div class="card-label">Open IMS 213s</div>
+        <div class="card-value">${data.open213s}</div>
+        <div class="card-context">messages pending</div>
+      </div>
+      <div class="summary-card" style="border-left-color:var(--amber-500)">
+        <div class="card-label">Pending Transfers</div>
+        <div class="card-value">${data.pendingTransfers}</div>
+        <div class="card-context">${data.activeTransfers} in progress</div>
+      </div>
+      <div class="summary-card" style="border-left-color:var(--teal-500)">
+        <div class="card-label">Completed Today</div>
+        <div class="card-value">${data.completedToday}</div>
+        <div class="card-context">transfers finalized</div>
+      </div>`;
+  }
 
-  document.getElementById('hubsGrid').innerHTML = hubsHTML;
-}
+  function renderHubs(hubs) {
+    hubs = hubs.filter(h => h.name !== 'Main EOC');
+    document.getElementById('hubsGrid').innerHTML = hubs.map(hub => {
+      const pct = hub.utilization || 0;
+      return `
+        <div class="hub-card">
+          <div class="hub-header">
+            <div class="hub-name">${hub.name}</div>
+            <div class="hub-status">${hub.status}</div>
+          </div>
+          <div class="hub-metrics">
+            <div class="hub-metric"><div class="metric-label">Total Rooms</div><div class="metric-value">${hub.rooms}</div></div>
+            <div class="hub-metric"><div class="metric-label">Occupied</div><div class="metric-value">${hub.occupied}</div><div class="metric-sub">rooms in use</div></div>
+            <div class="hub-metric"><div class="metric-label">Vacant</div><div class="metric-value">${hub.vacant}</div><div class="metric-sub">available</div></div>
+            <div class="hub-metric"><div class="metric-label">Community Members</div><div class="metric-value">${hub.evacuees}</div><div class="metric-sub">current</div></div>
+            <div class="hub-metric"><div class="metric-label">Capacity</div><div class="metric-value">${hub.capacity}</div><div class="metric-sub">max (2.5x rooms)</div></div>
+            <div class="hub-metric"><div class="metric-label">Utilization</div><div class="metric-value">${pct}%</div><div class="metric-sub">occupied</div></div>
+          </div>
+          <div class="occupancy-bar">
+            <div class="bar-label"><span>Occupancy Rate</span><span class="bar-percentage">${pct}%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
 
-    // Initialize dashboard
-async function initDashboard() {
-  const data = await fetchData();
-  const filteredHubs = data.hubs.filter(hub => hub.name !== "Main EOC");
-  renderSummary(data.summary, data.hubs);
-  renderHubs(filteredHubs);
-}
+  async function initDashboard() {
+    const data = await fetchData();
+    renderSummary(data.summary, data.hubs);
+    renderHubs(data.hubs);
+  }
 
-    // Load dashboard on page load
-    window.addEventListener('DOMContentLoaded', initDashboard);
-
-    // Refresh every 30 seconds
-    setInterval(initDashboard, 30000);
-  </script>
+  window.addEventListener('DOMContentLoaded', initDashboard);
+  setInterval(initDashboard, 30000);
+</script>
 </body>
 </html>
