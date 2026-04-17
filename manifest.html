@@ -849,7 +849,7 @@ function renderPaxPanel(flightId) {
   var totalLug = flightPax.reduce(function(s, p) { return s + (Number(p.luggageWeight)||0); }, 0);
   var totalCarry = flightPax.reduce(function(s, p) { return s + (Number(p.carryOnWeight)||0); }, 0);
 
-  var departed = flight.status === 'Departed';
+  var departed = flight.status === 'Departed' || flight.status === 'Received';
 
   var html = '';
 
@@ -922,12 +922,12 @@ function renderPaxPanel(flightId) {
       '<div class="email-hint">Separate multiple addresses with commas. Leave blank to use default.</div>' +
       '<button class="btn-generate" id="btn-generate" ' + (flightPax.length === 0 ? 'disabled' : '') + '>' +
         '<span id="gen-icon">&#128441;</span>' +
-        '<span id="gen-label">Generate Manifest</span>' +
+        '<span id="gen-label">' + (flight.direction === 'Inbound' ? 'Confirm Arrival' : 'Generate Manifest') + '</span>' +
       '</button>' +
       '<div class="generate-result" id="gen-result"></div>' +
     '</div>';
   } else {
-    html += '<div class="departed-notice">&#128274; This flight has departed. Manifest is locked.<br><small style="margin-top:4px;display:block">Contact EOC to make corrections.</small></div>';
+    html += '<div class="departed-notice">&#128274; ' + (flight.status === 'Received' ? 'Arrival confirmed. Record is locked.' : 'This flight has departed. Manifest is locked.') + '<br><small style="margin-top:4px;display:block">Contact EOC to make corrections.</small></div>';
   }
 
   var panel = document.getElementById('pax-panel-content');
