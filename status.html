@@ -995,6 +995,13 @@ async function init(){
     document.title=`${cfg.name||activationId} | Loomex Emergency Operations`;
     document.getElementById('active-badge').style.display='';
     document.getElementById('export-btn').style.display='';
+    // Back button
+    const backBtn=document.createElement('button');
+    backBtn.className='login-btn';
+    backBtn.innerHTML='← All Activations';
+    backBtn.style.cssText='font-size:.65rem;padding:.55rem 1rem;cursor:pointer';
+    backBtn.onclick=()=>location.href=location.pathname;
+    document.getElementById('header-right').prepend(backBtn);
     document.getElementById('activation-view').style.display = window.innerWidth <= 960 ? 'flex' : '';
     if (window.innerWidth <= 960) document.getElementById('activation-view').style.flexDirection = 'column';
     renderAll();
