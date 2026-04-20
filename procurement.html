@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOOMI — Procurement</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#1a4e7e; --navy-light:#234d75; --navy-dark:#0d2d4a;
+  --teal:#2f9879; --teal-dim:#1f6b53;
+  --lime:#7dbe42; --lime-dim:#5a9030;
+  --bg:#0d1117; --surface:#161b22; --surface2:#1e2530;
+  --surface3:#252d38; --border:#2a3340;
+  --text:#e6edf3; --text-dim:#c0cad6; --text-muted:#8fa3b8;
+  --red:#e05252; --amber:#d4a017; --green:#00A651;
+  --font-mono:'IBM Plex Mono',monospace;
+  --font-sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--navy);padding:0 20px;height:52px;display:flex;align-items:center;gap:16px;border-bottom:2px solid var(--lime);flex-shrink:0;position:sticky;top:0;z-index:100;}
+.logo{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--lime);letter-spacing:.12em;}
+.hdiv{width:1px;height:22px;background:var(--navy-light);}
+.htitle{font-size:13px;color:var(--text-dim);}
+.hright{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.hbadge{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.6);}
+
+/* TOOLBAR */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.toolbar label{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
+.toolbar select,.toolbar input[type=date]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:4px;font-size:13px;font-family:var(--font-sans);}
+.toolbar input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);}
+.tab-group{display:flex;gap:0;margin-left:auto;}
+.tab{padding:6px 16px;font-size:12px;font-weight:600;font-family:var(--font-mono);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;background:transparent;transition:all .15s;}
+.tab:first-child{border-radius:4px 0 0 4px;}
+.tab:last-child{border-radius:0 4px 4px 0;border-left:none;}
+.tab.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* MAIN */
+.main{flex:1;padding:20px;max-width:1200px;width:100%;margin:0 auto;}
+
+/* BANNER ROW */
+.banner-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.banner{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;position:relative;overflow:hidden;}
+.banner::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);}
+.banner.kitchen{--accent:var(--teal);}
+.banner.tuck{--accent:var(--lime);}
+.banner-label{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+.banner-amount{font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--text);margin-bottom:4px;}
+.banner-sub{font-size:12px;color:var(--text-muted);display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.banner-sub span{display:flex;align-items:center;gap:4px;}
+.progress-track{height:6px;background:var(--surface3);border-radius:3px;margin-top:10px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s ease;}
+.progress-fill.warn{background:var(--amber);}
+.progress-fill.over{background:var(--red);}
+.banner-link{position:absolute;top:12px;right:12px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);padding:3px 8px;border-radius:3px;cursor:pointer;background:transparent;}
+.banner-link:hover{color:var(--text);border-color:var(--text-muted);}
+
+/* SECTION HEADER */
+.section-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.section-title{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);}
+.btn-add{background:var(--teal);border:none;color:#fff;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;font-family:var(--font-mono);cursor:pointer;letter-spacing:.04em;transition:background .15s;}
+.btn-add:hover{background:var(--teal-dim);}
+.btn-primary{background:var(--navy);border:none;color:#fff;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:600;font-family:var(--font-sans);cursor:pointer;transition:background .15s;}
+.btn-primary:hover{background:var(--navy-light);}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:8px 20px;border-radius:4px;font-size:13px;cursor:pointer;font-family:var(--font-sans);transition:all .15s;}
+.btn-secondary:hover{border-color:var(--text-muted);color:var(--text);}
+.ml-auto{margin-left:auto;}
+
+/* SESSIONS */
+.sessions-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.session-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px;}
+.session-card-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.session-meal{font-size:14px;font-weight:600;color:var(--text);}
+.session-pill{padding:2px 8px;border-radius:12px;font-family:var(--font-mono);font-size:10px;font-weight:600;}
+.session-pill.communal{background:rgba(47,152,121,.15);color:var(--teal);border:1px solid rgba(47,152,121,.3);}
+.session-pill.alt{background:rgba(212,160,23,.12);color:var(--amber);border:1px solid rgba(212,160,23,.3);}
+.session-nums{display:flex;gap:20px;font-size:12px;color:var(--text-muted);font-family:var(--font-mono);}
+.session-nums strong{color:var(--text);}
+.session-track{height:8px;background:var(--surface3);border-radius:4px;margin-top:10px;overflow:hidden;}
+.session-fill{height:100%;border-radius:4px;transition:width .4s;}
+
+/* PURCHASES */
+.purchases-list{display:flex;flex-direction:column;gap:6px;}
+.purchase-row{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:12px 16px;display:flex;align-items:center;gap:12px;}
+.purchase-supplier{font-weight:600;font-size:13px;color:var(--text);min-width:0;flex:1;}
+.purchase-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);display:flex;gap:10px;flex-wrap:wrap;}
+.purchase-total{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;}
+.for-badge{padding:2px 7px;border-radius:3px;font-family:var(--font-mono);font-size:10px;font-weight:600;}
+.for-evacuees{background:rgba(0,166,81,.1);color:var(--green);border:1px solid rgba(0,166,81,.2);}
+.for-staff{background:rgba(122,168,212,.1);color:#7aa8d4;border:1px solid rgba(122,168,212,.2);}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;}
+
+/* OVERLAY + PANEL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.panel{position:fixed;right:0;top:0;bottom:0;width:min(560px,100vw);background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);z-index:201;overflow-y:auto;}
+.panel.open{transform:translateX(0);}
+.panel-hdr{background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10;}
+.panel-title{font-size:15px;font-weight:600;color:#fff;}
+.panel-close{background:transparent;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:4px;line-height:1;}
+.panel-close:hover{color:#fff;}
+.panel-body{padding:20px;flex:1;}
+
+/* FORM */
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:4px;font-size:13px;font-family:var(--font-sans);}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:1px solid var(--teal);}
+.form-row input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);}
+.form-row textarea{resize:vertical;min-height:60px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.for-toggle{display:flex;gap:8px;}
+.for-btn{flex:1;padding:8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;font-family:var(--font-mono);cursor:pointer;transition:all .15s;}
+.for-btn.active-evacuees{background:rgba(0,166,81,.12);color:var(--green);border-color:rgba(0,166,81,.3);}
+.for-btn.active-staff{background:rgba(122,168,212,.12);color:#7aa8d4;border-color:rgba(122,168,212,.3);}
+
+/* LINE ITEMS */
+.line-items-section{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:14px;}
+.line-items-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.line-items-title{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);}
+.line-item{background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:8px;position:relative;}
+.line-item-row{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;}
+.line-item select,.line-item input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-size:12px;font-family:var(--font-sans);}
+.li-type{width:90px;flex-shrink:0;}
+.li-session{flex:2;min-width:140px;}
+.li-desc{flex:2;min-width:140px;}
+.li-qty{width:55px;flex-shrink:0;}
+.li-amount{width:90px;flex-shrink:0;}
+.li-total{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--teal);width:70px;text-align:right;padding-top:8px;flex-shrink:0;}
+.li-del{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:4px;flex-shrink:0;line-height:1;}
+.li-del:hover{color:var(--red);}
+.li-label{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;}
+.li-col{display:flex;flex-direction:column;}
+.lines-total{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;}
+.lines-total-label{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);}
+.lines-total-val{font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--text);}
+.btn-add-line{background:transparent;border:1px dashed var(--border);color:var(--text-muted);width:100%;padding:8px;border-radius:4px;font-size:12px;cursor:pointer;transition:all .15s;font-family:var(--font-mono);}
+.btn-add-line:hover{border-color:var(--teal);color:var(--teal);}
+
+/* PANEL FOOTER */
+.panel-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;position:sticky;bottom:0;background:var(--surface);z-index:10;}
+.btn-save{flex:1;background:var(--teal);border:none;color:#fff;padding:12px;border-radius:4px;font-size:13px;font-weight:600;font-family:var(--font-sans);cursor:pointer;transition:background .15s;}
+.btn-save:hover:not(:disabled){background:var(--teal-dim);}
+.btn-save:disabled{opacity:.4;cursor:not-allowed;}
+.btn-save-another{flex:1;background:var(--navy);border:none;color:#fff;padding:12px;border-radius:4px;font-size:13px;font-weight:600;font-family:var(--font-sans);cursor:pointer;transition:background .15s;}
+.btn-save-another:hover:not(:disabled){background:var(--navy-light);}
+.btn-save-another:disabled{opacity:.4;cursor:not-allowed;}
+
+/* SESSION MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:min(520px,90vw);max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.modal-hdr{background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:8px 8px 0 0;position:sticky;top:0;}
+.modal-title{font-size:15px;font-weight:600;color:#fff;}
+.modal-body{padding:20px;}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+/* BUDGET PREVIEW */
+.budget-preview{background:var(--surface2);border:1px solid rgba(47,152,121,.3);border-radius:4px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.budget-preview-label{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);}
+.budget-preview-val{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--teal);}
+.budget-preview-formula{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:2px;}
+
+/* NOTIFY */
+.notify{position:fixed;top:20px;right:20px;z-index:400;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 18px;font-size:13px;color:var(--text);transform:translateY(-20px);opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.notify.show{transform:translateY(0);opacity:1;}
+.notify.success{border-color:rgba(0,166,81,.4);background:rgba(0,166,81,.08);}
+.notify.error{border-color:rgba(224,82,82,.4);background:rgba(224,82,82,.08);}
+
+/* LOADING */
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .banner-row{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .panel{width:100vw;}
+  .main{padding:12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">LOOMI</div>
+  <div class="hdiv"></div>
+  <div class="htitle">Procurement</div>
+  <div class="hright">
+    <span class="hbadge" id="user-email"></span>
+    <button class="btn-add" onclick="openPurchasePanel()">+ New Purchase</button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <label>Site</label>
+  <select id="site-select" onchange="onSiteChange()">
+    <option value="">Select site...</option>
+  </select>
+  <label>Date</label>
+  <input type="date" id="date-picker" onchange="loadAll()">
+  <div class="tab-group ml-auto">
+    <button class="tab active" onclick="switchTab('overview',this)">Overview</button>
+    <button class="tab" onclick="switchTab('kitchen',this)">Kitchen</button>
+    <button class="tab" onclick="switchTab('purchases',this)">Purchases</button>
+    <button class="tab" onclick="switchTab('inventory',this)">Inventory</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- OVERVIEW TAB -->
+  <div id="tab-overview">
+    <div class="banner-row">
+      <div class="banner kitchen">
+        <div class="banner-label">🍽 Kitchen Budget — Today</div>
+        <div class="banner-amount" id="kitchen-budget">$0.00</div>
+        <div class="banner-sub">
+          <span>Spent: <strong id="kitchen-spent">$0.00</strong></span>
+          <span>Remaining: <strong id="kitchen-remaining">$0.00</strong></span>
+          <span id="kitchen-sessions-count"></span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="kitchen-bar" style="width:0%"></div></div>
+        <button class="banner-link" onclick="switchTab('kitchen',document.querySelector('.tab:nth-child(2)'))">Detail →</button>
+      </div>
+      <div class="banner tuck">
+        <div class="banner-label">🛍 Tuck Budget — Today</div>
+        <div class="banner-amount" id="tuck-budget">$0.00</div>
+        <div class="banner-sub">
+          <span>Spent: <strong id="tuck-spent">$0.00</strong></span>
+          <span>Remaining: <strong id="tuck-remaining">$0.00</strong></span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="tuck-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="section-hdr">
+      <div class="section-title">Recent Purchases</div>
+      <button class="btn-add ml-auto" onclick="openPurchasePanel()">+ New Purchase</button>
+    </div>
+    <div id="recent-purchases-list" class="purchases-list">
+      <div class="empty">Select a site to view purchases.</div>
+    </div>
+  </div>
+
+  <!-- KITCHEN TAB -->
+  <div id="tab-kitchen" style="display:none">
+    <div class="section-hdr">
+      <div class="section-title">Kitchen Sessions</div>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <select id="session-type-filter" onchange="renderSessions()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:4px;font-size:12px;">
+          <option value="">All Types</option>
+          <option value="communal_kitchen">Communal Kitchen</option>
+          <option value="alternative_meal">Alternative Meals</option>
+        </select>
+        <button class="btn-add" onclick="openSessionModal()">+ Add Session</button>
+      </div>
+    </div>
+    <div id="sessions-list" class="sessions-grid">
+      <div class="empty">Select a site to view sessions.</div>
+    </div>
+  </div>
+
+  <!-- PURCHASES TAB -->
+  <div id="tab-purchases" style="display:none">
+    <div class="section-hdr">
+      <div class="section-title">All Purchases</div>
+      <button class="btn-add ml-auto" onclick="openPurchasePanel()">+ New Purchase</button>
+    </div>
+    <div id="all-purchases-list" class="purchases-list">
+      <div class="empty">Select a site to view purchases.</div>
+    </div>
+  </div>
+
+  <!-- INVENTORY TAB -->
+  <div id="tab-inventory" style="display:none">
+    <div class="section-hdr">
+      <div class="section-title">Asset Inventory</div>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <select id="inv-status-filter" onchange="loadInventory()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:4px;font-size:12px;">
+          <option value="">All Statuses</option>
+          <option value="available">Available</option>
+          <option value="checked_out">Checked Out</option>
+          <option value="in_repair">In Repair</option>
+          <option value="damaged">Damaged</option>
+          <option value="retired">Retired</option>
+        </select>
+      </div>
+    </div>
+    <div id="inventory-list" class="purchases-list">
+      <div class="empty">Select a site to view inventory.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PURCHASE PANEL -->
+<div class="overlay" id="purchase-overlay" onclick="closePurchasePanel()"></div>
+<div class="panel" id="purchase-panel">
+  <div class="panel-hdr">
+    <div class="panel-title">Record Purchase</div>
+    <button class="panel-close" onclick="closePurchasePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <!-- Purchased For -->
+    <div class="form-row">
+      <label>Purchased For</label>
+      <div class="for-toggle">
+        <button class="for-btn active-evacuees" id="for-evacuees" onclick="setFor('evacuees')">Evacuees</button>
+        <button class="for-btn" id="for-staff" onclick="setFor('staff')">Staff</button>
+      </div>
+    </div>
+    <!-- Receipt Details -->
+    <div class="form-row">
+      <label>Supplier *</label>
+      <input type="text" id="p-supplier" placeholder="e.g. Walmart, Costco">
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Date *</label>
+        <input type="date" id="p-date">
+      </div>
+      <div class="form-row">
+        <label>Receipt / Invoice #</label>
+        <input type="text" id="p-ref" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Subtotal *</label>
+        <input type="number" id="p-subtotal" step="0.01" min="0" placeholder="0.00" oninput="updateTotal()">
+      </div>
+      <div class="form-row">
+        <label>HST</label>
+        <input type="number" id="p-hst" step="0.01" min="0" placeholder="0.00" oninput="updateTotal()">
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+      <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">
+        Total: <strong id="p-total-display" style="color:var(--text);font-size:15px;">$0.00</strong>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Notes</label>
+      <textarea id="p-notes" placeholder="Additional notes..."></textarea>
+    </div>
+
+    <!-- Line Items -->
+    <div class="line-items-section">
+      <div class="line-items-hdr">
+        <div class="line-items-title">Line Items</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-left:auto;">How is this receipt split?</div>
+      </div>
+      <div id="line-items-container"></div>
+      <button class="btn-add-line" onclick="addLineItem()">+ Add Line Item</button>
+      <div class="lines-total">
+        <span class="lines-total-label">Lines Total</span>
+        <span class="lines-total-val" id="lines-total">$0.00</span>
+      </div>
+    </div>
+  </div>
+  <div class="panel-footer">
+    <button class="btn-save-another" id="btn-save-another" onclick="savePurchase(true)">Save &amp; Add Another</button>
+    <button class="btn-save" id="btn-save-close" onclick="savePurchase(false)">Save &amp; Close</button>
+  </div>
+</div>
+
+<!-- SESSION MODAL -->
+<div class="modal-overlay" id="session-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Add Kitchen Session</div>
+      <button class="panel-close" onclick="closeSessionModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>Session Type</label>
+        <div class="for-toggle">
+          <button class="for-btn active-evacuees" id="st-communal" onclick="setSessionType('communal_kitchen')">Communal Kitchen</button>
+          <button class="for-btn" id="st-alt" onclick="setSessionType('alternative_meal')">Alternative Meal</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Meal Type *</label>
+        <select id="s-meal-type" onchange="updateBudgetPreview()">
+          <option value="">Select meal...</option>
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+          <option value="snack">Snack</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Opt-In Headcount *</label>
+        <input type="number" id="s-headcount" min="1" placeholder="Number of people" oninput="updateBudgetPreview()">
+      </div>
+      <div class="budget-preview" id="budget-preview" style="display:none;">
+        <div>
+          <div class="budget-preview-label">Budget Generated</div>
+          <div class="budget-preview-formula" id="budget-formula"></div>
+        </div>
+        <div class="budget-preview-val" id="budget-preview-val">$0.00</div>
+      </div>
+      <!-- Alt meal fields -->
+      <div id="alt-meal-fields" style="display:none;">
+        <div class="form-row">
+          <label>Caterer Name</label>
+          <input type="text" id="s-caterer" placeholder="e.g. ABC Catering">
+        </div>
+        <div class="form-row">
+          <label>Meal Description</label>
+          <input type="text" id="s-desc" placeholder="e.g. Boxed lunch — chicken wrap">
+        </div>
+        <div class="form-row">
+          <label>Linked 213 ID</label>
+          <input type="text" id="s-213" placeholder="Optional — reference to food request 213">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Notes</label>
+        <textarea id="s-notes" placeholder="Optional notes..."></textarea>
+      </div>
+      <div id="dupe-warning" style="display:none;color:var(--red);font-size:12px;font-family:var(--font-mono);margin-bottom:10px;">⚠ A session for this meal type already exists on this date.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeSessionModal()">Cancel</button>
+      <button class="btn-save" style="min-width:120px;" id="btn-save-session" onclick="saveSession()">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<div class="notify" id="notify"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+const WORKER = 'https://loomi-procurement.loomex-it.workers.dev';
+
+// ── STATE ────────────────────────────────────────────────────
+let currentSite = { id: null, name: null };
+let currentDate = '';
+let sessions = [];
+let allotments = {};
+let lineItems = [];
+let purchasedFor = 'evacuees';
+let sessionType = 'communal_kitchen';
+let saving = false;
+
+// ── INIT ─────────────────────────────────────────────────────
+async function init() {
+  // Set today's date
+  const today = new Date();
+  const d = today.toISOString().slice(0, 10);
+  currentDate = d;
+  document.getElementById('date-picker').value = d;
+  document.getElementById('p-date').value = d;
+
+  // Populate sites from scheduler worker (or hardcode for now)
+  populateSites();
+
+  // Load allotments
+  await loadAllotments();
+}
+
+function populateSites() {
+  // Sites for current activation — hardcoded to match existing LOOMI setup
+  // In the full Next.js version this will come from the DB
+  const sites = [
+    { id: 'kingston-doubletree-2026', name: 'Kingston — DoubleTree' },
+    { id: 'kingston-west-2026',       name: 'Kingston West' },
+    { id: 'kapuskasing-2026',         name: 'Kapuskasing' },
+    { id: 'timmins-2026',             name: 'Timmins' },
+    { id: 'eoc-2026',                 name: 'EOC' },
+  ];
+  const sel = document.getElementById('site-select');
+  sites.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.name;
+    sel.appendChild(o);
+  });
+}
+
+async function loadAllotments() {
+  try {
+    const data = await api('/meal-allotments');
+    allotments = {};
+    data.forEach(a => { allotments[a.meal_type] = parseFloat(a.allotment); });
+  } catch (e) {
+    console.error('Could not load allotments:', e);
+  }
+}
+
+// ── SITE / DATE CHANGE ────────────────────────────────────────
+function onSiteChange() {
+  const sel = document.getElementById('site-select');
+  const opt = sel.options[sel.selectedIndex];
+  currentSite = { id: sel.value, name: opt.text };
+  loadAll();
+}
+
+async function loadAll() {
+  currentDate = document.getElementById('date-picker').value;
+  if (!currentSite.id) return;
+  await Promise.all([
+    loadBudgetSummary(),
+    loadSessions(),
+    loadPurchases(),
+    loadInventory(),
+  ]);
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(WORKER + path, {
+    ...opts,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = 'https://loomi-procurement.cloudflareaccess.com/cdn-cgi/access/login/loomi-procurement.loomex-it.workers.dev?redirectUrl=' + encodeURIComponent(window.location.href);
+    throw new Error('login');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+  return data;
+}
+
+// ── BUDGET SUMMARY ────────────────────────────────────────────
+async function loadBudgetSummary() {
+  if (!currentSite.id) return;
+  try {
+    const data = await api(`/budget-summary?site_id=${currentSite.id}&date=${currentDate}`);
+    const kb = parseFloat(data.kitchen.budget);
+    const ks = parseFloat(data.kitchen.spent);
+    const kr = parseFloat(data.kitchen.remaining);
+    const ts = parseFloat(data.tuck.spent);
+
+    // Kitchen
+    document.getElementById('kitchen-budget').textContent = '$' + kb.toFixed(2);
+    document.getElementById('kitchen-spent').textContent  = '$' + ks.toFixed(2);
+    document.getElementById('kitchen-remaining').textContent = '$' + kr.toFixed(2);
+    const kcount = data.kitchen.sessions.length + data.alternative_meals.sessions.length;
+    document.getElementById('kitchen-sessions-count').textContent = kcount + ' session' + (kcount !== 1 ? 's' : '');
+    const kpct = kb > 0 ? Math.min(100, ks / kb * 100) : 0;
+    const kbar = document.getElementById('kitchen-bar');
+    kbar.style.width = kpct + '%';
+    kbar.className = 'progress-fill' + (kpct >= 100 ? ' over' : kpct >= 80 ? ' warn' : '');
+
+    // Tuck — we need evacuee headcount for budget calc
+    // For now show spent vs estimated budget based on session headcounts
+    const tuckRate = allotments.tuck || 17;
+    const totalHeadcount = [...data.kitchen.sessions, ...data.alternative_meals.sessions]
+      .reduce((s, x) => s + (x.head_count || 0), 0);
+    const tb = totalHeadcount * tuckRate;
+    document.getElementById('tuck-budget').textContent  = '$' + tb.toFixed(2);
+    document.getElementById('tuck-spent').textContent   = '$' + ts.toFixed(2);
+    document.getElementById('tuck-remaining').textContent = '$' + Math.max(0, tb - ts).toFixed(2);
+    const tpct = tb > 0 ? Math.min(100, ts / tb * 100) : 0;
+    const tbar = document.getElementById('tuck-bar');
+    tbar.style.width = tpct + '%';
+    tbar.className = 'progress-fill' + (tpct >= 100 ? ' over' : tpct >= 80 ? ' warn' : '');
+  } catch (e) {
+    console.error('Budget summary failed:', e);
+  }
+}
+
+// ── SESSIONS ─────────────────────────────────────────────────
+async function loadSessions() {
+  if (!currentSite.id) return;
+  try {
+    sessions = await api(`/kitchen-sessions?site_id=${currentSite.id}&date=${currentDate}`);
+    renderSessions();
+  } catch (e) { console.error('Sessions load failed:', e); }
+}
+
+function renderSessions() {
+  const filter = document.getElementById('session-type-filter').value;
+  const filtered = filter ? sessions.filter(s => s.session_type === filter) : sessions;
+  const container = document.getElementById('sessions-list');
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty">No sessions for this date. Add one to get started.</div>';
+    return;
+  }
+  container.innerHTML = filtered.map(s => {
+    const pct = parseFloat(s.budget_generated) > 0
+      ? Math.min(100, parseFloat(s.amount_spent) / parseFloat(s.budget_generated) * 100)
+      : 0;
+    const fillClass = pct >= 100 ? 'background:var(--red)' : pct >= 80 ? 'background:var(--amber)' : 'background:var(--teal)';
+    const pill = s.session_type === 'communal_kitchen'
+      ? '<span class="session-pill communal">Communal Kitchen</span>'
+      : '<span class="session-pill alt">Alternative Meal' + (s.caterer_name ? ' — ' + s.caterer_name : '') + '</span>';
+    return `
+      <div class="session-card">
+        <div class="session-card-top">
+          <div class="session-meal">${cap(s.meal_type)}</div>
+          ${pill}
+          <div style="margin-left:auto;font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">${s.head_count} people · $${parseFloat(s.allotment).toFixed(2)}/person</div>
+        </div>
+        <div class="session-nums">
+          <span>Budget: <strong>$${parseFloat(s.budget_generated).toFixed(2)}</strong></span>
+          <span>Spent: <strong>$${parseFloat(s.amount_spent).toFixed(2)}</strong></span>
+          <span>Remaining: <strong style="color:${pct>=100?'var(--red)':'var(--teal)'}">$${parseFloat(s.remaining).toFixed(2)}</strong></span>
+          <span>${Math.round(pct)}% used</span>
+        </div>
+        ${s.meal_description ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px;">${s.meal_description}</div>` : ''}
+        <div class="session-track"><div class="session-fill" style="width:${pct}%;${fillClass}"></div></div>
+      </div>`;
+  }).join('');
+}
+
+// ── PURCHASES ────────────────────────────────────────────────
+async function loadPurchases() {
+  if (!currentSite.id) return;
+  try {
+    const data = await api(`/purchases?site_id=${currentSite.id}&limit=20`);
+    renderPurchases('recent-purchases-list', data.slice(0, 5));
+    renderPurchases('all-purchases-list', data);
+  } catch (e) { console.error('Purchases load failed:', e); }
+}
+
+function renderPurchases(containerId, data) {
+  const el = document.getElementById(containerId);
+  if (!data.length) {
+    el.innerHTML = '<div class="empty">No purchases recorded yet.</div>';
+    return;
+  }
+  el.innerHTML = data.map(p => `
+    <div class="purchase-row">
+      <div>
+        <div class="purchase-supplier">${esc(p.supplier)}</div>
+        <div class="purchase-meta">
+          <span>${p.purchase_date}</span>
+          ${p.receipt_ref ? '<span>Ref: ' + esc(p.receipt_ref) + '</span>' : ''}
+          <span>${p.recorded_by}</span>
+        </div>
+      </div>
+      <span class="for-badge ${p.purchased_for === 'evacuees' ? 'for-evacuees' : 'for-staff'}">${p.purchased_for}</span>
+      <div class="purchase-total">$${parseFloat(p.total).toFixed(2)}</div>
+    </div>`).join('');
+}
+
+// ── INVENTORY ────────────────────────────────────────────────
+async function loadInventory() {
+  if (!currentSite.id) return;
+  const status = document.getElementById('inv-status-filter').value;
+  try {
+    const data = await api(`/inventory?site_id=${currentSite.id}${status ? '&status=' + status : ''}`);
+    const el = document.getElementById('inventory-list');
+    if (!data.length) {
+      el.innerHTML = '<div class="empty">No assets registered for this site.</div>';
+      return;
+    }
+    el.innerHTML = data.map(item => `
+      <div class="purchase-row">
+        <div>
+          <div class="purchase-supplier">${esc(item.item_name)}</div>
+          <div class="purchase-meta">
+            <span style="font-family:var(--font-mono);color:var(--teal)">${item.item_id}</span>
+            <span>${cap(item.category)}</span>
+            ${item.serial_number ? '<span>S/N: ' + esc(item.serial_number) + '</span>' : ''}
+            ${item.supplier ? '<span>' + esc(item.supplier) + '</span>' : ''}
+          </div>
+        </div>
+        <span class="for-badge ${statusBadgeClass(item.status)}">${cap(item.status.replace(/_/g,' '))}</span>
+        ${item.purchase_value ? '<div class="purchase-total">$' + parseFloat(item.purchase_value).toFixed(2) + '</div>' : ''}
+      </div>`).join('');
+  } catch (e) { console.error('Inventory load failed:', e); }
+}
+
+function statusBadgeClass(status) {
+  return {
+    available:   'for-evacuees',
+    checked_out: 'for-staff',
+    in_repair:   '',
+    damaged:     '',
+    retired:     '',
+  }[status] || '';
+}
+
+// ── PURCHASE PANEL ────────────────────────────────────────────
+function openPurchasePanel() {
+  lineItems = [];
+  purchasedFor = 'evacuees';
+  document.getElementById('p-supplier').value = '';
+  document.getElementById('p-date').value = currentDate;
+  document.getElementById('p-ref').value = '';
+  document.getElementById('p-subtotal').value = '';
+  document.getElementById('p-hst').value = '';
+  document.getElementById('p-notes').value = '';
+  document.getElementById('p-total-display').textContent = '$0.00';
+  document.getElementById('lines-total').textContent = '$0.00';
+  setFor('evacuees');
+  renderLineItems();
+  document.getElementById('purchase-overlay').classList.add('open');
+  document.getElementById('purchase-panel').classList.add('open');
+  // Add first line item automatically
+  addLineItem();
+}
+
+function closePurchasePanel() {
+  document.getElementById('purchase-overlay').classList.remove('open');
+  document.getElementById('purchase-panel').classList.remove('open');
+}
+
+function setFor(val) {
+  purchasedFor = val;
+  document.getElementById('for-evacuees').className = 'for-btn' + (val === 'evacuees' ? ' active-evacuees' : '');
+  document.getElementById('for-staff').className    = 'for-btn' + (val === 'staff'    ? ' active-staff'    : '');
+}
+
+function updateTotal() {
+  const sub = parseFloat(document.getElementById('p-subtotal').value) || 0;
+  const hst = parseFloat(document.getElementById('p-hst').value) || 0;
+  document.getElementById('p-total-display').textContent = '$' + (sub + hst).toFixed(2);
+}
+
+// ── LINE ITEMS ────────────────────────────────────────────────
+function addLineItem() {
+  lineItems.push({ budget_type: 'kitchen', kitchen_session_id: '', description: '', quantity: 1, unit_cost: '', line_total: '', purchased_for: purchasedFor });
+  renderLineItems();
+}
+
+function removeLineItem(i) {
+  lineItems.splice(i, 1);
+  renderLineItems();
+  updateLinesTotal();
+}
+
+function renderLineItems() {
+  const container = document.getElementById('line-items-container');
+  const sessionOptions = sessions.map(s =>
+    `<option value="${s.id}">${cap(s.meal_type)} — ${s.head_count} people</option>`
+  ).join('');
+
+  container.innerHTML = lineItems.map((li, i) => `
+    <div class="line-item">
+      <div class="line-item-row">
+        <div class="li-col">
+          <div class="li-label">Type</div>
+          <select class="li-type" onchange="updateLineItem(${i},'budget_type',this.value);renderLineItems()">
+            <option value="kitchen"  ${li.budget_type==='kitchen' ?'selected':''}>Kitchen</option>
+            <option value="tuck"     ${li.budget_type==='tuck'    ?'selected':''}>Tuck</option>
+            <option value="asset"    ${li.budget_type==='asset'   ?'selected':''}>Asset</option>
+          </select>
+        </div>
+        ${li.budget_type === 'kitchen' ? `
+          <div class="li-col li-session">
+            <div class="li-label">Session</div>
+            <select class="li-session" onchange="updateLineItem(${i},'kitchen_session_id',this.value)">
+              <option value="">Select session...</option>
+              ${sessionOptions}
+            </select>
+          </div>` : ''}
+        ${li.budget_type === 'asset' ? `
+          <div class="li-col li-desc">
+            <div class="li-label">Description</div>
+            <input type="text" class="li-desc" placeholder="Item name" value="${esc(li.description)}" oninput="updateLineItem(${i},'description',this.value)">
+          </div>
+          <div class="li-col">
+            <div class="li-label">Qty</div>
+            <input type="number" class="li-qty" min="1" value="${li.quantity}" oninput="updateLineItem(${i},'quantity',this.value);calcLineTotal(${i})">
+          </div>
+          <div class="li-col">
+            <div class="li-label">Unit Cost</div>
+            <input type="number" class="li-amount" step="0.01" min="0" placeholder="0.00" value="${li.unit_cost}" oninput="updateLineItem(${i},'unit_cost',this.value);calcLineTotal(${i})">
+          </div>` : `
+          <div class="li-col">
+            <div class="li-label">Amount</div>
+            <input type="number" class="li-amount" step="0.01" min="0" placeholder="0.00" value="${li.line_total}" oninput="updateLineItem(${i},'line_total',this.value);updateLinesTotal()">
+          </div>`}
+        <div class="li-total">${li.line_total ? '$' + parseFloat(li.line_total).toFixed(2) : '—'}</div>
+        ${lineItems.length > 1 ? `<button class="li-del" onclick="removeLineItem(${i})">✕</button>` : ''}
+      </div>
+    </div>`).join('');
+  updateLinesTotal();
+}
+
+function updateLineItem(i, field, val) {
+  lineItems[i][field] = val;
+}
+
+function calcLineTotal(i) {
+  const li = lineItems[i];
+  const qty = parseFloat(li.quantity) || 1;
+  const cost = parseFloat(li.unit_cost) || 0;
+  lineItems[i].line_total = (qty * cost).toFixed(2);
+  renderLineItems();
+}
+
+function updateLinesTotal() {
+  const total = lineItems.reduce((s, li) => s + (parseFloat(li.line_total) || 0), 0);
+  document.getElementById('lines-total').textContent = '$' + total.toFixed(2);
+}
+
+// ── SAVE PURCHASE ─────────────────────────────────────────────
+async function savePurchase(addAnother) {
+  if (saving) return;
+  const supplier = document.getElementById('p-supplier').value.trim();
+  const date     = document.getElementById('p-date').value;
+  const subtotal = document.getElementById('p-subtotal').value;
+  if (!supplier || !date || !subtotal) { notify('Please fill in Supplier, Date, and Subtotal.', 'error'); return; }
+  if (!currentSite.id) { notify('Please select a site.', 'error'); return; }
+  if (!lineItems.length) { notify('Please add at least one line item.', 'error'); return; }
+
+  // Validate line items
+  for (const li of lineItems) {
+    if (!parseFloat(li.line_total)) { notify('All line items need an amount.', 'error'); return; }
+    if (li.budget_type === 'kitchen' && !li.kitchen_session_id) { notify('Kitchen line items must be linked to a session.', 'error'); return; }
+    if (li.budget_type === 'asset' && !li.description) { notify('Asset line items need a description.', 'error'); return; }
+  }
+
+  saving = true;
+  document.getElementById('btn-save-close').disabled = true;
+  document.getElementById('btn-save-another').disabled = true;
+
+  try {
+    const body = {
+      site_id:      currentSite.id,
+      site_name:    currentSite.name,
+      supplier,
+      purchase_date: date,
+      receipt_ref:  document.getElementById('p-ref').value.trim() || null,
+      subtotal:     parseFloat(subtotal),
+      hst:          parseFloat(document.getElementById('p-hst').value) || 0,
+      purchased_for: purchasedFor,
+      notes:        document.getElementById('p-notes').value.trim() || null,
+      line_items:   lineItems.map(li => ({
+        budget_type:        li.budget_type,
+        purchased_for:      li.purchased_for || purchasedFor,
+        kitchen_session_id: li.kitchen_session_id || null,
+        description:        li.description || null,
+        quantity:           parseInt(li.quantity) || 1,
+        unit_cost:          parseFloat(li.unit_cost) || 0,
+        line_total:         parseFloat(li.line_total),
+      })),
+    };
+
+    const result = await api('/purchases', { method: 'POST', body: JSON.stringify(body) });
+    const invCount = result.inventory_created?.length || 0;
+    notify(`Purchase saved!${invCount ? ' ' + invCount + ' asset' + (invCount > 1 ? 's' : '') + ' added to inventory.' : ''}`, 'success');
+
+    await loadAll();
+
+    if (addAnother) {
+      openPurchasePanel();
+    } else {
+      closePurchasePanel();
+    }
+  } catch (e) {
+    notify('Save failed: ' + e.message, 'error');
+  } finally {
+    saving = false;
+    document.getElementById('btn-save-close').disabled = false;
+    document.getElementById('btn-save-another').disabled = false;
+  }
+}
+
+// ── SESSION MODAL ─────────────────────────────────────────────
+function openSessionModal() {
+  if (!currentSite.id) { notify('Please select a site first.', 'error'); return; }
+  sessionType = 'communal_kitchen';
+  document.getElementById('s-meal-type').value = '';
+  document.getElementById('s-headcount').value = '';
+  document.getElementById('s-caterer').value = '';
+  document.getElementById('s-desc').value = '';
+  document.getElementById('s-213').value = '';
+  document.getElementById('s-notes').value = '';
+  document.getElementById('budget-preview').style.display = 'none';
+  document.getElementById('alt-meal-fields').style.display = 'none';
+  document.getElementById('dupe-warning').style.display = 'none';
+  setSessionType('communal_kitchen');
+  document.getElementById('session-modal').classList.add('open');
+}
+
+function closeSessionModal() {
+  document.getElementById('session-modal').classList.remove('open');
+}
+
+function setSessionType(val) {
+  sessionType = val;
+  document.getElementById('st-communal').className = 'for-btn' + (val === 'communal_kitchen' ? ' active-evacuees' : '');
+  document.getElementById('st-alt').className       = 'for-btn' + (val === 'alternative_meal' ? ' active-evacuees' : '');
+  document.getElementById('alt-meal-fields').style.display = val === 'alternative_meal' ? 'block' : 'none';
+}
+
+function updateBudgetPreview() {
+  const meal  = document.getElementById('s-meal-type').value;
+  const count = parseInt(document.getElementById('s-headcount').value) || 0;
+  const rate  = allotments[meal] || 0;
+  const total = count * rate;
+
+  // Dupe check
+  const isDupe = sessions.some(s =>
+    s.session_type === sessionType &&
+    s.meal_type === meal &&
+    s.session_date === currentDate
+  );
+  document.getElementById('dupe-warning').style.display = isDupe ? 'block' : 'none';
+
+  if (meal && count > 0 && rate > 0) {
+    document.getElementById('budget-preview').style.display = 'flex';
+    document.getElementById('budget-preview-val').textContent = '$' + total.toFixed(2);
+    document.getElementById('budget-formula').textContent = count + ' × $' + rate.toFixed(2) + '/person';
+  } else {
+    document.getElementById('budget-preview').style.display = 'none';
+  }
+}
+
+async function saveSession() {
+  const meal  = document.getElementById('s-meal-type').value;
+  const count = document.getElementById('s-headcount').value;
+  if (!meal || !count || parseInt(count) <= 0) { notify('Please fill in Meal Type and Headcount.', 'error'); return; }
+
+  // Check dupe
+  const isDupe = sessions.some(s =>
+    s.session_type === sessionType &&
+    s.meal_type === meal &&
+    s.session_date === currentDate
+  );
+  if (isDupe) { notify('A session for this meal type already exists on this date.', 'error'); return; }
+
+  document.getElementById('btn-save-session').disabled = true;
+  document.getElementById('btn-save-session').textContent = 'Saving...';
+
+  try {
+    const body = {
+      site_id:      currentSite.id,
+      site_name:    currentSite.name,
+      session_type: sessionType,
+      meal_type:    meal,
+      session_date: currentDate,
+      head_count:   parseInt(count),
+      status:       sessionType === 'alternative_meal' ? 'pending' : 'active',
+      caterer_name: document.getElementById('s-caterer').value.trim() || null,
+      meal_description: document.getElementById('s-desc').value.trim() || null,
+      linked_213_id: document.getElementById('s-213').value.trim() || null,
+      notes:        document.getElementById('s-notes').value.trim() || null,
+    };
+    await api('/kitchen-sessions', { method: 'POST', body: JSON.stringify(body) });
+    notify('Session added!', 'success');
+    closeSessionModal();
+    await loadAll();
+  } catch (e) {
+    notify('Save failed: ' + e.message, 'error');
+  } finally {
+    document.getElementById('btn-save-session').disabled = false;
+    document.getElementById('btn-save-session').textContent = 'Save Session';
+  }
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  ['overview','kitchen','purchases','inventory'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function notify(msg, type = 'success') {
+  const el = document.getElementById('notify');
+  el.textContent = msg;
+  el.className = 'notify ' + type + ' show';
+  setTimeout(() => { el.classList.remove('show'); }, 3500);
+}
+
+// ── START ─────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
