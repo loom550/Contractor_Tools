@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <script src="/pwa-nav.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Incident Report – LOOMI</title>
@@ -339,11 +338,11 @@
 <div id="form-area" class="form-wrapper">
   <form id="irForm" novalidate>
 
-    <!-- Site / ACTIVATION -->
+    <!-- HUB / ACTIVATION -->
     <div class="section-header">Activation Information</div>
     <div class="two-col">
       <div class="field" id="f-HubName">
-        <label>Site Name <span class="req">*</span></label>
+        <label>Hub Name <span class="req">*</span></label>
         <select name="HubName" id="hubSelect">
           <option value="">-- Loading sites... --</option>
         </select>
@@ -352,7 +351,9 @@
       <input type="hidden" name="FolderName" id="folderName">
       <div class="field">
         <label>Activation ID</label>
-        <input type="text" name="ActivationID" id="activationID" value="Loading..." readonly style="background:#f0f0f0;color:var(--grey);">
+        <select name="ActivationID" id="activationID">
+          <option value="">-- Loading... --</option>
+        </select>
       </div>
     </div>
 
@@ -575,7 +576,7 @@
     </div>
 
     <!-- SECTION 10: IC Information -->
-    <div class="section-header">Section 10 – Site Commander Information</div>
+    <div class="section-header">Section 10 – Incident Commander Information</div>
 
     <div class="three-col">
       <div class="field" id="f-ICName">
@@ -790,7 +791,7 @@
     selectedFiles.forEach((f, i) => payload.append(`attachment_${i}`, f, f.name));
 
     try {
-      const res = await fetch('https://super-violet-90e9.loomex-it.workers.dev/incident-submit', { method: 'POST', body: payload, headers: { 'X-Submit-Secret': '7ce93d730211ce20724195fb7d0f2918b95d0497db03acbb1e668107d0a8cc38' } });
+      const res = await fetch('https://super-violet-90e9.loomex-it.workers.dev/incident-submit', { method: 'POST', body: payload });
       if (res.ok) {
         document.getElementById('form-area').style.display = 'none';
         document.getElementById('confirmation').style.display = 'block';
@@ -838,13 +839,22 @@
 
   // ---- Dynamic activation loading ----
   async function loadActivation() {
+    const select = document.getElementById('activationID');
     try {
-      const res = await fetch('https://loomi-data.loomex-it.workers.dev/activation');
-      const data = await res.json();
-      document.getElementById('activationID').value = data.activationID || 'Unknown';
+      const res = await fetch('https://loomi-data.loomex-it.workers.dev/activations');
+      const activations = await res.json();
+      select.innerHTML = '<option value="">-- Select Activation --</option>';
+      activations.forEach(act => {
+        const opt = document.createElement('option');
+        opt.value = act.id;
+        opt.textContent = act.title;
+        select.appendChild(opt);
+      });
+      // Auto-select if only one active activation
+      if (activations.length === 1) select.value = activations[0].id;
     } catch (e) {
-      document.getElementById('activationID').value = 'Unknown';
-      console.error('Could not load activation:', e);
+      select.innerHTML = '<option value="">-- Could not load --</option>';
+      console.error('Could not load activations:', e);
     }
   }
 
