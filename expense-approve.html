@@ -533,6 +533,14 @@
           <button class="sig-clear-btn" onclick="clearSig()">Clear</button>
         </div>
         <p class="sig-hint">Draw your signature above using your mouse or finger</p>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eef0f3;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Internal Notes <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;">(admin only -- never sent externally)</span></div>
+          <textarea id="internalNotes" placeholder="Private notes for admin reference only..." style="border:1.5px solid var(--grey-border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;width:100%;color:var(--text);background:var(--white);resize:vertical;min-height:60px;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='var(--grey-border)'"></textarea>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+            <button type="button" id="saveNoteBtn" onclick="saveInternalNote()" style="background:none;border:1.5px solid var(--grey-border);border-radius:7px;padding:6px 18px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;">Save Note</button>
+            <span id="noteStatus" style="font-size:12px;color:var(--text-muted);"></span>
+          </div>
+        </div>
       </div>
 
       <!-- FOOTER ACTIONS -->
@@ -542,13 +550,33 @@
         </div>
         <div class="status-msg" id="statusMsg"></div>
         <div class="btn-row">
+          <div class="btn-row">
           <button class="btn-approve" id="approveBtn" onclick="submitDecision()">&#10003; Submit Approval Decision</button>
           <button class="btn-contact" id="contactBtn">&#9993; Contact Contractor</button>
         </div>
+
+        <!-- WHOLE-SUBMISSION REJECTION -->
+        <div style="border-top:1px solid #eef0f3;padding-top:18px;margin-top:4px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">Reject Entire Submission</div>
+          <div id="rejectBtns" style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-contact" style="border-color:#f59e0b;color:#92400e;" onclick="showRejectPanel('revision')">&#8617; Request Revision</button>
+            <button class="btn-contact" style="border-color:var(--error);color:var(--error);" onclick="showRejectPanel('close')">&#10007; Reject &amp; Close</button>
+          </div>
+          <div id="rejectPanel" style="display:none;margin-top:14px;">
+            <div id="rejectPanelTitle" style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;"></div>
+            <textarea id="rejectReason" placeholder="Reason (required -- will be sent to contractor)..." style="border:1.5px solid var(--grey-border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;width:100%;color:var(--text);background:var(--white);resize:vertical;min-height:72px;margin-bottom:10px;" onfocus="this.style.borderColor='var(--error)'" onblur="this.style.borderColor='var(--grey-border)'"></textarea>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="rejectAdminName" placeholder="Your name" style="max-width:180px;border:1.5px solid var(--grey-border);border-radius:8px;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;">
+              <input type="password" id="rejectPassword" placeholder="Admin password" style="max-width:180px;border:1.5px solid var(--grey-border);border-radius:8px;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;">
+              <button id="rejectConfirmBtn" onclick="submitReject()" style="background:var(--error);color:white;border:none;border-radius:8px;padding:10px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Confirm</button>
+              <button onclick="hideRejectPanel()" style="background:none;border:1.5px solid var(--grey-border);border-radius:8px;padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-muted);cursor:pointer;">Cancel</button>
+            </div>
+            <div id="rejectStatusMsg" style="font-size:13px;margin-top:10px;display:none;padding:10px 14px;border-radius:8px;"></div>
+          </div>
+        </div>
+
       </div>
-
     </div><!-- contentWrap -->
-
   </div><!-- card -->
 
   <div class="page-footer">
@@ -683,8 +711,13 @@
       b.textContent = `✓ This expense report was ${sub.status} by ${sub.approvedBy || 'EOC Admin'} on ${new Date(sub.approvedAt).toLocaleDateString('en-CA')}.`;
       b.style.display = 'block';
       document.getElementById('approveBtn').disabled = true;
-      document.getElementById('approveBtn').textContent = `${sub.status === 'approved' ? 'Approved' : 'Processed'} by ${sub.approvedBy}`;
+      const statusLabels = { approved: 'Approved', rejected: 'Rejected', revision_requested: 'Revision Requested', rejected_closed: 'Rejected & Closed' };
+      document.getElementById('approveBtn').textContent = `${statusLabels[sub.status] || sub.status} by ${sub.approvedBy || sub.rejectedBy || ''}`.trim();
+      document.getElementById('rejectBtns').style.display = 'none';
     }
+    // Pre-fill internal notes
+    if (sub.internalNotes) document.getElementById('internalNotes').value = sub.internalNotes;
+    
 
     // Contact button -- use data attributes to avoid Cloudflare email obfuscation
     const contactBtn = document.getElementById('contactBtn');
@@ -1223,7 +1256,7 @@
     if (!hasSig) { showStatus('Please draw your signature before submitting.', 'error'); return; }
 
     const anyApproved = rowDecisions.some(d => d.approved !== false);
-    if (!anyApproved) { showStatus('At least one line item must be approved. Contact the contractor directly to reject all items.', 'error'); return; }
+    if (!anyApproved) { showStatus('All items are rejected. Use <strong>Request Revision</strong> or <strong>Reject &amp; Close</strong> below to handle a full rejection.', 'error'); return; }
 
     const missingReasons = rowDecisions.filter(d => d.approved === false && !d.reason.trim());
     if (missingReasons.length > 0) {
@@ -1273,6 +1306,122 @@
   // ---- LIGHTBOX ----
   function openLightbox(url) { document.getElementById('lightboxImg').src = url; document.getElementById('lightbox').classList.add('open'); }
   function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+ // ---- ADMIN SESSION (lazy -- prompted on first privileged action) ----
+  let adminSessionToken = null;
+  let adminSessionTs    = null;
+
+  async function getAdminSession(password) {
+    const res = await fetch(`${WORKER_URL}/expense-admin-auth`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.token) throw new Error('Incorrect password');
+    adminSessionToken = data.token;
+    adminSessionTs    = data.ts;
+  }
+
+  function adminAuthHeader() {
+    return `Bearer ${adminSessionToken}:${adminSessionTs}`;
+  }
+
+  // ---- INTERNAL NOTE ----
+  async function saveInternalNote() {
+    const notes   = document.getElementById('internalNotes').value.trim();
+    const statusEl = document.getElementById('noteStatus');
+    const btn      = document.getElementById('saveNoteBtn');
+    btn.disabled = true; btn.textContent = 'Saving...'; statusEl.textContent = '';
+    try {
+      if (!adminSessionToken) {
+        const pwd = prompt('Enter admin password to save note:');
+        if (!pwd) { btn.disabled = false; btn.textContent = 'Save Note'; return; }
+        await getAdminSession(pwd);
+      }
+      const res = await fetch(`${WORKER_URL}/expense-admin-note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': adminAuthHeader() },
+        body: JSON.stringify({ token, notes })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      statusEl.textContent = '✓ Saved'; statusEl.style.color = 'var(--green-dark)';
+    } catch(e) {
+      statusEl.textContent = '✗ ' + e.message; statusEl.style.color = 'var(--error)';
+      adminSessionToken = null;
+    }
+    btn.disabled = false; btn.textContent = 'Save Note';
+  }
+
+  // ---- REJECT WHOLE SUBMISSION ----
+  let currentRejectType = null;
+
+  function showRejectPanel(type) {
+    currentRejectType = type;
+    const titleEl     = document.getElementById('rejectPanelTitle');
+    const confirmBtn  = document.getElementById('rejectConfirmBtn');
+    if (type === 'revision') {
+      titleEl.textContent = 'Request Revision -- the contractor will receive a link to correct and resubmit';
+      confirmBtn.style.background = '#E8A317';
+    } else {
+      titleEl.textContent = 'Reject & Close -- the contractor will be notified with no option to resubmit';
+      confirmBtn.style.background = 'var(--error)';
+    }
+    document.getElementById('rejectPanel').style.display = 'block';
+    document.getElementById('rejectBtns').style.display = 'none';
+    document.getElementById('rejectReason').focus();
+  }
+
+  function hideRejectPanel() {
+    document.getElementById('rejectPanel').style.display = 'none';
+    document.getElementById('rejectBtns').style.display  = 'flex';
+    document.getElementById('rejectReason').value   = '';
+    document.getElementById('rejectPassword').value = '';
+    document.getElementById('rejectStatusMsg').style.display = 'none';
+  }
+
+  async function submitReject() {
+    const reason    = document.getElementById('rejectReason').value.trim();
+    const adminName = document.getElementById('rejectAdminName').value.trim();
+    const password  = document.getElementById('rejectPassword').value;
+    const confirmBtn = document.getElementById('rejectConfirmBtn');
+
+    if (!reason)    { showRejectStatus('Please enter a reason.', 'error'); return; }
+    if (!adminName) { showRejectStatus('Please enter your name.', 'error'); return; }
+    if (!password && !adminSessionToken) { showRejectStatus('Please enter admin password.', 'error'); return; }
+
+    confirmBtn.disabled = true; confirmBtn.textContent = 'Processing...';
+    try {
+      if (!adminSessionToken) await getAdminSession(password);
+      const res = await fetch(`${WORKER_URL}/expense-reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': adminAuthHeader() },
+        body: JSON.stringify({ token, rejectionType: currentRejectType, reason, adminName })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Rejection failed');
+      document.getElementById('rejectPanel').style.display = 'none';
+      document.getElementById('rejectBtns').style.display  = 'none';
+      const msg = currentRejectType === 'revision'
+        ? `&#8617; Revision requested. ${submission.formData.contractorName} has been emailed a revision link.`
+        : `&#10007; Rejected and closed. ${submission.formData.contractorName} has been notified.`;
+      showStatus(msg, 'success');
+      document.getElementById('approveBtn').disabled = true;
+      document.getElementById('approveBtn').textContent = currentRejectType === 'revision' ? 'Revision Requested' : 'Rejected & Closed';
+    } catch(e) {
+      showRejectStatus(e.message, 'error');
+      if (e.message === 'Incorrect password') adminSessionToken = null;
+    }
+    confirmBtn.disabled = false; confirmBtn.textContent = 'Confirm';
+  }
+
+  function showRejectStatus(msg, type) {
+    const el = document.getElementById('rejectStatusMsg');
+    el.innerHTML = msg; el.style.display = 'block';
+    el.style.background = type === 'error' ? 'var(--error-bg)' : 'var(--green-light)';
+    el.style.color       = type === 'error' ? 'var(--error)'   : 'var(--green-dark)';
+    el.style.border      = type === 'error' ? '1px solid rgba(204,41,54,0.2)' : '1px solid var(--green-mid)';
+  }
 
   loadSubmission();
 </script>
