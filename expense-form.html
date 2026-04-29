@@ -644,7 +644,7 @@
 // ---- PAGE INIT -- checks for revision token before normal load ----
   async function initPage() {
     const params = new URLSearchParams(location.search);
-    revisionToken = params.get('revisionToken');
+    revisionToken = params.get('revisionToken') || params.get('token');
     if (revisionToken) {
       revisionMode = true;
       try {
