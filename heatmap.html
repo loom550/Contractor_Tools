@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOOMI &mdash; Contractor Heat Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans',Arial,sans-serif;background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* Gate */
+#gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a4e7e 0%,#0d2d4a 100%);z-index:1000;}
+.gate-card{background:#161b22;border-radius:12px;padding:40px;max-width:360px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:center;border:1px solid #2a3340;}
+.gate-logo{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:#7dbe42;letter-spacing:.12em;margin-bottom:6px;}
+.gate-title{font-size:17px;font-weight:600;color:#e6edf3;margin-bottom:4px;}
+.gate-sub{font-size:12px;color:#8fa3b8;margin-bottom:24px;}
+.gate-input{width:100%;background:#1e2530;border:1.5px solid #2a3340;border-radius:8px;padding:12px 16px;font-size:15px;color:#e6edf3;font-family:'IBM Plex Mono',monospace;outline:none;text-align:center;letter-spacing:3px;transition:border-color .2s;margin-bottom:0;}
+.gate-input:focus{border-color:#7dbe42;}
+.gate-btn{width:100%;margin-top:10px;background:#1a4e7e;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:background .2s;}
+.gate-btn:hover{background:#2f6ea8;}
+.gate-error{margin-top:10px;color:#e05252;font-size:12px;min-height:16px;}
+
+/* App */
+#app{display:none;flex:1;flex-direction:column;height:100vh;}
+
+/* Header */
+.hdr{background:#1a4e7e;padding:0 20px;display:flex;align-items:center;gap:14px;height:50px;border-bottom:3px solid #7dbe42;flex-shrink:0;}
+.hdr-logo{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#7dbe42;letter-spacing:.12em;}
+.hdr-div{width:1px;height:22px;background:rgba(255,255,255,.2);}
+.hdr-act{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.08em;}
+.hdr-title{font-size:13px;font-weight:600;color:#fff;}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.ref-btn{background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.75);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+.ref-btn:hover{background:rgba(255,255,255,.1);}
+
+/* Stats bar */
+.stats-bar{background:#161b22;border-bottom:1px solid #2a3340;padding:5px 20px;display:flex;gap:20px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8fa3b8;flex-shrink:0;flex-wrap:wrap;}
+.stat-item{display:flex;align-items:center;gap:5px;}
+.stat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.s-dot{width:6px;height:6px;border-radius:50%;background:#7dbe42;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* Map wrapper */
+.map-wrap{flex:1;position:relative;}
+#map{position:absolute;inset:0;}
+
+/* Legend */
+.legend{position:absolute;bottom:28px;right:10px;z-index:500;background:rgba(22,27,34,.95);border:1px solid #2a3340;border-radius:6px;padding:12px 14px;font-size:11px;color:#c0cad6;min-width:150px;box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.legend-title{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8fa3b8;margin-bottom:8px;}
+.legend-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.legend-bubble{border-radius:50%;background:rgba(47,152,121,.5);border:2px solid #2f9879;flex-shrink:0;}
+.legend-site{width:12px;height:12px;border-radius:50%;background:#1a4e7e;border:2px solid #7dbe42;flex-shrink:0;}
+.legend-sep{border-top:1px solid #2a3340;margin:7px 0;}
+
+/* Leaflet tooltip override */
+.leaflet-tooltip{background:#1e2530!important;border:1px solid #2a3340!important;color:#e6edf3!important;font-family:'IBM Plex Sans',Arial,sans-serif!important;font-size:12px!important;border-radius:4px!important;box-shadow:0 4px 12px rgba(0,0,0,.4)!important;}
+.tt-name{font-weight:600;color:#e6edf3;}
+.tt-count{color:#2f9879;}
+.tt-site{color:#7dbe42;font-weight:600;}
+.leaflet-container{background:#1a2030;}
+</style>
+</head>
+<body>
+
+<!-- Gate -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">LOOMI</div>
+    <div class="gate-title">Contractor Heat Map</div>
+    <div class="gate-sub">Loomex Response &amp; Readiness &bull; Restricted Access</div>
+    <input class="gate-input" type="password" id="gi" placeholder="Access code" autocomplete="current-password">
+    <button class="gate-btn" id="gate-btn">View Map</button>
+    <div class="gate-error" id="ge"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="hdr">
+    <span class="hdr-logo">LOOMI</span>
+    <div class="hdr-div"></div>
+    <span class="hdr-act">2026-KASH-HUBHOST</span>
+    <div class="hdr-div"></div>
+    <span class="hdr-title">Contractor Heat Map</span>
+    <div class="hdr-right">
+      <button class="ref-btn" id="refresh-btn">&#8635; Refresh</button>
+    </div>
+  </div>
+  <div class="stats-bar" id="stats-bar">
+    <span class="stat-item"><span class="s-dot"></span>Loading&hellip;</span>
+  </div>
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="legend">
+      <div class="legend-title">Contractor Pool</div>
+      <div class="legend-row"><div class="legend-bubble" style="width:10px;height:10px;"></div><span>1&ndash;2</span></div>
+      <div class="legend-row"><div class="legend-bubble" style="width:16px;height:16px;"></div><span>3&ndash;7</span></div>
+      <div class="legend-row"><div class="legend-bubble" style="width:24px;height:24px;"></div><span>8&ndash;15</span></div>
+      <div class="legend-row"><div class="legend-bubble" style="width:34px;height:34px;"></div><span>16+</span></div>
+      <div class="legend-sep"></div>
+      <div class="legend-row"><div class="legend-site"></div><span>Hub site</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var WORKER = 'https://evacscheduling.loomex-it.workers.dev';
+var pass = sessionStorage.getItem('loomi_hm_pass') || '';
+var map = null;
+var fsaLayer = null;
+var siteLayer = null;
+
+// Ontario FSA centroids
+var FSA_COORDS = {
+  // K - Eastern Ontario / Ottawa / Kingston
+  'K0A':[45.23,-75.43],'K0B':[45.31,-74.65],'K0C':[45.01,-75.64],'K0E':[44.91,-75.83],
+  'K0G':[44.78,-76.95],'K0H':[44.25,-76.95],'K0J':[45.82,-77.10],'K0K':[44.35,-77.38],
+  'K0L':[45.05,-77.85],'K0M':[45.05,-78.52],
+  'K1A':[45.42,-75.70],'K1B':[45.42,-75.60],'K1C':[45.45,-75.52],'K1E':[45.48,-75.52],
+  'K1G':[45.41,-75.67],'K1H':[45.38,-75.70],'K1J':[45.43,-75.62],'K1K':[45.43,-75.65],
+  'K1L':[45.43,-75.67],'K1M':[45.43,-75.72],'K1N':[45.43,-75.70],'K1P':[45.42,-75.70],
+  'K1R':[45.41,-75.71],'K1S':[45.41,-75.69],'K1T':[45.37,-75.66],'K1V':[45.37,-75.71],
+  'K1W':[45.44,-75.56],'K1X':[45.36,-75.72],'K1Y':[45.40,-75.74],'K1Z':[45.40,-75.73],
+  'K2A':[45.40,-75.77],'K2B':[45.35,-75.79],'K2C':[45.37,-75.78],'K2E':[45.36,-75.76],
+  'K2G':[45.32,-75.75],'K2H':[45.34,-75.78],'K2J':[45.28,-75.75],'K2K':[45.34,-75.85],
+  'K2L':[45.32,-75.88],'K2M':[45.31,-75.86],'K2P':[45.41,-75.69],'K2R':[45.26,-75.73],
+  'K2S':[45.27,-75.92],'K2T':[45.31,-75.88],'K2V':[45.29,-75.78],'K2W':[45.28,-75.80],
+  'K4A':[45.49,-75.52],'K4B':[45.48,-75.40],'K4C':[45.55,-75.29],'K4K':[45.61,-74.60],
+  'K4M':[44.91,-75.83],'K4P':[45.25,-75.57],'K4R':[45.04,-75.40],
+  'K6A':[44.71,-75.52],'K6H':[44.59,-75.69],'K6J':[44.60,-75.70],'K6K':[44.61,-75.68],
+  'K6T':[44.33,-76.16],'K6V':[44.59,-75.69],
+  'K7A':[44.90,-76.25],'K7C':[44.90,-76.02],'K7G':[44.90,-76.02],'K7H':[44.90,-76.02],
+  'K7K':[44.23,-76.49],'K7L':[44.23,-76.50],'K7M':[44.23,-76.52],'K7N':[44.24,-76.55],
+  'K7P':[44.25,-76.59],'K7R':[44.27,-76.62],'K7V':[45.43,-76.36],
+  'K8A':[45.47,-76.69],'K8B':[45.47,-76.69],'K8H':[45.83,-77.11],'K8N':[44.17,-77.39],
+  'K8P':[44.15,-77.38],'K8R':[44.16,-77.40],'K8V':[44.10,-77.58],
+  'K9A':[43.96,-78.17],'K9H':[44.31,-77.80],'K9J':[44.31,-78.32],'K9K':[44.31,-78.33],
+  'K9L':[44.29,-78.31],'K9V':[44.35,-78.74],
+  // L - Central Ontario / GTA / Hamilton
+  'L0A':[43.98,-78.62],'L0B':[43.93,-78.59],'L0C':[44.00,-79.68],'L0E':[44.30,-79.38],
+  'L0G':[43.94,-79.85],'L0H':[43.79,-79.60],'L0K':[44.75,-79.90],'L0L':[44.40,-79.65],
+  'L0M':[44.19,-79.70],'L0N':[43.70,-80.37],'L0P':[43.61,-80.15],'L0R':[43.10,-79.83],
+  'L0S':[43.08,-79.07],
+  'L1A':[44.10,-78.94],'L1B':[43.87,-78.96],'L1C':[43.91,-78.69],'L1E':[43.93,-78.74],
+  'L1G':[43.90,-78.87],'L1H':[43.88,-78.84],'L1J':[43.87,-78.86],'L1K':[43.91,-78.90],
+  'L1L':[43.93,-78.91],'L1M':[43.97,-79.25],'L1N':[43.86,-78.94],'L1P':[43.87,-78.97],
+  'L1R':[43.90,-78.96],'L1S':[43.84,-79.02],'L1T':[43.86,-79.03],'L1V':[43.83,-79.08],
+  'L1W':[43.83,-79.07],'L1X':[43.85,-79.09],'L1Y':[43.87,-79.09],'L1Z':[43.85,-79.05],
+  'L2A':[42.91,-79.02],'L2E':[43.10,-79.07],'L2G':[43.08,-79.07],'L2H':[43.11,-79.10],
+  'L2J':[43.13,-79.08],'L2M':[43.18,-79.22],'L2N':[43.19,-79.25],'L2P':[43.16,-79.25],
+  'L2R':[43.16,-79.24],'L2S':[43.15,-79.22],'L2T':[43.16,-79.27],'L2V':[42.99,-79.24],
+  'L3A':[44.15,-79.87],'L3B':[42.99,-79.23],'L3C':[43.10,-79.21],'L3K':[42.89,-79.25],
+  'L3M':[43.19,-79.56],'L3P':[43.87,-79.26],'L3R':[43.83,-79.33],'L3S':[43.85,-79.26],
+  'L3T':[43.82,-79.42],'L3V':[44.60,-79.42],'L3X':[44.07,-79.47],'L3Y':[44.05,-79.46],
+  'L3Z':[44.12,-79.56],
+  'L4A':[43.97,-79.25],'L4B':[43.87,-79.40],'L4C':[43.88,-79.43],'L4E':[43.94,-79.44],
+  'L4G':[43.99,-79.47],'L4H':[43.80,-79.60],'L4J':[43.82,-79.45],'L4K':[43.82,-79.53],
+  'L4L':[43.79,-79.60],'L4M':[44.37,-79.69],'L4N':[44.39,-79.69],'L4P':[44.25,-79.47],
+  'L4R':[44.75,-79.88],'L4S':[43.87,-79.42],'L4T':[43.71,-79.63],'L4V':[43.70,-79.62],
+  'L4W':[43.65,-79.62],'L4X':[43.63,-79.61],'L4Y':[43.60,-79.59],'L4Z':[43.62,-79.65],
+  'L5A':[43.59,-79.60],'L5B':[43.60,-79.64],'L5C':[43.56,-79.64],'L5E':[43.56,-79.57],
+  'L5G':[43.55,-79.59],'L5H':[43.53,-79.61],'L5J':[43.51,-79.63],'L5K':[43.52,-79.65],
+  'L5L':[43.53,-79.66],'L5M':[43.56,-79.72],'L5N':[43.59,-79.74],'L5P':[43.68,-79.63],
+  'L5R':[43.63,-79.68],'L5S':[43.68,-79.65],'L5T':[43.67,-79.66],'L5V':[43.61,-79.71],
+  'L5W':[43.60,-79.70],
+  'L6A':[43.86,-79.52],'L6B':[43.84,-79.08],'L6C':[43.91,-79.47],'L6E':[43.90,-79.29],
+  'L6G':[43.85,-79.32],'L6H':[43.49,-79.72],'L6J':[43.45,-79.69],'L6K':[43.45,-79.71],
+  'L6L':[43.45,-79.72],'L6M':[43.48,-79.75],'L6P':[43.76,-79.72],'L6R':[43.79,-79.74],
+  'L6S':[43.73,-79.72],'L6T':[43.71,-79.73],'L6V':[43.68,-79.76],'L6W':[43.68,-79.72],
+  'L6X':[43.69,-79.79],'L6Y':[43.66,-79.79],'L6Z':[43.72,-79.78],
+  'L7A':[43.73,-79.83],'L7B':[43.93,-79.53],'L7C':[43.86,-79.77],'L7E':[43.88,-79.74],
+  'L7G':[43.91,-79.93],'L7J':[43.64,-79.93],'L7K':[43.92,-80.10],'L7L':[43.37,-79.80],
+  'L7M':[43.38,-79.83],'L7N':[43.34,-79.81],'L7P':[43.34,-79.83],'L7R':[43.33,-79.80],
+  'L7S':[43.32,-79.79],'L7T':[43.32,-79.80],
+  'L8A':[43.23,-79.86],'L8B':[43.29,-79.93],'L8E':[43.24,-79.76],'L8G':[43.23,-79.78],
+  'L8H':[43.24,-79.78],'L8J':[43.21,-79.80],'L8K':[43.23,-79.82],'L8L':[43.26,-79.85],
+  'L8M':[43.26,-79.86],'L8N':[43.25,-79.86],'L8P':[43.26,-79.87],'L8R':[43.27,-79.87],
+  'L8S':[43.27,-79.89],'L8T':[43.23,-79.87],'L8V':[43.22,-79.87],'L8W':[43.20,-79.88],
+  'L9A':[43.22,-79.88],'L9B':[43.20,-79.88],'L9C':[43.22,-79.88],'L9G':[43.23,-79.99],
+  'L9H':[43.27,-79.96],'L9J':[43.30,-79.97],'L9K':[43.22,-79.93],'L9M':[44.77,-79.94],
+  'L9N':[44.30,-79.57],'L9P':[44.10,-79.12],'L9R':[44.37,-79.71],'L9S':[44.33,-79.60],
+  'L9T':[43.52,-79.88],'L9V':[43.92,-80.09],'L9W':[43.91,-80.09],'L9X':[44.41,-79.73],
+  'L9Y':[44.50,-80.22],'L9Z':[44.52,-80.02],
+  // M - Toronto
+  'M1B':[43.81,-79.23],'M1C':[43.78,-79.16],'M1E':[43.77,-79.18],'M1G':[43.77,-79.23],
+  'M1H':[43.76,-79.25],'M1J':[43.74,-79.26],'M1K':[43.74,-79.28],'M1L':[43.72,-79.29],
+  'M1M':[43.72,-79.22],'M1N':[43.69,-79.26],'M1P':[43.77,-79.29],'M1R':[43.76,-79.31],
+  'M1S':[43.79,-79.29],'M1T':[43.78,-79.31],'M1V':[43.81,-79.29],'M1W':[43.80,-79.31],
+  'M1X':[43.82,-79.23],
+  'M2H':[43.80,-79.37],'M2J':[43.78,-79.36],'M2K':[43.76,-79.40],'M2L':[43.74,-79.38],
+  'M2M':[43.77,-79.41],'M2N':[43.76,-79.41],'M2P':[43.74,-79.40],'M2R':[43.77,-79.44],
+  'M3A':[43.75,-79.33],'M3B':[43.74,-79.35],'M3C':[43.73,-79.35],'M3H':[43.76,-79.45],
+  'M3J':[43.76,-79.49],'M3K':[43.73,-79.46],'M3L':[43.73,-79.50],'M3M':[43.72,-79.49],
+  'M3N':[43.76,-79.52],
+  'M4A':[43.71,-79.32],'M4B':[43.70,-79.31],'M4C':[43.69,-79.31],'M4E':[43.68,-79.29],
+  'M4G':[43.71,-79.36],'M4H':[43.70,-79.35],'M4J':[43.68,-79.33],'M4K':[43.67,-79.35],
+  'M4L':[43.67,-79.32],'M4M':[43.66,-79.34],'M4N':[43.73,-79.39],'M4P':[43.71,-79.39],
+  'M4R':[43.72,-79.40],'M4S':[43.70,-79.39],'M4T':[43.69,-79.39],'M4V':[43.68,-79.40],
+  'M4W':[43.68,-79.38],'M4X':[43.66,-79.37],'M4Y':[43.67,-79.38],
+  'M5A':[43.66,-79.36],'M5B':[43.66,-79.38],'M5C':[43.65,-79.38],'M5E':[43.64,-79.38],
+  'M5G':[43.66,-79.39],'M5H':[43.65,-79.38],'M5J':[43.64,-79.39],'M5M':[43.74,-79.42],
+  'M5N':[43.73,-79.41],'M5P':[43.70,-79.41],'M5R':[43.67,-79.41],'M5S':[43.66,-79.40],
+  'M5T':[43.65,-79.40],'M5V':[43.64,-79.40],
+  'M6A':[43.70,-79.45],'M6B':[43.70,-79.44],'M6C':[43.69,-79.43],'M6E':[43.68,-79.45],
+  'M6G':[43.67,-79.43],'M6H':[43.66,-79.44],'M6J':[43.65,-79.43],'M6K':[43.64,-79.44],
+  'M6L':[43.71,-79.48],'M6M':[43.69,-79.48],'M6N':[43.67,-79.47],'M6P':[43.66,-79.46],
+  'M6R':[43.65,-79.45],'M6S':[43.65,-79.47],
+  'M8V':[43.61,-79.50],'M8W':[43.60,-79.53],'M8X':[43.64,-79.49],'M8Y':[43.62,-79.49],
+  'M8Z':[43.61,-79.52],
+  'M9A':[43.65,-79.51],'M9B':[43.65,-79.54],'M9C':[43.64,-79.57],'M9L':[43.73,-79.59],
+  'M9M':[43.73,-79.56],'M9N':[43.70,-79.53],'M9P':[43.69,-79.53],'M9R':[43.68,-79.57],
+  'M9V':[43.74,-79.61],'M9W':[43.73,-79.63],
+  // N - Southwestern Ontario
+  'N0A':[43.06,-79.86],'N0B':[43.69,-80.43],'N0C':[44.28,-80.52],'N0E':[42.84,-80.30],
+  'N0G':[43.60,-80.60],'N0H':[44.15,-81.02],'N0J':[42.85,-80.50],'N0K':[43.35,-81.47],
+  'N0L':[42.96,-81.62],'N0M':[43.35,-81.47],'N0N':[42.60,-82.39],'N0P':[42.97,-82.40],
+  'N0R':[42.05,-82.60],
+  'N1E':[43.56,-80.24],'N1G':[43.53,-80.23],'N1H':[43.55,-80.26],'N1K':[43.55,-80.29],
+  'N1L':[43.53,-80.30],'N1M':[43.70,-80.37],'N1R':[43.37,-80.31],'N1S':[43.37,-80.32],
+  'N1T':[43.40,-80.30],
+  'N2A':[43.43,-80.43],'N2B':[43.44,-80.46],'N2C':[43.42,-80.43],'N2E':[43.41,-80.49],
+  'N2G':[43.45,-80.49],'N2H':[43.46,-80.50],'N2J':[43.46,-80.52],'N2K':[43.48,-80.51],
+  'N2L':[43.47,-80.54],'N2M':[43.43,-80.52],'N2N':[43.43,-80.55],'N2P':[43.40,-80.53],
+  'N2R':[43.40,-80.48],'N2T':[43.46,-80.57],'N2V':[43.50,-80.56],
+  'N3C':[43.17,-80.28],'N3E':[43.17,-80.27],'N3L':[43.22,-80.38],'N3P':[43.17,-80.26],
+  'N3R':[43.14,-80.26],'N3S':[43.15,-80.25],'N3T':[43.13,-80.25],'N3V':[43.15,-80.28],
+  'N3W':[43.08,-79.96],
+  'N4B':[42.86,-80.73],'N4G':[42.86,-80.73],'N4K':[44.57,-80.94],'N4L':[44.56,-80.95],
+  'N4N':[44.15,-81.02],'N4S':[43.13,-80.75],'N4T':[43.13,-80.77],'N4W':[43.73,-80.95],
+  'N4X':[43.15,-80.78],
+  'N5A':[42.78,-81.19],'N5G':[42.78,-80.98],'N5H':[42.77,-80.99],'N5L':[42.77,-81.20],
+  'N5P':[42.78,-81.20],'N5R':[42.78,-81.19],'N5V':[43.00,-81.14],'N5W':[43.00,-81.17],
+  'N5X':[43.02,-81.28],'N5Y':[43.01,-81.22],'N5Z':[42.98,-81.21],
+  'N6A':[42.99,-81.25],'N6B':[42.99,-81.24],'N6C':[42.98,-81.24],'N6E':[42.96,-81.24],
+  'N6G':[43.01,-81.28],'N6H':[42.99,-81.29],'N6J':[42.98,-81.28],'N6K':[43.00,-81.32],
+  'N6L':[42.96,-81.28],'N6M':[42.95,-81.22],'N6N':[42.95,-81.25],'N6P':[42.95,-81.31],
+  'N7A':[42.97,-82.40],'N7G':[42.88,-82.14],'N7M':[42.40,-82.19],'N7S':[42.97,-82.40],
+  'N7T':[42.99,-82.41],'N7V':[43.00,-82.40],'N7W':[43.01,-82.40],'N7X':[43.00,-82.41],
+  'N8A':[42.33,-82.92],'N8H':[42.10,-83.10],'N8M':[42.05,-82.60],'N8N':[42.06,-82.59],
+  'N8P':[42.32,-82.89],'N8R':[42.31,-82.96],'N8S':[42.32,-82.98],'N8T':[42.32,-83.00],
+  'N8V':[42.31,-83.01],'N8W':[42.30,-83.01],'N8X':[42.30,-83.02],'N8Y':[42.31,-83.04],
+  'N9A':[42.31,-83.04],'N9B':[42.31,-83.04],'N9C':[42.30,-83.04],'N9E':[42.29,-83.05],
+  'N9G':[42.28,-83.03],'N9H':[42.29,-83.01],'N9J':[42.27,-83.10],'N9V':[42.35,-82.98],
+  'N9Y':[42.10,-83.10],
+  // P - Northern Ontario
+  'P0A':[45.50,-79.30],'P0B':[45.03,-79.30],'P0C':[45.05,-78.52],'P0E':[47.99,-84.77],
+  'P0G':[46.25,-83.55],'P0H':[47.51,-79.68],'P0J':[49.07,-81.02],'P0K':[47.51,-79.68],
+  'P0L':[49.69,-83.66],'P0M':[46.50,-81.00],'P0N':[49.40,-82.43],'P0P':[46.52,-84.33],
+  'P0R':[48.38,-89.25],'P0S':[48.60,-85.28],'P0T':[48.38,-89.25],'P0V':[50.09,-91.92],
+  'P0W':[50.64,-93.26],'P0X':[49.78,-92.84],'P0Y':[48.47,-81.33],
+  'P1A':[46.30,-79.46],'P1B':[46.33,-79.47],'P1C':[46.32,-79.46],'P1H':[45.33,-79.22],
+  'P1L':[45.03,-79.30],'P1P':[44.92,-79.37],
+  'P2A':[45.34,-80.04],'P2B':[45.34,-80.04],'P2N':[45.76,-79.40],
+  'P3A':[46.52,-80.97],'P3B':[46.50,-80.99],'P3C':[46.47,-81.00],'P3E':[46.47,-80.97],
+  'P3G':[46.45,-80.99],'P3L':[46.57,-80.90],'P3N':[46.55,-80.97],'P3P':[46.42,-81.00],
+  'P3Y':[46.50,-81.00],
+  'P4N':[48.47,-81.33],'P4P':[48.48,-81.34],'P4R':[48.46,-81.35],
+  'P5A':[46.53,-84.33],'P5E':[46.53,-84.34],'P5N':[49.42,-82.43],
+  'P6A':[46.52,-84.34],'P6B':[46.51,-84.35],'P6C':[46.50,-84.36],
+  'P7A':[48.40,-89.25],'P7B':[48.39,-89.25],'P7C':[48.37,-89.24],'P7E':[48.38,-89.23],
+  'P7G':[48.40,-89.32],'P7J':[48.42,-89.30],'P7K':[48.45,-89.27],
+  'P8N':[48.73,-94.57],'P8T':[48.61,-93.40],
+  'P9A':[48.38,-89.25],'P9N':[49.77,-94.49]
+};
+
+function bubbleRadius(count){
+  // sqrt scale: 1→5, 4→10, 9→15, 16→20, 25→25, 36→30, capped 35
+  return Math.max(5, Math.min(35, Math.sqrt(count) * 5));
+}
+
+// Gate
+document.getElementById('gate-btn').addEventListener('click', function(){
+  var v = document.getElementById('gi').value.trim();
+  if(!v) return;
+  pass = v;
+  loadData();
+});
+document.getElementById('gi').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('gate-btn').click(); });
+document.getElementById('refresh-btn').addEventListener('click', loadData);
+
+function initMap(){
+  if(map) return;
+  map = L.map('map', { center:[46.5,-80.0], zoom:6, zoomControl:true });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom:13
+  }).addTo(map);
+}
+
+async function loadData(){
+  document.getElementById('ge').textContent = '';
+  var res;
+  try {
+    res = await fetch(WORKER + '/heatmap-data?pass=' + encodeURIComponent(pass));
+  } catch(e) {
+    document.getElementById('ge').textContent = 'Network error: ' + e.message;
+    return;
+  }
+  if(res.status === 401){
+    document.getElementById('ge').textContent = 'Incorrect access code.';
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    sessionStorage.removeItem('loomi_hm_pass');
+    return;
+  }
+  if(!res.ok){
+    document.getElementById('ge').textContent = 'Error: HTTP ' + res.status;
+    return;
+  }
+  var data = await res.json();
+  sessionStorage.setItem('loomi_hm_pass', pass);
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  initMap();
+  renderMap(data);
+}
+
+function renderMap(data){
+  // Clear layers
+  if(fsaLayer){ map.removeLayer(fsaLayer); fsaLayer = null; }
+  if(siteLayer){ map.removeLayer(siteLayer); siteLayer = null; }
+  fsaLayer = L.layerGroup();
+  siteLayer = L.layerGroup();
+
+  var totalContractors = 0, plotted = 0, fsaCount = 0;
+
+  // Contractor FSA bubbles (render before sites so sites appear on top)
+  for(var fsa in data.fsaMap){
+    var count = data.fsaMap[fsa];
+    totalContractors += count;
+    var coords = FSA_COORDS[fsa];
+    if(!coords) continue;
+    plotted += count;
+    fsaCount++;
+    (function(f, c, co){
+      var circle = L.circleMarker([co[0], co[1]], {
+        radius: bubbleRadius(c),
+        fillColor: '#2f9879',
+        color: '#1f7a5e',
+        weight: 1.5,
+        opacity: 0.9,
+        fillOpacity: 0.5
+      });
+      circle.bindTooltip(
+        '<span class="tt-name">' + f + '</span><br><span class="tt-count">' + c + ' contractor' + (c !== 1 ? 's' : '') + '</span>',
+        { permanent: false, direction: 'top', offset: [0, -4] }
+      );
+      circle.addTo(fsaLayer);
+    })(fsa, count, coords);
+  }
+
+  // Site markers on top
+  var siteIconHtml = '<div style="width:14px;height:14px;border-radius:50%;background:#1a4e7e;border:2px solid #7dbe42;box-shadow:0 2px 8px rgba(0,0,0,.5);"></div>';
+  for(var i = 0; i < data.sites.length; i++){
+    var site = data.sites[i];
+    var siteFSA = site.postalCode;
+    var siteCoords = FSA_COORDS[siteFSA];
+    if(!siteCoords) continue;
+    (function(s, co){
+      var icon = L.divIcon({ html: siteIconHtml, iconSize:[14,14], iconAnchor:[7,7], className:'' });
+      var marker = L.marker([co[0], co[1]], { icon: icon, zIndexOffset: 1000 });
+      marker.bindTooltip(
+        '<span class="tt-site">' + s.name + '</span><br>Hub Site (' + s.postalCode + ')',
+        { permanent: false, direction: 'top', offset: [0, -8] }
+      );
+      marker.addTo(siteLayer);
+    })(site, siteCoords);
+  }
+
+  fsaLayer.addTo(map);
+  siteLayer.addTo(map);
+
+  // Stats bar
+  var unplotted = totalContractors - plotted;
+  var lu = new Date();
+  var statsHtml =
+    '<span class="stat-item"><span class="s-dot"></span>Updated ' + lu.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'}) + '</span>' +
+    '<span class="stat-item"><span class="stat-dot" style="background:#2f9879;"></span>' + totalContractors + ' active contractors</span>' +
+    '<span class="stat-item"><span class="stat-dot" style="background:#1a4e7e;"></span>' + data.sites.length + ' hub sites</span>' +
+    '<span class="stat-item"><span class="stat-dot" style="background:#2a3340;"></span>' + fsaCount + ' FSAs plotted</span>';
+  if(unplotted > 0){
+    statsHtml += '<span class="stat-item" style="color:#d4a017;">&#9888; ' + unplotted + ' contractors missing valid postal code</span>';
+  }
+  document.getElementById('stats-bar').innerHTML = statsHtml;
+}
+
+// Auto-load if password cached in session
+if(pass) loadData();
+</script>
+</body>
+</html>
