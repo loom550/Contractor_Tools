@@ -251,7 +251,7 @@ function bubbleRadius(count){return Math.max(5,Math.min(35,Math.sqrt(count)*5));
 function siteCategory(locationType){
   var lt=(locationType||'').toLowerCase();
   if(lt==='virtual'||lt==='eoc') return 'eoc';
-  if(lt==='host'||lt==='host site') return 'host';
+  if(lt==='host') return 'host';
   return 'hub';
 }
 
