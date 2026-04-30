@@ -1018,11 +1018,12 @@ function renderEvacueeList() {
     const badgeClass = { ok: 'badge-ok', warning: 'badge-warn', maxed: 'badge-max' }[status];
     const badgeText  = { ok: 'Eligible', warning: '⚠ Near Limit', maxed: '✗ Maxed' }[status];
     const fillClass  = { ok: 'fill-ok',  warning: 'fill-warn',  maxed: 'fill-max'  }[status];
-    const safeName = fullName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    const safeId   = (ev.EvacueeID || '').replace(/'/g, "\\'");
-    return `
-      <div class="ev-item ${status} ${isSel ? 'selected' : ''}"
-           onclick="${isMaxed ? '' : `toggleEvacuee('${safeId}', '${safeName}')`}">
+    const safeId   = (ev.EvacueeID || '').replace(/"/g, '&quot;');
+const safeName = fullName.replace(/"/g, '&quot;');
+return `
+  <div class="ev-item ${status} ${isSel ? 'selected' : ''}"
+       data-id="${safeId}" data-name="${safeName}"
+       onclick="${isMaxed ? '' : 'handleEvacueeClick(event)'}">
         <div class="ev-check">${isSel ? '✓' : ''}</div>
         <div class="ev-info">
           <div class="ev-name">${fullName}</div>
@@ -1073,6 +1074,11 @@ function renderLineItems() {
         </div>
       </div>`;
   }).join('');
+}
+
+  function handleEvacueeClick(e) {
+  const el = e.currentTarget;
+  toggleEvacuee(el.dataset.id, el.dataset.name);
 }
 
 function checkOver(input, evacueeId) {
