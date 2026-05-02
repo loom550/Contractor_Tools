@@ -204,7 +204,7 @@
       <h1>Loomex Tools</h1>
       <p>Contractor and EOC Portal</p>
     </div>
-    <button class="eoc-login-btn" id="eocLoginBtn" onclick="handleEocLoginClick()">EOC Login</button>
+    <button class="eoc-login-btn" id="eocLoginBtn" onclick="handleEocLoginClick()">Login</button>
   </div>
 
   <div class="card">
@@ -363,6 +363,22 @@
 
     </div>
 
+    <div id="corpSection" style="display:none;border-top:1px solid #eef0f3;padding:16px 24px 24px;">
+      <div class="section-label navy-label" style="margin-bottom:16px;">Corporate</div>
+
+      <a class="tool-card navy-card" href="https://tools.loomex.ca/hr-docs.html">
+        <div class="tool-icon icon-navy">&#128196;</div>
+        <div class="tool-info">
+          <h3>HR Document Review</h3>
+          <p>Review and manage HR documentation for Loomex staff and contractors.</p>
+        </div>
+        <span class="tool-arrow">&#8250;</span>
+      </a>
+
+      <div class="section-label navy-label" style="margin-top:20px;margin-bottom:12px;">Tool Credentials</div>
+      <div id="corp-tools-list" style="font-size:13px;color:var(--text-muted);padding:8px 0;">Loading&hellip;</div>
+    </div>
+
   </div>
 
   <div class="page-footer">
@@ -392,8 +408,8 @@
   <div class="modal login-modal">
     <div class="modal-header">
       <div>
-        <h2>EOC Staff Login</h2>
-        <p>Enter your EOC password to continue</p>
+        <h2>Login</h2>
+        <p>Enter your password to continue</p>
       </div>
       <button class="modal-close" onclick="closeModal('loginModal')">&#x2715;</button>
     </div>
@@ -428,7 +444,10 @@ window.addEventListener('DOMContentLoaded', function() {
     method: 'GET',
     credentials: 'include'
   }).then(function(res) { return res.json(); }).then(function(data) {
-    if (data.ok) showEocSection();
+    if (data.ok) {
+      showEocSection();
+      if (data.role === 'corporate') showCorpSection();
+    }
   }).catch(function() {});
 });
 
@@ -467,6 +486,7 @@ function submitEocLogin() {
       closeModal('loginModal');
       document.getElementById('eocPassword').value = '';
       showEocSection();
+      if (data.role === 'corporate') showCorpSection();
       setTimeout(function() { document.getElementById('eocSection').scrollIntoView({ behavior: 'smooth' }); }, 150);
     } else {
       errEl.textContent = 'Incorrect password. Please try again.';
@@ -485,8 +505,67 @@ function submitEocLogin() {
 function showEocSection() {
   document.getElementById('eocSection').classList.add('visible');
   var btn = document.getElementById('eocLoginBtn');
-  btn.textContent = 'EOC Staff';
+  btn.textContent = 'Staff';
   btn.classList.add('authed');
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showCorpSection() {
+  var sec = document.getElementById('corpSection');
+  sec.style.display = 'block';
+  var list = document.getElementById('corp-tools-list');
+  list.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">Loading&hellip;</div>';
+  fetch(EOC_WORKER + '/corp-data', { method: 'GET', credentials: 'include' })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.tools || !data.tools.length) {
+        list.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No credentials stored yet. Add them to CORP_TOOLS_JSON in the worker.</div>';
+        return;
+      }
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+      html += '<thead><tr style="background:#e8eef5;">';
+      html += '<th style="text-align:left;padding:8px 10px;color:var(--navy);font-size:11px;font-weight:700;width:22%;">Tool</th>';
+      html += '<th style="text-align:left;padding:8px 10px;color:var(--navy);font-size:11px;font-weight:700;width:38%;">URL</th>';
+      html += '<th style="text-align:left;padding:8px 10px;color:var(--navy);font-size:11px;font-weight:700;width:25%;">Password</th>';
+      html += '<th style="text-align:left;padding:8px 10px;color:var(--navy);font-size:11px;font-weight:700;">Notes</th>';
+      html += '</tr></thead><tbody>';
+      data.tools.forEach(function(t, i) {
+        var bg = i % 2 === 0 ? '#f5f7fa' : '#ffffff';
+        var pw = t.password || '';
+        var masked = pw ? '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;' : '&mdash;';
+        html += '<tr style="background:' + bg + '">';
+        html += '<td style="padding:8px 10px;font-weight:600;color:var(--navy);border-bottom:1px solid #eef0f3;">' + esc(t.name) + '</td>';
+        html += '<td style="padding:8px 10px;border-bottom:1px solid #eef0f3;">' + (t.url ? '<a href="' + esc(t.url) + '" target="_blank" style="color:var(--green);font-size:12px;word-break:break-all;">' + esc(t.url) + '</a>' : '<span style="color:#ccc">&mdash;</span>') + '</td>';
+        html += '<td style="padding:8px 10px;border-bottom:1px solid #eef0f3;">';
+        if (pw) {
+          html += '<span class="pw-cell" data-pw="' + esc(pw) + '" data-revealed="0" onclick="togglePw(this)" style="font-family:monospace;font-size:12px;cursor:pointer;user-select:none;color:var(--navy);" title="Click to reveal">' + masked + '</span>';
+        } else {
+          html += '<span style="color:#ccc;">&mdash;</span>';
+        }
+        html += '</td>';
+        html += '<td style="padding:8px 10px;font-size:12px;color:var(--text-muted);border-bottom:1px solid #eef0f3;">' + esc(t.notes || '') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      html += '<div style="font-size:11px;color:var(--text-muted);margin-top:10px;">Click a password to reveal. Closes automatically on sign out.</div>';
+      list.innerHTML = html;
+    })
+    .catch(function() {
+      list.innerHTML = '<div style="font-size:13px;color:#c0392b;padding:8px 0;">Could not load credentials.</div>';
+    });
+}
+
+function togglePw(el) {
+  if (el.dataset.revealed === '1') {
+    el.textContent = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+    el.dataset.revealed = '0';
+  } else {
+    el.textContent = el.dataset.pw;
+    el.dataset.revealed = '1';
+  }
 }
 
 function eocLogout() {
@@ -495,8 +574,10 @@ function eocLogout() {
     credentials: 'include'
   }).catch(function() {}).finally(function() {
     document.getElementById('eocSection').classList.remove('visible');
+    document.getElementById('corpSection').style.display = 'none';
+    document.getElementById('corp-tools-list').innerHTML = '';
     var btn = document.getElementById('eocLoginBtn');
-    btn.textContent = 'EOC Login';
+    btn.textContent = 'Login';
     btn.classList.remove('authed');
   });
 }
