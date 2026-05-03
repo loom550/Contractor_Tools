@@ -994,10 +994,10 @@ function renderPaxRow(p, isUnassigned, targetFlightId) {
       '<span>' + (p.luggageWeight||0) + ' lug</span>' +
       '<span>' + (p.carryOnWeight||0) + ' carry</span>' +
     '</div>' +
-    (isUnassigned
-      ? '<button class="assign-btn" data-pax-id="' + p.id + '">Assign</button>'
-      : '<button class="pax-edit-btn" data-pax-id="' + p.id + '">Edit</button>') +
-  '</div>';
+    '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+  (isUnassigned ? '<button class="assign-btn" data-pax-id="' + p.id + '">Assign</button>' : '') +
+  '<button class="pax-edit-btn" data-pax-id="' + p.id + '">Edit</button>' +
+'</div>'
 }
 
 // ── ASSIGN PAX ────────────────────────────────────────────────────────────────
