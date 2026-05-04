@@ -908,6 +908,7 @@ var uploadMasterRows = [];
 var poolSelected = {};
 var lastPoolFlightId = null;
 var activeWarnings = {};
+var poolCollapsed = false;
 var hidePastFlights = false;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -1147,38 +1148,43 @@ function renderPaxPanel(flightId) {
     });
   }
 
-  // Pool — flat alpha
+  // Assigned section — always first
+  if (filteredAssigned.length) {
+    html += '<div class="section-label">On Flight ' + esc(flight.flightNumber) + ' <span class="section-badge" style="background:var(--teal);">' + filteredAssigned.length + '</span></div>';
+    filteredAssigned.forEach(function(p) {
+      var key = (p.firstName + ' ' + p.lastName).toLowerCase().trim();
+      html += renderPaxRow(p, false, flightId, nameCounts[key] > 1);
+    });
+  } else if (!departed && !searchQ) {
+    html += '<div style="padding:16px 16px 0;text-align:center;color:var(--text-muted);font-size:13px;">No passengers assigned yet.</div>';
+  }
+
+  // Pool — collapsible, below assigned
   if (!departed) {
     if (filteredPool.length === 0 && pool.length === 0 && flightPax.length === 0) {
       html += '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No passengers yet.<br>Upload an inbound manifest to add to the pool.</div>';
     } else if (filteredPool.length === 0 && searchQ) {
       html += '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">No pool matches for "' + esc(searchQ) + '"</div>';
     } else if (filteredPool.length > 0) {
-      html += '<div class="section-label" style="justify-content:space-between;">' +
-        '<span>Hub Pool <span class="section-badge">' + filteredPool.length + '</span></span>' +
+      html += '<div class="section-label" style="justify-content:space-between;margin-top:4px;">' +
+        '<span style="display:flex;align-items:center;gap:6px;cursor:pointer;" onclick="togglePool()">' +
+          '<span>' + (poolCollapsed ? '&#9658;' : '&#9660;') + '</span>' +
+          'Hub Pool <span class="section-badge">' + filteredPool.length + '</span>' +
+        '</span>' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<button class="btn-bulk-remove" id="btn-bulk-remove" onclick="bulkRemovePool(\'' + flightId + '\')">&#128465; Remove <span id="bulk-remove-count">0</span></button>' +
-          '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;">' +
+          (!poolCollapsed ? '<button class="btn-bulk-remove" id="btn-bulk-remove" onclick="event.stopPropagation();bulkRemovePool(\'' + flightId + '\')">&#128465; Remove <span id="bulk-remove-count">0</span></button>' : '') +
+          (!poolCollapsed ? '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;" onclick="event.stopPropagation();">' +
             '<input type="checkbox" class="pool-cb" id="pool-select-all"> All' +
-          '</label>' +
+          '</label>' : '') +
         '</div>' +
       '</div>';
-      filteredPool.forEach(function(p) {
-        var key = (p.firstName + ' ' + p.lastName).toLowerCase().trim();
-        html += renderPaxRow(p, true, flightId, nameCounts[key] > 1);
-      });
+      if (!poolCollapsed) {
+        filteredPool.forEach(function(p) {
+          var key = (p.firstName + ' ' + p.lastName).toLowerCase().trim();
+          html += renderPaxRow(p, true, flightId, nameCounts[key] > 1);
+        });
+      }
     }
-  }
-
-  // Assigned section
-  if (filteredAssigned.length) {
-    html += '<div class="section-label">Assigned to ' + esc(flight.flightNumber) + ' <span class="section-badge" style="background:var(--teal);">' + filteredAssigned.length + '</span></div>';
-    filteredAssigned.forEach(function(p) {
-      var key = (p.firstName + ' ' + p.lastName).toLowerCase().trim();
-      html += renderPaxRow(p, false, flightId, nameCounts[key] > 1);
-    });
-  } else if (!departed && !pool.length && !searchQ) {
-    html += '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No passengers assigned yet.</div>';
   }
 
   // Generate section
@@ -2236,6 +2242,11 @@ function bulkRemovePool(flightId) {
     renderPaxPanel(flightId);
     showToast(ids.length + ' passengers removed', 'ok');
   });
+}
+
+  function togglePool() {
+  poolCollapsed = !poolCollapsed;
+  if (selectedFlightId) renderPaxPanel(selectedFlightId);
 }
 
 </script>
