@@ -1218,7 +1218,10 @@ function renderPaxPanel(flightId) {
   if (searchInput) {
     searchInput.addEventListener('input', function() {
       poolSearchQuery = this.value;
+      var pos = this.selectionStart;
       renderPaxPanel(flightId);
+      var reInput = document.getElementById('pool-search');
+      if (reInput) { reInput.focus(); try { reInput.setSelectionRange(pos, pos); } catch(e) {} }
     });
   }
 
