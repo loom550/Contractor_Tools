@@ -479,6 +479,11 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .file-queue-remove{background:transparent;border:none;font-size:16px;color:var(--text-muted);cursor:pointer;flex-shrink:0;line-height:1;}
 
 .pax-info{flex:1;min-width:0;}
+.pool-cb{width:16px;height:16px;accent-color:var(--navy);cursor:pointer;flex-shrink:0;}
+.btn-pax-remove{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 4px;flex-shrink:0;transition:color .12s;}
+.btn-pax-remove:hover{color:var(--red);}
+.btn-bulk-remove{height:26px;padding:0 10px;background:var(--red-lt);color:var(--red);border:1px solid rgba(217,64,64,.3);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:none;}
+.btn-bulk-remove:hover{background:rgba(217,64,64,.2);}
 </style>
 </head>
 <body>
@@ -900,6 +905,8 @@ var inboundWarningsDismissed = {};
 var uploadQueue = [];
 var uploadQueueIndex = 0;
 var uploadMasterRows = [];
+var poolSelected = {};
+var lastPoolFlightId = null;
 var activeWarnings = {};
 var hidePastFlights = false;
 
@@ -1032,6 +1039,11 @@ function renderFlights() {
 // ── RENDER PAX PANEL ──────────────────────────────────────────────────────────
 function renderPaxPanel(flightId) {
   var flight = flights.find(function(f) { return f.id === flightId; });
+  // Clear selection when switching flights
+  if (flightId !== lastPoolFlightId) {
+    poolSelected = {};
+    lastPoolFlightId = flightId;
+  }
   if (!flight) return;
 
   var flightPax = allPax.filter(function(p) { return p.flightId === flightId; });
@@ -1142,7 +1154,15 @@ function renderPaxPanel(flightId) {
     } else if (filteredPool.length === 0 && searchQ) {
       html += '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">No pool matches for "' + esc(searchQ) + '"</div>';
     } else if (filteredPool.length > 0) {
-      html += '<div class="section-label">Hub Pool <span class="section-badge">' + filteredPool.length + '</span></div>';
+      html += '<div class="section-label" style="justify-content:space-between;">' +
+        '<span>Hub Pool <span class="section-badge">' + filteredPool.length + '</span></span>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<button class="btn-bulk-remove" id="btn-bulk-remove" onclick="bulkRemovePool(\'' + flightId + '\')">&#128465; Remove <span id="bulk-remove-count">0</span></button>' +
+          '<label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;">' +
+            '<input type="checkbox" class="pool-cb" id="pool-select-all"> All' +
+          '</label>' +
+        '</div>' +
+      '</div>';
       filteredPool.forEach(function(p) {
         var key = (p.firstName + ' ' + p.lastName).toLowerCase().trim();
         html += renderPaxRow(p, true, flightId, nameCounts[key] > 1);
@@ -1213,6 +1233,44 @@ function renderPaxPanel(flightId) {
   var genBtn = document.getElementById('btn-generate');
   if (genBtn) genBtn.addEventListener('click', function() { generateManifest(flightId); });
   var prevBtn = document.getElementById('btn-preview');
+  // Wire pool checkboxes
+  panel.querySelectorAll('.pool-row-cb').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var pid = this.getAttribute('data-pax-id');
+      if (this.checked) poolSelected[pid] = true;
+      else delete poolSelected[pid];
+      updateBulkBar();
+    });
+  });
+
+  var selectAllCb = document.getElementById('pool-select-all');
+  if (selectAllCb) {
+    var allPoolIds = filteredPool.map(function(p) { return p.id; });
+    var allChecked = allPoolIds.length > 0 && allPoolIds.every(function(id) { return poolSelected[id]; });
+    var someChecked = allPoolIds.some(function(id) { return poolSelected[id]; });
+    selectAllCb.checked = allChecked;
+    selectAllCb.indeterminate = someChecked && !allChecked;
+
+    selectAllCb.addEventListener('change', function() {
+      panel.querySelectorAll('.pool-row-cb').forEach(function(cb) {
+        cb.checked = selectAllCb.checked;
+        var pid = cb.getAttribute('data-pax-id');
+        if (selectAllCb.checked) poolSelected[pid] = true;
+        else delete poolSelected[pid];
+      });
+      updateBulkBar();
+    });
+  }
+
+  // Wire individual remove buttons
+  panel.querySelectorAll('.btn-pax-remove').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      removePoolPax(this.getAttribute('data-pax-id'), flightId);
+    });
+  });
+
+  updateBulkBar();
   if (prevBtn) prevBtn.addEventListener('click', function() { openPreviewManifest(flightId); });
 }
 
@@ -1235,6 +1293,7 @@ function renderPaxRow(p, isUnassigned, targetFlightId, isDupe) {
     if (inbFlt) inboundBadge = '<span style="font-size:10px;background:var(--teal-lt);color:var(--teal);padding:1px 6px;border-radius:8px;margin-left:4px;">Flt ' + esc(inbFlt.flightNumber) + (inbFlt.flightDate ? ' \u00b7 ' + inbFlt.flightDate : '') + '</span>';
   }
   return '<div class="pax-row' + (isUnassigned ? ' unassigned-row' : '') + '"' + (isDupe ? ' style="background:#fffbf0;"' : '') + '>' +
+    (isUnassigned ? '<input type="checkbox" class="pool-cb pool-row-cb" data-pax-id="' + p.id + '" ' + (poolSelected[p.id] ? 'checked' : '') + '>' : '') +
     '<div class="ptype-badge b-' + p.passengerType + '">' + p.passengerType + '</div>' +
     '<div class="pax-info">' +
       '<div class="pax-name">' + medFlag + rxFlag + esc(p.firstName) + ' ' + esc(p.lastName) + destBadge + dupeBadge + inboundBadge + '</div>' +
@@ -1244,6 +1303,7 @@ function renderPaxRow(p, isUnassigned, targetFlightId, isDupe) {
     '<div style="display:flex;gap:6px;flex-shrink:0;">' +
     (isUnassigned ? '<button class="assign-btn" data-pax-id="' + p.id + '">Assign</button>' : '') +
     '<button class="pax-edit-btn" data-pax-id="' + p.id + '">Edit</button>' +
+    (isUnassigned ? '<button class="btn-pax-remove" data-pax-id="' + p.id + '" title="Remove">&times;</button>' : '') +
     '</div>' +
   '</div>';
 }
@@ -2121,6 +2181,63 @@ document.getElementById('edit-flight-modal').addEventListener('click', function(
   if (e.target === this) closeEditFlightModal();
 });
 document.getElementById('efm-save').addEventListener('click', saveEditFlight);
+
+function updateBulkBar() {
+  var count = Object.keys(poolSelected).length;
+  var btn = document.getElementById('btn-bulk-remove');
+  if (btn) {
+    btn.style.display = count > 0 ? '' : 'none';
+    var countEl = document.getElementById('bulk-remove-count');
+    if (countEl) countEl.textContent = count;
+  }
+  var allCbs = document.querySelectorAll('.pool-row-cb');
+  var checkedCount = document.querySelectorAll('.pool-row-cb:checked').length;
+  var selectAll = document.getElementById('pool-select-all');
+  if (selectAll) {
+    selectAll.checked = allCbs.length > 0 && checkedCount === allCbs.length;
+    selectAll.indeterminate = checkedCount > 0 && checkedCount < allCbs.length;
+  }
+}
+
+function removePoolPax(paxId, flightId) {
+  if (!confirm('Remove this passenger from the system? This cannot be undone.')) return;
+  api('DELETE', '/api/pax/' + paxId)
+    .then(function(data) {
+      if (data.error) { showToast('Error: ' + data.error, 'err'); return; }
+      allPax = allPax.filter(function(p) { return p.id !== paxId; });
+      delete poolSelected[paxId];
+      renderFlights();
+      renderPaxPanel(flightId);
+      showToast('Passenger removed', 'ok');
+    })
+    .catch(function(e) { showToast('Remove failed: ' + e.message, 'err'); });
+}
+
+function bulkRemovePool(flightId) {
+  var ids = Object.keys(poolSelected);
+  if (!ids.length) return;
+  if (!confirm('Permanently remove ' + ids.length + ' selected passenger' + (ids.length === 1 ? '' : 's') + ' from the system?\n\nThis cannot be undone.')) return;
+
+  showToast('Removing ' + ids.length + ' passengers...', '');
+
+  var promises = ids.map(function(paxId) {
+    return api('DELETE', '/api/pax/' + paxId)
+      .then(function(data) {
+        if (!data.error) {
+          allPax = allPax.filter(function(p) { return p.id !== paxId; });
+          delete poolSelected[paxId];
+        }
+      })
+      .catch(function() {});
+  });
+
+  Promise.allSettled(promises).then(function() {
+    renderFlights();
+    renderPaxPanel(flightId);
+    showToast(ids.length + ' passengers removed', 'ok');
+  });
+}
+
 </script>
 </body>
 </html>
