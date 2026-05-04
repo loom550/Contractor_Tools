@@ -446,7 +446,10 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .btn-preview{width:100%;height:44px;margin-top:14px;background:transparent;color:var(--navy);border:2px solid var(--navy);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;}
 .btn-preview:hover:not(:disabled){background:var(--navy-lt);}
 .btn-preview:disabled{opacity:.4;cursor:not-allowed;}
-
+.btn-toggle-past{background:transparent;border:1px solid var(--border);color:var(--text-muted);width:28px;height:28px;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;}
+.btn-toggle-past:hover{border-color:var(--navy);color:var(--navy);}
+.btn-toggle-past.active{background:var(--navy-lt);border-color:var(--navy);color:var(--navy);}
+  
 </style>
 </head>
 <body>
@@ -480,6 +483,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
       <div class="panel-hdr">
         <span class="panel-title">Flights</span>
         <span class="panel-count" id="flight-count"></span>
+        <button class="btn-toggle-past" id="btn-toggle-past" title="Hide completed flights">&#128065;</button>
         <button class="panel-action" id="add-flight-btn">+ Add Flight</button>
       </div>
 
@@ -762,6 +766,7 @@ var flights = [];
 var allPax = [];
 var selectedFlightId = null;
 var editingPaxId = null;
+var hidePastFlights = false;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 (function init() {
@@ -773,6 +778,12 @@ var editingPaxId = null;
   window.addEventListener('offline', updateDot);
   updateDot();
   document.getElementById('btn-refresh').addEventListener('click', loadData);
+  document.getElementById('btn-toggle-past').addEventListener('click', function() {
+    hidePastFlights = !hidePastFlights;
+    this.classList.toggle('active', hidePastFlights);
+    this.title = hidePastFlights ? 'Show completed flights' : 'Hide completed flights';
+    renderFlights();
+  });
   setupAddFlightForm();
   setupModal();
 })();
@@ -828,7 +839,7 @@ function renderFlights() {
     if (sa !== sb) return sa - sb;
     return (a.etd || '').localeCompare(b.etd || '');
   });
-
+  if (hidePastFlights) sorted = sorted.filter(function(f) { return f.status !== 'Departed' && f.status !== 'Departed-Revised' && f.status !== 'Received'; });
   container.innerHTML = sorted.map(function(f) {
     var paxForFlight = allPax.filter(function(p) { return p.flightId === f.id; });
     var totalLug = paxForFlight.reduce(function(s, p) { return s + (Number(p.luggageWeight) || 0); }, 0);
