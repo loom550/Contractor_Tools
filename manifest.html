@@ -1051,7 +1051,7 @@ function renderPaxPanel(flightId) {
 
   // Pool: At Hub only, not already on this flight
   var pool = allPax.filter(function(p) {
-    return p.paxStatus === 'At Hub' && p.flightId !== flightId;
+    return p.paxStatus === 'At Hub' && (!p.outboundFlightId || p.outboundFlightId !== flightId);
   });
 
   // Duplicate detection
@@ -1319,11 +1319,11 @@ function renderPaxRow(p, isUnassigned, targetFlightId, isDupe) {
 
 // ── ASSIGN PAX ────────────────────────────────────────────────────────────────
 function assignPax(paxId, flightId) {
-  api('PATCH', '/api/pax/' + paxId, { flightId: flightId })
+  api('PATCH', '/api/pax/' + paxId, { outboundFlightId: flightId })
     .then(function(data) {
       if (data.error) { showToast('Error: ' + data.error, 'err'); return; }
       var pax = allPax.find(function(p) { return p.id === paxId; });
-      if (pax) pax.flightId = flightId;
+      if (pax) pax.outboundFlightId = flightId;
       renderFlights();
       renderPaxPanel(flightId);
       showToast('Passenger assigned', 'ok');
@@ -1884,7 +1884,10 @@ document.getElementById('preview-overlay').addEventListener('click', function(e)
 function openPreviewManifest(flightId) {
   var flight = flights.find(function(f) { return f.id === flightId; });
   if (!flight) return;
-  var flightPax = allPax.filter(function(p) { return p.flightId === flightId; });
+  var isOutbound = flight.direction && flight.direction.toLowerCase() !== 'inbound';
+  var flightPax = allPax.filter(function(p) {
+    return isOutbound ? p.outboundFlightId === flightId : p.flightId === flightId;
+  });
   if (!flightPax.length) { showToast('No passengers assigned', 'err'); return; }
   var dnb = (document.getElementById('dnb-note') || {}).value || '';
   document.getElementById('preview-frame').srcdoc = buildClientManifestHTML(flight, flightPax, dnb);
@@ -2061,9 +2064,9 @@ function bulkAssignFromFlights(inboundFlightIds, outboundFlightId) {
   showToast('Assigning ' + paxToAssign.length + ' passengers...', '');
 
   var promises = paxToAssign.map(function(p) {
-    return api('PATCH', '/api/pax/' + p.id, { flightId: outboundFlightId })
+    return api('PATCH', '/api/pax/' + p.id, { outboundFlightId: outboundFlightId, paxStatus: 'At Hub' })
       .then(function(data) {
-        if (!data.error) p.flightId = outboundFlightId;
+        if (!data.error) p.outboundFlightId = outboundFlightId;
       })
       .catch(function() {});
   });
