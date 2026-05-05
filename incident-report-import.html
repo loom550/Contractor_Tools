@@ -17,11 +17,12 @@
     .topbar-user strong { color: #4caf92; }
     .topbar-signin { background: #e8620a; color: #fff; border: none; border-radius: 5px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .topbar-signin:hover { background: #d05508; }
-    .session-bar { background: #252840; border-bottom: 1px solid #33374f; padding: 10px 16px; margin: 0 -16px 20px; display: flex; align-items: center; gap: 16px; }
+    .session-bar { background: #252840; border-bottom: 1px solid #33374f; padding: 10px 16px; margin: 0 -16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .session-bar-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #8888aa; white-space: nowrap; }
-    .session-bar select, .session-bar input { background: #1a1a2e; border: 1px solid #33374f; color: #e0e4f0; border-radius: 5px; padding: 5px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace; outline: none; min-width: 200px; }
-    .session-bar select:focus, .session-bar input:focus { border-color: #e8620a; }
-    .session-bar-hint { font-size: 11px; color: #5a6080; }
+    .session-input { background: #1a1a2e !important; border: 1px solid #33374f !important; color: #e0e4f0 !important; border-radius: 5px; padding: 5px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace; outline: none; width: 220px; }
+    .session-input:focus { border-color: #e8620a !important; }
+    .session-input::placeholder { color: #5a6080; }
+    .session-bar-hint { font-size: 11px; color: #5a6080; margin-left: 4px; }
     .session-divider { width: 1px; height: 24px; background: #33374f; }
     .card { background: #fff; border: 1px solid #e0e4ec; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
     .card-header { padding: 10px 16px; background: #f8f9fc; border-bottom: 1px solid #e0e4ec; display: flex; justify-content: space-between; align-items: center; }
@@ -301,14 +302,29 @@
       return { siteId: site.id, listId: data.value[0].id };
     }
 
-    async function fetchSessionOptions(siteId, listId, token) {
-      const r = await fetch(
-        `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=ActivationID,HubID)&$top=999`,
+    async function fetchSourceList(siteId, listName, token) {
+      const lr = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$filter=displayName eq '${encodeURIComponent(listName)}'`,
         { headers: { Authorization: `Bearer ${token}` } });
-      if (!r.ok) return { activations: [], hubs: [] };
-      const data = await r.json();
-      const activations = [...new Set(data.value.map(i => i.fields?.ActivationID).filter(Boolean))].sort();
-      const hubs        = [...new Set(data.value.map(i => i.fields?.HubID).filter(Boolean))].sort();
+      if (!lr.ok) return [];
+      const ld = await lr.json();
+      if (!ld.value?.length) return [];
+      const ir = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${ld.value[0].id}/items?$expand=fields($select=Title,id)&$top=999`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (!ir.ok) return [];
+      const id = await ir.json();
+      return id.value
+        .map(i => ({ id: parseInt(i.id), title: i.fields?.Title || '' }))
+        .filter(i => i.title)
+        .sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    async function fetchSessionOptions(siteId, token) {
+      const [activations, hubs] = await Promise.all([
+        fetchSourceList(siteId, 'Activations', token),
+        fetchSourceList(siteId, 'HUBS / LOCATIONS', token),
+      ]);
       return { activations, hubs };
     }
 
@@ -391,7 +407,7 @@
           const token = await getTokenFor(inst, acct);
           const { siteId, listId } = await resolveSiteList(token);
           setSpCache({ siteId, listId });
-          const opts = await fetchSessionOptions(siteId, listId, token);
+          const opts = await fetchSessionOptions(siteId, token);
           setActOptions(opts.activations);
           setHubOptions(opts.hubs);
         } catch (e) { console.warn('SP init:', e.message); }
@@ -460,9 +476,15 @@
             if (v === undefined || v === null || v === '') return;
             spFields[key] = type === 'bool' ? (v === 'true' || v === true) : v;
           });
-          // Include session fields
-          if (item.form.ActivationID) spFields.ActivationID = item.form.ActivationID;
-          if (item.form.HubID)        spFields.HubID        = item.form.HubID;
+          // Lookup fields -- submit LookupId (integer) not display text
+          if (item.form.ActivationID) {
+            const match = actOptions.find(o => o.title === item.form.ActivationID);
+            if (match) spFields.ActivationIDLookupId = match.id;
+          }
+          if (item.form.HubID) {
+            const match = hubOptions.find(o => o.title === item.form.HubID);
+            if (match) spFields.HubIDLookupId = match.id;
+          }
           await postItem(siteId, listId, spFields, token);
           upd(id, { status: 'done' });
           const next = queue.find(i => i.id !== id && ['ready','extracting','pending'].includes(i.status));
@@ -531,23 +553,33 @@
           {account && (
             <div className="session-bar">
               <span className="session-bar-label">Activation</span>
-              <select value={sessionAct} onChange={e => setSessionAct(e.target.value)}
-                style={{minWidth:220}}>
-                <option value="">— select activation —</option>
-                {actOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                {sessionAct && !actOptions.includes(sessionAct) &&
-                  <option value={sessionAct}>{sessionAct}</option>}
-              </select>
+              <input
+                className="session-input"
+                list="act-options"
+                placeholder="Type or select…"
+                value={sessionAct}
+                onChange={e => setSessionAct(e.target.value)}
+              />
+              <datalist id="act-options">
+                {actOptions.map(o => <option key={o.id} value={o.title} />)}
+              </datalist>
               <div className="session-divider" />
               <span className="session-bar-label">Hub</span>
-              <select value={sessionHub} onChange={e => setSessionHub(e.target.value)}
-                style={{minWidth:220}}>
-                <option value="">— select hub —</option>
-                {hubOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                {sessionHub && !hubOptions.includes(sessionHub) &&
-                  <option value={sessionHub}>{sessionHub}</option>}
-              </select>
-              <span className="session-bar-hint">Set once — applies to all reports in this batch</span>
+              <input
+                className="session-input"
+                list="hub-options"
+                placeholder="Type or select…"
+                value={sessionHub}
+                onChange={e => setSessionHub(e.target.value)}
+              />
+              <datalist id="hub-options">
+                {hubOptions.map(o => <option key={o.id} value={o.title} />)}
+              </datalist>
+              <span className="session-bar-hint">
+                {actOptions.length || hubOptions.length
+                  ? 'Start typing to see existing values'
+                  : 'Type values — or add records to SP list for autocomplete'}
+              </span>
             </div>
           )}
 
