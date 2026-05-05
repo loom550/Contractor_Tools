@@ -9,7 +9,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 14px; min-height: 100vh; }
     #root { max-width: 1400px; margin: 0 auto; padding: 0 16px 40px; }
     #loading { text-align: center; padding: 60px; color: #7a8499; font-size: 14px; }
-    .topbar { background: #1a1a2e; color: #fff; padding: 12px 16px; margin: 0 -16px 24px; display: flex; align-items: center; gap: 12px; }
+    .topbar { background: #1a1a2e; color: #fff; padding: 12px 16px; margin: 0 -16px 0; display: flex; align-items: center; gap: 12px; }
     .topbar-logo { width: 4px; height: 28px; background: #e8620a; border-radius: 2px; flex-shrink: 0; }
     .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: 0.04em; }
     .topbar-sub { font-size: 11px; color: #8888aa; margin-top: 2px; }
@@ -17,13 +17,19 @@
     .topbar-user strong { color: #4caf92; }
     .topbar-signin { background: #e8620a; color: #fff; border: none; border-radius: 5px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
     .topbar-signin:hover { background: #d05508; }
+    .session-bar { background: #252840; border-bottom: 1px solid #33374f; padding: 10px 16px; margin: 0 -16px 20px; display: flex; align-items: center; gap: 16px; }
+    .session-bar-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #8888aa; white-space: nowrap; }
+    .session-bar select, .session-bar input { background: #1a1a2e; border: 1px solid #33374f; color: #e0e4f0; border-radius: 5px; padding: 5px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace; outline: none; min-width: 200px; }
+    .session-bar select:focus, .session-bar input:focus { border-color: #e8620a; }
+    .session-bar-hint { font-size: 11px; color: #5a6080; }
+    .session-divider { width: 1px; height: 24px; background: #33374f; }
     .card { background: #fff; border: 1px solid #e0e4ec; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
     .card-header { padding: 10px 16px; background: #f8f9fc; border-bottom: 1px solid #e0e4ec; display: flex; justify-content: space-between; align-items: center; }
     .card-header-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #5a6478; }
     .card-body { padding: 14px 16px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
     .field-label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #7a8499; margin-bottom: 4px; }
-    input, select, textarea { width: 100%; padding: 7px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace; background: #f8f9fc; border: 1px solid #d0d5e0; border-radius: 5px; color: #1a1a2e; outline: none; transition: border-color 0.15s; }
+    input[type=text], input[type=date], input[type=time], select, textarea { width: 100%; padding: 7px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace; background: #f8f9fc; border: 1px solid #d0d5e0; border-radius: 5px; color: #1a1a2e; outline: none; transition: border-color 0.15s; }
     input:focus, select:focus, textarea:focus { border-color: #e8620a; background: #fff; }
     textarea { resize: vertical; }
     button { cursor: pointer; border-radius: 5px; font-size: 13px; font-weight: 500; border: 1px solid #d0d5e0; background: #fff; color: #1a1a2e; padding: 7px 14px; transition: all 0.15s; }
@@ -51,7 +57,6 @@
     .span-2 { grid-column: 1 / -1; }
     .radio-row { display: flex; gap: 20px; padding-top: 5px; }
     .radio-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
-    .manual-badge { font-size: 9px; font-weight: 600; background: #fff3e0; color: #b45309; padding: 1px 5px; border-radius: 3px; margin-left: 5px; }
     .action-bar { display: flex; align-items: center; gap: 10px; padding: 4px 0 16px; }
     .done-panel { padding: 32px; text-align: center; }
     .done-msg { font-size: 14px; color: #1a7a50; margin-bottom: 14px; }
@@ -92,18 +97,18 @@
     const SCOPES = ['https://graph.microsoft.com/Sites.ReadWrite.All', 'User.Read'];
 
     // ── Fields ───────────────────────────────────────────────────────────────
+    // IncidentID removed (SP generates row ID)
+    // ActivationID and HubID managed via session bar
+    // DocumentURL, Attachments, AttachmentFolder, RecordStatus removed (system-managed)
 
     const FIELDS = [
-      { key:'IncidentID',          label:'Incident ID',         group:'LOOMI Reference', manual:true },
-      { key:'ActivationID',        label:'Activation ID',       group:'LOOMI Reference', manual:true },
-      { key:'HubID',               label:'Hub ID',              group:'LOOMI Reference', manual:true },
-      { key:'ReportNumber',        label:'Report Number',       group:'LOOMI Reference', manual:true },
+      { key:'ReportNumber',        label:'Report Number',       group:'Reference', manual:true },
       { key:'IncidentTitle',       label:'Title',               group:'Incident' },
       { key:'IncidentDate',        label:'Date',                group:'Incident', type:'date' },
       { key:'IncidentTime',        label:'Time',                group:'Incident', type:'time' },
       { key:'IncidentType',        label:'Type',                group:'Incident' },
-      { key:'Severity',            label:'Severity',            group:'Incident', type:'select', options:['Minor','Moderate','Major','Critical'] },
-      { key:'IncidentStatus',      label:'Status',              group:'Incident', type:'select', options:['Submitted','Under Review','Resolved','Assistance Required'] },
+      { key:'Severity',            label:'Severity',            group:'Incident', type:'select', options:['Minor','Moderate','Major','Unknown'] },
+      { key:'IncidentStatus',      label:'Status',              group:'Incident', type:'select', options:['Assistance Required','Major Assistance Required','Under Control','Resolved','Closed','Unknown'] },
       { key:'ICName',              label:'IC Name',             group:'Incident Commander' },
       { key:'ICDept',              label:'IC Department',       group:'Incident Commander' },
       { key:'ICContact',           label:'IC Contact',          group:'Incident Commander' },
@@ -127,10 +132,6 @@
       { key:'CompletedByContact',  label:'Contact',             group:'Completed By' },
       { key:'CompletedDate',       label:'Date completed',      group:'Completed By', type:'date' },
       { key:'Distribution',        label:'Distribution',        group:'Completed By' },
-      { key:'DocumentURL',         label:'Document URL',        group:'System', manual:true },
-      { key:'RecordStatus',        label:'Record Status',       group:'System', type:'select', options:['Submitted','Draft','Archived'] },
-      { key:'Attachments',         label:'Attachments',         group:'System', manual:true },
-      { key:'AttachmentFolder',    label:'Attachment Folder',   group:'System', manual:true },
     ];
     const GROUPS = [...new Set(FIELDS.map(f => f.group))];
 
@@ -138,15 +139,12 @@
 
     function extract(text) {
 
-      // Convert date strings to YYYY-MM-DD
-      // Assumes DD/MM/YYYY for ambiguous cases (Canadian context)
       const toDate = str => {
         if (!str) return '';
         const m = str.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
         if (m) {
           const year = m[3].length === 2 ? '20' + m[3] : m[3];
-          const a = parseInt(m[1]), b = parseInt(m[2]);
-          // If first number > 12 it must be the day
+          const a = parseInt(m[1]);
           const [day, month] = a > 12 ? [m[1], m[2]] : [m[1], m[2]];
           return `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
         }
@@ -154,54 +152,55 @@
         return '';
       };
 
-      // Convert time strings to HH:MM (24h)
       const toTime = str => {
         if (!str) return '';
         str = str.trim();
-        const pmMatch = str.match(/^(\d{1,2}):(\d{2})\s*pm$/i);
-        const amMatch = str.match(/^(\d{1,2}):(\d{2})\s*am$/i);
-        if (pmMatch) {
-          let h = parseInt(pmMatch[1]);
-          if (h < 12) h += 12;
-          return `${h.toString().padStart(2,'0')}:${pmMatch[2]}`;
-        }
-        if (amMatch) {
-          let h = parseInt(amMatch[1]);
-          if (h === 12) h = 0;
-          return `${h.toString().padStart(2,'0')}:${amMatch[2]}`;
-        }
+        const pmM = str.match(/^(\d{1,2}):(\d{2})\s*pm$/i);
+        const amM = str.match(/^(\d{1,2}):(\d{2})\s*am$/i);
+        if (pmM) { let h = parseInt(pmM[1]); if (h < 12) h += 12; return `${h.toString().padStart(2,'0')}:${pmM[2]}`; }
+        if (amM) { let h = parseInt(amM[1]); if (h === 12) h = 0; return `${h.toString().padStart(2,'0')}:${amM[2]}`; }
         if (/^\d{1,2}:\d{2}$/.test(str)) return str.padStart(5, '0');
         return '';
       };
 
-      // Parse the text into label→content segments.
-      // A line is treated as a label if it ends with ':' or matches 'Label: value'
-      // and the label portion is short and alphabetic.
+      // Extract the value of checked checkbox (☑ or ✓) from a list of options
+      const checkedOne = (haystack, ...options) => {
+        for (const opt of options) {
+          const re = new RegExp('[☑✓✅]\\s*' + opt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+          if (re.test(haystack)) return opt;
+        }
+        return '';
+      };
+
+      // Extract all checked checkboxes from a list
+      const checkedMany = (haystack, ...options) => {
+        return options
+          .filter(opt => new RegExp('[☑✓✅]\\s*' + opt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(haystack))
+          .join(', ');
+      };
+
+      // Build label→content segment map
       const lines = text.split('\n');
-      const segments = {};   // label (lowercase) → full content string
-      const segOrder = [];   // to preserve order
+      const segments = {};
       let curKey = null;
       let curLines = [];
 
       const flush = () => {
         if (curKey !== null) {
           segments[curKey] = curLines.filter(l => l.trim()).join('\n').trim();
-          if (!segOrder.includes(curKey)) segOrder.push(curKey);
         }
       };
 
       for (const raw of lines) {
         const line = raw.trim();
-        // Detect a label line: text before the colon must be ≤ 50 chars and
-        // contain only letters, digits, spaces, slashes, parens, hyphens
         const ci = line.indexOf(':');
         const labelPart = ci > 0 ? line.substring(0, ci) : '';
-        const isLabelLine = ci > 0
+        const isLabel = ci > 0
           && labelPart.length <= 50
           && /^[\w\s\/\(\)\-&]+$/.test(labelPart)
           && labelPart.trim().length > 0;
 
-        if (isLabelLine) {
+        if (isLabel) {
           flush();
           curKey = labelPart.trim().toLowerCase();
           const rest = line.substring(ci + 1).trim();
@@ -212,7 +211,6 @@
       }
       flush();
 
-      // Helper: get first non-empty line of a segment
       const get = (...keys) => {
         for (const k of keys) {
           const v = segments[k.toLowerCase()];
@@ -221,7 +219,6 @@
         return '';
       };
 
-      // Helper: get full multi-line content
       const getAll = (...keys) => {
         for (const k of keys) {
           const v = segments[k.toLowerCase()];
@@ -232,16 +229,15 @@
 
       const f = {};
 
+      f.ReportNumber        = get('report number', 'report #', 'report no', 'report no.');
       f.IncidentTitle       = get('title', 'incident title', 'subject');
       f.IncidentDate        = toDate(get('incident date', 'date'));
       f.IncidentTime        = toTime(get('incident time', 'time'));
       f.IncidentType        = get('incident type', 'type of incident', 'type');
-      f.ReportNumber        = get('report number', 'report #', 'report no', 'report no.');
       f.StreetAddress       = get('location', 'address', 'street address', 'location of incident/event', 'location of incident');
       f.Intersection1       = get('intersection 1', 'cross street 1');
       f.Intersection2       = get('intersection 2', 'cross street 2');
       f.LeadAgency          = get('lead agency', 'reporting agency', 'agency');
-      f.SupportingAgencies  = get('supporting agencies', 'supporting agency');
       f.RelatedEvents       = get('related events', 'related event');
       f.ICName              = get('name', 'ic name', 'commander name');
       f.ICDept              = get('dept/agency', 'dept', 'department', 'ic department', 'ic dept');
@@ -251,25 +247,26 @@
       f.Prognosis           = get('prognosis');
       f.CompletedByName     = get('completed by', 'submitted by', 'reported by', 'prepared by', 'author');
       f.CompletedByPosition = get('position', 'role', 'job title');
-      f.CompletedByContact  = get('email', 'contact email', 'submitter contact');
+      f.CompletedByContact  = get('email', 'contact email');
       f.Distribution        = get('distribution');
 
-      // Severity from explicit field first, then keyword fallback
-      const sevField = get('severity', 'incident severity');
-      if (sevField) {
-        if (/critical/i.test(sevField))     f.Severity = 'Critical';
-        else if (/major/i.test(sevField))   f.Severity = 'Major';
-        else if (/moderate/i.test(sevField)) f.Severity = 'Moderate';
-        else if (/minor/i.test(sevField))   f.Severity = 'Minor';
-      }
-      // Only keyword fallback if no field found
-      if (!f.Severity) {
-        const summaryText = f.SituationSummary + ' ' + f.AnticipatedActions;
-        if (/\bcritical\b/i.test(summaryText))     f.Severity = 'Critical';
-        else if (/\bmajor\b/i.test(summaryText))   f.Severity = 'Major';
-        else if (/\bmoderate\b/i.test(summaryText)) f.Severity = 'Moderate';
-        else if (/\bminor\b/i.test(summaryText))   f.Severity = 'Minor';
-      }
+      // Severity -- check for explicit checkbox first, then field, then keyword on narrative only
+      const severityOpts = ['Major', 'Moderate', 'Minor', 'Unknown'];
+      f.Severity = checkedOne(text, ...severityOpts)
+        || (() => { const v = get('severity', 'incident severity'); return severityOpts.find(o => new RegExp(o, 'i').test(v)) || ''; })()
+        || (() => { const n = f.SituationSummary + ' ' + f.AnticipatedActions; return severityOpts.slice(0,3).find(o => new RegExp('\\b' + o + '\\b', 'i').test(n)) || ''; })();
+
+      // Incident status -- checkbox first, then field
+      const statusOpts = ['Major Assistance Required', 'Assistance Required', 'Under Control', 'Resolved', 'Closed', 'Unknown'];
+      f.IncidentStatus = checkedOne(text, ...statusOpts)
+        || (() => { const v = get('incident status', 'status'); return statusOpts.find(o => new RegExp(o, 'i').test(v)) || ''; })();
+
+      // Supporting agencies -- all checked boxes
+      const agencyOpts = ['Police','Fire','Emergency Medical Services','Animal Control','By-Law',
+        'Ministry of Emergency Preparedness and Response','Ministry of Natural Resources',
+        'Ministry of Labour','Ministry of Environment','Provincial HUSAR Team','Provincial Hazmat Teams','Other'];
+      const agencySection = getAll('supporting agencies', 'agencies');
+      f.SupportingAgencies = checkedMany(agencySection || text, ...agencyOpts);
 
       // Prognosis keyword fallback
       if (!f.Prognosis) {
@@ -278,17 +275,13 @@
         else if (/\bstable\b/i.test(text))    f.Prognosis = 'Stable';
       }
 
-      // Booleans -- only check narrative content, not the whole doc
-      const narrativeText = f.SituationSummary + ' ' + f.AnticipatedActions + ' '
-        + getAll('injuries', 'fatalities', 'evacuees');
+      // Booleans -- narrative content only
+      const narrativeText = f.SituationSummary + ' ' + f.AnticipatedActions + ' ' + getAll('injuries','fatalities','evacuees');
       f.FatalitiesYN = /\b(?:fatal|death|deceased|fatality)\b/i.test(narrativeText) ? 'true' : 'false';
       f.InjuriesYN   = /\b(?:injur|hurt|wounded)\b/i.test(narrativeText)            ? 'true' : 'false';
       f.EvacueesYN   = /\b(?:evacuee|evacuated|displaced)\b/i.test(narrativeText)   ? 'true' : 'false';
 
-      f.RecordStatus   = 'Submitted';
-      f.IncidentStatus = 'Submitted';
-      f.CompletedDate  = new Date().toISOString().split('T')[0];
-
+      f.CompletedDate = new Date().toISOString().split('T')[0];
       return f;
     }
 
@@ -306,6 +299,17 @@
       const data = await lr.json();
       if (!data.value?.length) throw new Error(`List "${CONFIG.listName}" not found`);
       return { siteId: site.id, listId: data.value[0].id };
+    }
+
+    async function fetchSessionOptions(siteId, listId, token) {
+      const r = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=ActivationID,HubID)&$top=999`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) return { activations: [], hubs: [] };
+      const data = await r.json();
+      const activations = [...new Set(data.value.map(i => i.fields?.ActivationID).filter(Boolean))].sort();
+      const hubs        = [...new Set(data.value.map(i => i.fields?.HubID).filter(Boolean))].sort();
+      return { activations, hubs };
     }
 
     async function postItem(siteId, listId, fields, token) {
@@ -326,13 +330,34 @@
     // ── App ──────────────────────────────────────────────────────────────────
 
     function App() {
-      const [msalInst, setMsalInst] = useState(null);
-      const [account,  setAccount]  = useState(null);
-      const [authErr,  setAuthErr]  = useState('');
-      const [queue,    setQueue]    = useState([]);
-      const [activeId, setActiveId] = useState(null);
-      const [drag,     setDrag]     = useState(false);
+      const [msalInst,  setMsalInst]  = useState(null);
+      const [account,   setAccount]   = useState(null);
+      const [authErr,   setAuthErr]   = useState('');
+      const [spCache,   setSpCache]   = useState(null); // { siteId, listId }
+      const [sessionAct, setSessionActRaw] = useState(sessionStorage.getItem('loomex-activation-id') || '');
+      const [sessionHub, setSessionHubRaw] = useState(sessionStorage.getItem('loomex-hub-id') || '');
+      const [actOptions, setActOptions] = useState([]);
+      const [hubOptions, setHubOptions] = useState([]);
+      const [queue,     setQueue]     = useState([]);
+      const [activeId,  setActiveId]  = useState(null);
+      const [drag,      setDrag]      = useState(false);
       const fileRef = useRef();
+
+      // Persist session values and propagate to all pending/ready queue items
+      const setSessionAct = val => {
+        setSessionActRaw(val);
+        sessionStorage.setItem('loomex-activation-id', val);
+        setQueue(q => q.map(i =>
+          ['pending','ready','extracting'].includes(i.status)
+            ? { ...i, form: { ...i.form, ActivationID: val } } : i));
+      };
+      const setSessionHub = val => {
+        setSessionHubRaw(val);
+        sessionStorage.setItem('loomex-hub-id', val);
+        setQueue(q => q.map(i =>
+          ['pending','ready','extracting'].includes(i.status)
+            ? { ...i, form: { ...i.form, HubID: val } } : i));
+      };
 
       useEffect(() => {
         (async () => {
@@ -348,21 +373,41 @@
             await inst.initialize();
             setMsalInst(inst);
             const accounts = inst.getAllAccounts();
-            if (accounts.length) setAccount(accounts[0]);
+            if (accounts.length) {
+              setAccount(accounts[0]);
+              initSp(inst, accounts[0]);
+            }
           } catch (e) { setAuthErr(e.message); }
         })();
       }, []);
 
-      const signIn  = async () => {
-        try { const r = await msalInst.loginPopup({ scopes: SCOPES }); setAccount(r.account); setAuthErr(''); }
-        catch (e) { setAuthErr(e.message); }
+      const getTokenFor = async (inst, acct) => {
+        try { return (await inst.acquireTokenSilent({ scopes: SCOPES, account: acct })).accessToken; }
+        catch { return (await inst.acquireTokenPopup({ scopes: SCOPES, account: acct })).accessToken; }
       };
-      const signOut = () => { msalInst?.logoutPopup({ account }); setAccount(null); };
 
-      const getToken = async () => {
-        try { return (await msalInst.acquireTokenSilent({ scopes: SCOPES, account })).accessToken; }
-        catch { return (await msalInst.acquireTokenPopup({ scopes: SCOPES, account })).accessToken; }
+      const initSp = async (inst, acct) => {
+        try {
+          const token = await getTokenFor(inst, acct);
+          const { siteId, listId } = await resolveSiteList(token);
+          setSpCache({ siteId, listId });
+          const opts = await fetchSessionOptions(siteId, listId, token);
+          setActOptions(opts.activations);
+          setHubOptions(opts.hubs);
+        } catch (e) { console.warn('SP init:', e.message); }
       };
+
+      const signIn = async () => {
+        try {
+          const r = await msalInst.loginPopup({ scopes: SCOPES });
+          setAccount(r.account); setAuthErr('');
+          initSp(msalInst, r.account);
+        } catch (e) { setAuthErr(e.message); }
+      };
+
+      const signOut = () => { msalInst?.logoutPopup({ account }); setAccount(null); setSpCache(null); };
+
+      const getToken = async () => getTokenFor(msalInst, account);
 
       const upd = (id, patch) => setQueue(q => q.map(i => i.id === id ? { ...i, ...patch } : i));
 
@@ -384,7 +429,11 @@
             }
             text = pages.join('\n\n');
           } else throw new Error('Only .docx and .pdf are supported');
-          upd(id, { status: 'ready', rawText: text, form: extract(text) });
+          const form = extract(text);
+          // Apply session values
+          form.ActivationID = sessionStorage.getItem('loomex-activation-id') || '';
+          form.HubID        = sessionStorage.getItem('loomex-hub-id') || '';
+          upd(id, { status: 'ready', rawText: text, form });
         } catch (e) { upd(id, { status: 'error', error: e.message }); }
       };
 
@@ -404,13 +453,16 @@
         upd(id, { status: 'submitting', error: '' });
         try {
           const token = await getToken();
-          const { siteId, listId } = await resolveSiteList(token);
-          const spFields = {};
+          let { siteId, listId } = spCache || await resolveSiteList(token);
+          const spFields = { RecordStatus: 'Submitted' };
           FIELDS.forEach(({ key, type }) => {
             const v = item.form[key];
             if (v === undefined || v === null || v === '') return;
             spFields[key] = type === 'bool' ? (v === 'true' || v === true) : v;
           });
+          // Include session fields
+          if (item.form.ActivationID) spFields.ActivationID = item.form.ActivationID;
+          if (item.form.HubID)        spFields.HubID        = item.form.HubID;
           await postItem(siteId, listId, spFields, token);
           upd(id, { status: 'done' });
           const next = queue.find(i => i.id !== id && ['ready','extracting','pending'].includes(i.status));
@@ -460,6 +512,7 @@
 
       return (
         <div>
+          {/* Top bar */}
           <div className="topbar">
             <div className="topbar-logo" />
             <div>
@@ -474,7 +527,32 @@
             </div>
           </div>
 
+          {/* Session bar -- set once per batch */}
+          {account && (
+            <div className="session-bar">
+              <span className="session-bar-label">Activation</span>
+              <select value={sessionAct} onChange={e => setSessionAct(e.target.value)}
+                style={{minWidth:220}}>
+                <option value="">— select activation —</option>
+                {actOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                {sessionAct && !actOptions.includes(sessionAct) &&
+                  <option value={sessionAct}>{sessionAct}</option>}
+              </select>
+              <div className="session-divider" />
+              <span className="session-bar-label">Hub</span>
+              <select value={sessionHub} onChange={e => setSessionHub(e.target.value)}
+                style={{minWidth:220}}>
+                <option value="">— select hub —</option>
+                {hubOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                {sessionHub && !hubOptions.includes(sessionHub) &&
+                  <option value={sessionHub}>{sessionHub}</option>}
+              </select>
+              <span className="session-bar-hint">Set once — applies to all reports in this batch</span>
+            </div>
+          )}
+
           <div className="main-layout">
+            {/* Sidebar */}
             <div>
               <div
                 className={`dropzone${drag ? ' drag' : ''}`}
@@ -514,6 +592,7 @@
               )}
             </div>
 
+            {/* Review panel */}
             <div>
               {!active && queue.length === 0 && (
                 <div className="card">
@@ -554,17 +633,13 @@
                           <div key={group} className="card">
                             <div className="card-header">
                               <span className="card-header-title">{group}</span>
-                              {['LOOMI Reference','System'].includes(group) &&
-                                <span className="badge-warn">Set manually</span>}
+                              {group === 'Reference' && <span className="badge-warn">Manual fields</span>}
                             </div>
                             <div className="card-body">
                               <div className="grid-2">
                                 {fields.map(f => (
                                   <div key={f.key} className={`field-row${f.type === 'textarea' ? ' span-2' : ''}`}>
-                                    <label className="field-label">
-                                      {f.label}
-                                      {f.manual && <span className="manual-badge">MANUAL</span>}
-                                    </label>
+                                    <label className="field-label">{f.label}</label>
                                     <FieldInput item={active} f={f} />
                                   </div>
                                 ))}
