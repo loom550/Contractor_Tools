@@ -137,35 +137,158 @@
     // ── Extraction ───────────────────────────────────────────────────────────
 
     function extract(text) {
-      const g = (...ps) => { for (const p of ps) { const m = text.match(p); if (m) return m[1].trim(); } return ''; };
+
+      // Convert date strings to YYYY-MM-DD
+      // Assumes DD/MM/YYYY for ambiguous cases (Canadian context)
+      const toDate = str => {
+        if (!str) return '';
+        const m = str.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+        if (m) {
+          const year = m[3].length === 2 ? '20' + m[3] : m[3];
+          const a = parseInt(m[1]), b = parseInt(m[2]);
+          // If first number > 12 it must be the day
+          const [day, month] = a > 12 ? [m[1], m[2]] : [m[1], m[2]];
+          return `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str.trim())) return str.trim();
+        return '';
+      };
+
+      // Convert time strings to HH:MM (24h)
+      const toTime = str => {
+        if (!str) return '';
+        str = str.trim();
+        const pmMatch = str.match(/^(\d{1,2}):(\d{2})\s*pm$/i);
+        const amMatch = str.match(/^(\d{1,2}):(\d{2})\s*am$/i);
+        if (pmMatch) {
+          let h = parseInt(pmMatch[1]);
+          if (h < 12) h += 12;
+          return `${h.toString().padStart(2,'0')}:${pmMatch[2]}`;
+        }
+        if (amMatch) {
+          let h = parseInt(amMatch[1]);
+          if (h === 12) h = 0;
+          return `${h.toString().padStart(2,'0')}:${amMatch[2]}`;
+        }
+        if (/^\d{1,2}:\d{2}$/.test(str)) return str.padStart(5, '0');
+        return '';
+      };
+
+      // Parse the text into label→content segments.
+      // A line is treated as a label if it ends with ':' or matches 'Label: value'
+      // and the label portion is short and alphabetic.
+      const lines = text.split('\n');
+      const segments = {};   // label (lowercase) → full content string
+      const segOrder = [];   // to preserve order
+      let curKey = null;
+      let curLines = [];
+
+      const flush = () => {
+        if (curKey !== null) {
+          segments[curKey] = curLines.filter(l => l.trim()).join('\n').trim();
+          if (!segOrder.includes(curKey)) segOrder.push(curKey);
+        }
+      };
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        // Detect a label line: text before the colon must be ≤ 50 chars and
+        // contain only letters, digits, spaces, slashes, parens, hyphens
+        const ci = line.indexOf(':');
+        const labelPart = ci > 0 ? line.substring(0, ci) : '';
+        const isLabelLine = ci > 0
+          && labelPart.length <= 50
+          && /^[\w\s\/\(\)\-&]+$/.test(labelPart)
+          && labelPart.trim().length > 0;
+
+        if (isLabelLine) {
+          flush();
+          curKey = labelPart.trim().toLowerCase();
+          const rest = line.substring(ci + 1).trim();
+          curLines = rest ? [rest] : [];
+        } else if (curKey !== null) {
+          curLines.push(line);
+        }
+      }
+      flush();
+
+      // Helper: get first non-empty line of a segment
+      const get = (...keys) => {
+        for (const k of keys) {
+          const v = segments[k.toLowerCase()];
+          if (v) return v.split('\n')[0].trim();
+        }
+        return '';
+      };
+
+      // Helper: get full multi-line content
+      const getAll = (...keys) => {
+        for (const k of keys) {
+          const v = segments[k.toLowerCase()];
+          if (v) return v.trim();
+        }
+        return '';
+      };
+
       const f = {};
-      f.IncidentTitle       = g(/(?:incident title|subject|re)[:\s]+([^\n]+)/i);
-      f.IncidentDate        = g(/(?:incident date|date)[:\s]+(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
-      f.IncidentTime        = g(/(?:incident time|time)[:\s]+(\d{1,2}:\d{2}(?:\s*[ap]m)?)/i);
-      f.IncidentType        = g(/(?:incident type|type of incident)[:\s]+([^\n]+)/i);
-      f.StreetAddress       = g(/(?:location|address|site|facility)[:\s]+([^\n]+)/i);
-      f.LeadAgency          = g(/(?:lead agency|reporting agency)[:\s]+([^\n]+)/i);
-      f.ICName              = g(/(?:incident commander|ic name)[:\s]+([^\n]+)/i);
-      f.CompletedByName     = g(/(?:completed by|submitted by|reported by|prepared by)[:\s]+([^\n]+)/i);
-      f.CompletedByPosition = g(/(?:position|title|role)[:\s]+([^\n]+)/i);
-      f.CompletedByContact  = g(/(?:contact|phone|email)[:\s]+([^\n]+)/i);
-      if (/\bcritical\b/i.test(text))      f.Severity  = 'Critical';
-      else if (/\bmajor\b/i.test(text))    f.Severity  = 'Major';
-      else if (/\bmoderate\b/i.test(text)) f.Severity  = 'Moderate';
-      else if (/\bminor\b/i.test(text))    f.Severity  = 'Minor';
-      if (/\bworsening\b/i.test(text))     f.Prognosis = 'Worsening';
-      else if (/\bimproving\b/i.test(text)) f.Prognosis = 'Improving';
-      else if (/\bstable\b/i.test(text))   f.Prognosis = 'Stable';
-      f.FatalitiesYN = /\b(?:fatal|death|deceased|fatality)\b/i.test(text) ? 'true' : 'false';
-      f.InjuriesYN   = /\b(?:injur|hurt|wounded)\b/i.test(text)            ? 'true' : 'false';
-      f.EvacueesYN   = /\b(?:evacuee|evacuated|displaced)\b/i.test(text)   ? 'true' : 'false';
-      const sum = text.match(/(?:summary|situation|description|narrative)[:\s\n]+([\s\S]+?)(?:\n(?:actions|anticipated|prognosis|severity|injuries|fatalities|completed)|$)/i);
-      f.SituationSummary = (sum ? sum[1].trim() : text).substring(0, 3000);
-      const act = text.match(/(?:anticipated actions|actions|next steps)[:\s\n]+([\s\S]+?)(?:\n(?:prognosis|severity|injuries|fatalities|completed)|$)/i);
-      if (act) f.AnticipatedActions = act[1].trim().substring(0, 2000);
+
+      f.IncidentTitle       = get('title', 'incident title', 'subject');
+      f.IncidentDate        = toDate(get('incident date', 'date'));
+      f.IncidentTime        = toTime(get('incident time', 'time'));
+      f.IncidentType        = get('incident type', 'type of incident', 'type');
+      f.ReportNumber        = get('report number', 'report #', 'report no', 'report no.');
+      f.StreetAddress       = get('location', 'address', 'street address', 'location of incident/event', 'location of incident');
+      f.Intersection1       = get('intersection 1', 'cross street 1');
+      f.Intersection2       = get('intersection 2', 'cross street 2');
+      f.LeadAgency          = get('lead agency', 'reporting agency', 'agency');
+      f.SupportingAgencies  = get('supporting agencies', 'supporting agency');
+      f.RelatedEvents       = get('related events', 'related event');
+      f.ICName              = get('name', 'ic name', 'commander name');
+      f.ICDept              = get('dept/agency', 'dept', 'department', 'ic department', 'ic dept');
+      f.ICContact           = get('contact number', 'ic contact', 'phone');
+      f.SituationSummary    = getAll('situation summary', 'summary', 'description', 'narrative', 'details of incident', 'details');
+      f.AnticipatedActions  = getAll('anticipated actions', 'actions taken', 'actions', 'next steps', 'response');
+      f.Prognosis           = get('prognosis');
+      f.CompletedByName     = get('completed by', 'submitted by', 'reported by', 'prepared by', 'author');
+      f.CompletedByPosition = get('position', 'role', 'job title');
+      f.CompletedByContact  = get('email', 'contact email', 'submitter contact');
+      f.Distribution        = get('distribution');
+
+      // Severity from explicit field first, then keyword fallback
+      const sevField = get('severity', 'incident severity');
+      if (sevField) {
+        if (/critical/i.test(sevField))     f.Severity = 'Critical';
+        else if (/major/i.test(sevField))   f.Severity = 'Major';
+        else if (/moderate/i.test(sevField)) f.Severity = 'Moderate';
+        else if (/minor/i.test(sevField))   f.Severity = 'Minor';
+      }
+      // Only keyword fallback if no field found
+      if (!f.Severity) {
+        const summaryText = f.SituationSummary + ' ' + f.AnticipatedActions;
+        if (/\bcritical\b/i.test(summaryText))     f.Severity = 'Critical';
+        else if (/\bmajor\b/i.test(summaryText))   f.Severity = 'Major';
+        else if (/\bmoderate\b/i.test(summaryText)) f.Severity = 'Moderate';
+        else if (/\bminor\b/i.test(summaryText))   f.Severity = 'Minor';
+      }
+
+      // Prognosis keyword fallback
+      if (!f.Prognosis) {
+        if (/\bworsening\b/i.test(text))      f.Prognosis = 'Worsening';
+        else if (/\bimproving\b/i.test(text)) f.Prognosis = 'Improving';
+        else if (/\bstable\b/i.test(text))    f.Prognosis = 'Stable';
+      }
+
+      // Booleans -- only check narrative content, not the whole doc
+      const narrativeText = f.SituationSummary + ' ' + f.AnticipatedActions + ' '
+        + getAll('injuries', 'fatalities', 'evacuees');
+      f.FatalitiesYN = /\b(?:fatal|death|deceased|fatality)\b/i.test(narrativeText) ? 'true' : 'false';
+      f.InjuriesYN   = /\b(?:injur|hurt|wounded)\b/i.test(narrativeText)            ? 'true' : 'false';
+      f.EvacueesYN   = /\b(?:evacuee|evacuated|displaced)\b/i.test(narrativeText)   ? 'true' : 'false';
+
       f.RecordStatus   = 'Submitted';
       f.IncidentStatus = 'Submitted';
       f.CompletedDate  = new Date().toISOString().split('T')[0];
+
       return f;
     }
 
@@ -195,7 +318,7 @@
       return r.json();
     }
 
-    // ── Status helpers ────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     const S_COLOR = { pending:'#aab0be', extracting:'#b45309', ready:'#1a56db', submitting:'#b45309', done:'#1a7a50', error:'#b91c1c', skipped:'#aab0be' };
     const S_LABEL = { pending:'Pending', extracting:'Extracting…', ready:'Ready', submitting:'Submitting…', done:'Done', error:'Error', skipped:'Skipped' };
@@ -352,7 +475,6 @@
           </div>
 
           <div className="main-layout">
-            {/* Sidebar */}
             <div>
               <div
                 className={`dropzone${drag ? ' drag' : ''}`}
@@ -392,7 +514,6 @@
               )}
             </div>
 
-            {/* Review panel */}
             <div>
               {!active && queue.length === 0 && (
                 <div className="card">
