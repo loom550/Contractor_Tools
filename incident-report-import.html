@@ -8,136 +8,121 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 14px; min-height: 100vh; }
     #root { max-width: 1400px; margin: 0 auto; padding: 0 16px 40px; }
+    #loading { text-align: center; padding: 60px; color: #7a8499; font-size: 14px; }
     .topbar { background: #1a1a2e; color: #fff; padding: 12px 16px; margin: 0 -16px 24px; display: flex; align-items: center; gap: 12px; }
-    .topbar-logo { width: 4px; height: 28px; background: #e8620a; border-radius: 2px; }
+    .topbar-logo { width: 4px; height: 28px; background: #e8620a; border-radius: 2px; flex-shrink: 0; }
     .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: 0.04em; }
-    .topbar-sub { font-size: 12px; color: #8888aa; margin-top: 1px; }
-    .topbar-user { margin-left: auto; font-size: 12px; color: #8888aa; }
+    .topbar-sub { font-size: 11px; color: #8888aa; margin-top: 2px; }
+    .topbar-user { margin-left: auto; font-size: 12px; color: #8888aa; display: flex; align-items: center; gap: 8px; }
     .topbar-user strong { color: #4caf92; }
     .card { background: #fff; border: 1px solid #e0e4ec; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
-    .card-header { padding: 10px 16px; background: #f8f9fc; border-bottom: 1px solid #e0e4ec; display: flex; justify-content: space-between; align-items: center; }
+    .card-header { padding: 10px 16px; background: #f8f9fc; border-bottom: 1px solid #e0e4ec; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
     .card-header-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #5a6478; }
     .card-body { padding: 14px 16px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    label.field-label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #7a8499; margin-bottom: 4px; }
-    input[type=text], input[type=date], input[type=time], input[type=password], select, textarea {
-      width: 100%; padding: 7px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace;
-      background: #f8f9fc; border: 1px solid #d0d5e0; border-radius: 5px; color: #1a1a2e;
-      outline: none; transition: border-color 0.15s;
-    }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    .field-label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #7a8499; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 7px 10px; font-size: 13px; font-family: 'SF Mono', 'Consolas', monospace; background: #f8f9fc; border: 1px solid #d0d5e0; border-radius: 5px; color: #1a1a2e; outline: none; transition: border-color 0.15s; }
     input:focus, select:focus, textarea:focus { border-color: #e8620a; background: #fff; }
     textarea { resize: vertical; }
     button { cursor: pointer; border-radius: 5px; font-size: 13px; font-weight: 500; border: 1px solid #d0d5e0; background: #fff; color: #1a1a2e; padding: 7px 14px; transition: all 0.15s; }
-    button:hover { background: #f0f2f5; }
+    button:hover:not(:disabled) { background: #f0f2f5; }
     button.primary { background: #e8620a; color: #fff; border-color: #e8620a; }
-    button.primary:hover { background: #d05508; }
-    button.primary:disabled { background: #c4c4c4; border-color: #c4c4c4; cursor: not-allowed; }
-    button.ghost { background: transparent; border-color: transparent; color: #7a8499; padding: 4px 8px; }
-    button.ghost:hover { background: #f0f2f5; color: #1a1a2e; }
-    .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; }
-    .badge-warning { background: #fff3e0; color: #b45309; }
-    .badge-success { background: #e6f4ee; color: #1a7a50; }
-    .badge-error { background: #fce8e8; color: #b91c1c; }
-    .badge-info { background: #e8f0fe; color: #1a56db; }
-    .badge-muted { background: #f0f2f5; color: #7a8499; }
-    .notice { padding: 10px 14px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; }
-    .notice-error { background: #fce8e8; border: 1px solid #f5c2c2; color: #b91c1c; }
-    .notice-success { background: #e6f4ee; border: 1px solid #b2dfce; color: #1a7a50; }
-    .notice-warn { background: #fff3e0; border: 1px solid #fdd090; color: #b45309; }
-    .layout { display: grid; grid-template-columns: 230px 1fr; gap: 14px; align-items: start; }
+    button.primary:hover:not(:disabled) { background: #d05508; }
+    button.primary:disabled { background: #ccc; border-color: #ccc; cursor: not-allowed; }
+    button.ghost { background: transparent; border: none; color: #8888aa; padding: 4px 8px; font-size: 12px; }
+    button.ghost:hover { color: #fff; }
+    .badge-warn { font-size: 10px; font-weight: 600; background: #fff3e0; color: #b45309; padding: 2px 7px; border-radius: 4px; }
+    .notice-error { background: #fce8e8; border: 1px solid #f5c2c2; color: #b91c1c; padding: 10px 14px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; }
+    .main-layout { display: grid; grid-template-columns: 230px 1fr; gap: 14px; align-items: start; }
     .review-layout { display: grid; grid-template-columns: 260px 1fr; gap: 12px; align-items: start; }
     .sticky { position: sticky; top: 14px; }
-    .raw-text { max-height: 65vh; overflow-y: auto; padding: 12px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 11px; color: #5a6478; white-space: pre-wrap; line-height: 1.7; }
-    .dropzone { border: 2px dashed #c8cdd8; border-radius: 8px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.15s; margin-bottom: 10px; }
+    .raw-pre { max-height: 65vh; overflow-y: auto; padding: 12px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 11px; color: #5a6478; white-space: pre-wrap; line-height: 1.7; }
+    .dropzone { border: 2px dashed #c8cdd8; border-radius: 8px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.15s; margin-bottom: 10px; background: #fff; }
     .dropzone:hover, .dropzone.drag { border-color: #e8620a; background: #fff7f3; }
-    .dropzone p { font-size: 13px; color: #7a8499; margin: 0; }
-    .dropzone small { font-size: 11px; color: #aab0be; margin-top: 4px; display: block; }
-    .queue-item { padding: 9px 14px; cursor: pointer; border-bottom: 1px solid #f0f2f5; display: flex; justify-content: space-between; align-items: center; gap: 8px; transition: background 0.1s; }
+    .queue-item { padding: 9px 14px; cursor: pointer; border-bottom: 1px solid #f0f2f5; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .queue-item:last-child { border-bottom: none; }
-    .queue-item:hover, .queue-item.active { background: #f8f9fc; }
-    .queue-item.active { border-left: 3px solid #e8620a; padding-left: 11px; }
-    .queue-item-name { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1a1a2e; }
-    .queue-item-err { font-size: 10px; color: #b91c1c; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .radio-group { display: flex; gap: 20px; padding-top: 5px; }
-    .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
-    .manual-badge { font-size: 9px; font-weight: 600; background: #fff3e0; color: #b45309; padding: 1px 5px; border-radius: 3px; margin-left: 5px; letter-spacing: 0.04em; }
+    .queue-item.active { background: #f8f9fc; border-left: 3px solid #e8620a; padding-left: 11px; }
+    .queue-item:not(.active):hover { background: #fafafa; }
+    .q-name { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .q-err { font-size: 10px; color: #b91c1c; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .field-row { margin-bottom: 10px; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
     .span-2 { grid-column: 1 / -1; }
+    .radio-row { display: flex; gap: 20px; padding-top: 5px; }
+    .radio-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+    .manual-badge { font-size: 9px; font-weight: 600; background: #fff3e0; color: #b45309; padding: 1px 5px; border-radius: 3px; margin-left: 5px; }
     .action-bar { display: flex; align-items: center; gap: 10px; padding: 4px 0 16px; }
-    .action-bar .spacer { margin-left: auto; }
-    .sign-in-notice { font-size: 12px; color: #b45309; }
-    .progress-note { font-size: 12px; color: #aab0be; }
     .done-panel { padding: 32px; text-align: center; }
-    .done-panel p { font-size: 14px; color: #1a7a50; margin-bottom: 14px; }
+    .done-msg { font-size: 14px; color: #1a7a50; margin-bottom: 14px; }
     .empty-state { padding: 40px; text-align: center; color: #aab0be; font-size: 13px; }
-    .extracting-state { padding: 32px; text-align: center; color: #7a8499; font-size: 13px; }
-    .collapse-toggle { cursor: pointer; user-select: none; }
-    .queue-progress { font-size: 11px; color: #7a8499; }
-    .clear-link { font-size: 12px; color: #7a8499; cursor: pointer; text-decoration: underline; margin-left: 8px; }
-    .clear-link:hover { color: #e8620a; }
+    .center-msg { padding: 28px; text-align: center; color: #7a8499; font-size: 13px; }
+    .clear-btn { font-size: 11px; color: #aab0be; cursor: pointer; text-decoration: underline; }
+    .clear-btn:hover { color: #e8620a; }
+    .auth-note { font-size: 11px; color: #aab0be; margin-left: 4px; }
+    .sign-warn { font-size: 12px; color: #b45309; }
+    .progress-note { font-size: 12px; color: #aab0be; margin-left: auto; }
   </style>
+</head>
+<body>
+  <div id="root"><div id="loading">Loading tools…</div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
   <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.5.0/lib/msal-browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-</head>
-<body>
-  <div id="root"></div>
 
-  <script type="module">
-    import { createElement as h, useState, useEffect, useRef, Fragment } from 'https://esm.sh/react@18';
-    import { createRoot } from 'https://esm.sh/react-dom@18/client';
-    import htm from 'https://esm.sh/htm@3';
-    const html = htm.bind(h);
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // ── Field definitions ─────────────────────────────────────────────────────
+    // ── Fields ───────────────────────────────────────────────────────────────
 
     const FIELDS = [
-      { key:'IncidentID',          label:'Incident ID',          group:'LOOMI Reference', manual:true },
-      { key:'ActivationID',        label:'Activation ID',        group:'LOOMI Reference', manual:true },
-      { key:'HubID',               label:'Hub ID',               group:'LOOMI Reference', manual:true },
-      { key:'ReportNumber',        label:'Report Number',        group:'LOOMI Reference', manual:true },
-      { key:'IncidentTitle',       label:'Title',                group:'Incident' },
-      { key:'IncidentDate',        label:'Date',                 group:'Incident', type:'date' },
-      { key:'IncidentTime',        label:'Time',                 group:'Incident', type:'time' },
-      { key:'IncidentType',        label:'Type',                 group:'Incident' },
-      { key:'Severity',            label:'Severity',             group:'Incident', type:'select', options:['Minor','Moderate','Major','Critical'] },
-      { key:'IncidentStatus',      label:'Status',               group:'Incident', type:'select', options:['Submitted','Under Review','Resolved','Assistance Required'] },
-      { key:'ICName',              label:'IC Name',              group:'Incident Commander' },
-      { key:'ICDept',              label:'IC Department',        group:'Incident Commander' },
-      { key:'ICContact',           label:'IC Contact',           group:'Incident Commander' },
-      { key:'StreetAddress',       label:'Street Address',       group:'Location' },
-      { key:'Intersection1',       label:'Intersection 1',       group:'Location' },
-      { key:'Intersection2',       label:'Intersection 2',       group:'Location' },
-      { key:'LeadAgency',          label:'Lead Agency',          group:'Agencies' },
-      { key:'SupportingAgencies',  label:'Supporting Agencies',  group:'Agencies' },
-      { key:'RelatedEvents',       label:'Related Events',       group:'Agencies' },
-      { key:'SituationSummary',    label:'Situation Summary',    group:'Narrative', type:'textarea' },
-      { key:'AnticipatedActions',  label:'Anticipated Actions',  group:'Narrative', type:'textarea' },
-      { key:'Prognosis',           label:'Prognosis',            group:'Narrative', type:'select', options:['Improving','Stable','Worsening','Unknown'] },
-      { key:'FatalitiesYN',        label:'Fatalities?',          group:'Casualties', type:'bool' },
-      { key:'FatalitiesDetails',   label:'Details',              group:'Casualties', type:'textarea' },
-      { key:'InjuriesYN',          label:'Injuries?',            group:'Casualties', type:'bool' },
-      { key:'InjuriesDetails',     label:'Details',              group:'Casualties', type:'textarea' },
-      { key:'EvacueesYN',          label:'Evacuees affected?',   group:'Casualties', type:'bool' },
-      { key:'EvacueesDetails',     label:'Details',              group:'Casualties', type:'textarea' },
-      { key:'CompletedByName',     label:'Name',                 group:'Completed By' },
-      { key:'CompletedByPosition', label:'Position',             group:'Completed By' },
-      { key:'CompletedByContact',  label:'Contact',              group:'Completed By' },
-      { key:'CompletedDate',       label:'Date completed',       group:'Completed By', type:'date' },
-      { key:'Distribution',        label:'Distribution',         group:'Completed By' },
-      { key:'DocumentURL',         label:'Document URL',         group:'System', manual:true },
-      { key:'RecordStatus',        label:'Record Status',        group:'System', type:'select', options:['Submitted','Draft','Archived'] },
-      { key:'Attachments',         label:'Attachments',          group:'System', manual:true },
-      { key:'AttachmentFolder',    label:'Attachment Folder',    group:'System', manual:true },
+      { key:'IncidentID',          label:'Incident ID',         group:'LOOMI Reference', manual:true },
+      { key:'ActivationID',        label:'Activation ID',       group:'LOOMI Reference', manual:true },
+      { key:'HubID',               label:'Hub ID',              group:'LOOMI Reference', manual:true },
+      { key:'ReportNumber',        label:'Report Number',       group:'LOOMI Reference', manual:true },
+      { key:'IncidentTitle',       label:'Title',               group:'Incident' },
+      { key:'IncidentDate',        label:'Date',                group:'Incident', type:'date' },
+      { key:'IncidentTime',        label:'Time',                group:'Incident', type:'time' },
+      { key:'IncidentType',        label:'Type',                group:'Incident' },
+      { key:'Severity',            label:'Severity',            group:'Incident', type:'select', options:['Minor','Moderate','Major','Critical'] },
+      { key:'IncidentStatus',      label:'Status',              group:'Incident', type:'select', options:['Submitted','Under Review','Resolved','Assistance Required'] },
+      { key:'ICName',              label:'IC Name',             group:'Incident Commander' },
+      { key:'ICDept',              label:'IC Department',       group:'Incident Commander' },
+      { key:'ICContact',           label:'IC Contact',          group:'Incident Commander' },
+      { key:'StreetAddress',       label:'Street Address',      group:'Location' },
+      { key:'Intersection1',       label:'Intersection 1',      group:'Location' },
+      { key:'Intersection2',       label:'Intersection 2',      group:'Location' },
+      { key:'LeadAgency',          label:'Lead Agency',         group:'Agencies' },
+      { key:'SupportingAgencies',  label:'Supporting Agencies', group:'Agencies' },
+      { key:'RelatedEvents',       label:'Related Events',      group:'Agencies' },
+      { key:'SituationSummary',    label:'Situation Summary',   group:'Narrative', type:'textarea' },
+      { key:'AnticipatedActions',  label:'Anticipated Actions', group:'Narrative', type:'textarea' },
+      { key:'Prognosis',           label:'Prognosis',           group:'Narrative', type:'select', options:['Improving','Stable','Worsening','Unknown'] },
+      { key:'FatalitiesYN',        label:'Fatalities?',         group:'Casualties', type:'bool' },
+      { key:'FatalitiesDetails',   label:'Details',             group:'Casualties', type:'textarea' },
+      { key:'InjuriesYN',          label:'Injuries?',           group:'Casualties', type:'bool' },
+      { key:'InjuriesDetails',     label:'Details',             group:'Casualties', type:'textarea' },
+      { key:'EvacueesYN',          label:'Evacuees affected?',  group:'Casualties', type:'bool' },
+      { key:'EvacueesDetails',     label:'Details',             group:'Casualties', type:'textarea' },
+      { key:'CompletedByName',     label:'Name',                group:'Completed By' },
+      { key:'CompletedByPosition', label:'Position',            group:'Completed By' },
+      { key:'CompletedByContact',  label:'Contact',             group:'Completed By' },
+      { key:'CompletedDate',       label:'Date completed',      group:'Completed By', type:'date' },
+      { key:'Distribution',        label:'Distribution',        group:'Completed By' },
+      { key:'DocumentURL',         label:'Document URL',        group:'System', manual:true },
+      { key:'RecordStatus',        label:'Record Status',       group:'System', type:'select', options:['Submitted','Draft','Archived'] },
+      { key:'Attachments',         label:'Attachments',         group:'System', manual:true },
+      { key:'AttachmentFolder',    label:'Attachment Folder',   group:'System', manual:true },
     ];
     const GROUPS = [...new Set(FIELDS.map(f => f.group))];
 
-    // ── Extraction ────────────────────────────────────────────────────────────
+    // ── Extraction ───────────────────────────────────────────────────────────
 
     function extract(text) {
       const g = (...ps) => { for (const p of ps) { const m = text.match(p); if (m) return m[1].trim(); } return ''; };
@@ -152,16 +137,16 @@
       f.CompletedByName     = g(/(?:completed by|submitted by|reported by|prepared by)[:\s]+([^\n]+)/i);
       f.CompletedByPosition = g(/(?:position|title|role)[:\s]+([^\n]+)/i);
       f.CompletedByContact  = g(/(?:contact|phone|email)[:\s]+([^\n]+)/i);
-      if (/\bcritical\b/i.test(text))    f.Severity = 'Critical';
-      else if (/\bmajor\b/i.test(text))  f.Severity = 'Major';
-      else if (/\bmoderate\b/i.test(text)) f.Severity = 'Moderate';
-      else if (/\bminor\b/i.test(text))  f.Severity = 'Minor';
-      if (/\bworsening\b/i.test(text))   f.Prognosis = 'Worsening';
+      if (/\bcritical\b/i.test(text))      f.Severity  = 'Critical';
+      else if (/\bmajor\b/i.test(text))    f.Severity  = 'Major';
+      else if (/\bmoderate\b/i.test(text)) f.Severity  = 'Moderate';
+      else if (/\bminor\b/i.test(text))    f.Severity  = 'Minor';
+      if (/\bworsening\b/i.test(text))     f.Prognosis = 'Worsening';
       else if (/\bimproving\b/i.test(text)) f.Prognosis = 'Improving';
-      else if (/\bstable\b/i.test(text)) f.Prognosis = 'Stable';
+      else if (/\bstable\b/i.test(text))   f.Prognosis = 'Stable';
       f.FatalitiesYN = /\b(?:fatal|death|deceased|fatality)\b/i.test(text) ? 'true' : 'false';
-      f.InjuriesYN   = /\b(?:injur|hurt|wounded)\b/i.test(text) ? 'true' : 'false';
-      f.EvacueesYN   = /\b(?:evacuee|evacuated|displaced)\b/i.test(text) ? 'true' : 'false';
+      f.InjuriesYN   = /\b(?:injur|hurt|wounded)\b/i.test(text)            ? 'true' : 'false';
+      f.EvacueesYN   = /\b(?:evacuee|evacuated|displaced)\b/i.test(text)   ? 'true' : 'false';
       const sum = text.match(/(?:summary|situation|description|narrative)[:\s\n]+([\s\S]+?)(?:\n(?:actions|anticipated|prognosis|severity|injuries|fatalities|completed)|$)/i);
       f.SituationSummary = (sum ? sum[1].trim() : text).substring(0, 3000);
       const act = text.match(/(?:anticipated actions|actions|next steps)[:\s\n]+([\s\S]+?)(?:\n(?:prognosis|severity|injuries|fatalities|completed)|$)/i);
@@ -172,7 +157,7 @@
       return f;
     }
 
-    // ── Graph API ─────────────────────────────────────────────────────────────
+    // ── Graph API ────────────────────────────────────────────────────────────
 
     async function resolveSiteList(siteUrl, listName, token) {
       const u = new URL(siteUrl);
@@ -183,77 +168,66 @@
       const lr = await fetch(
         `https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=displayName eq '${encodeURIComponent(listName)}'`,
         { headers: { Authorization: `Bearer ${token}` } });
-      const lists = await lr.json();
-      if (!lists.value?.length) throw new Error(`List "${listName}" not found on site`);
-      return { siteId: site.id, listId: lists.value[0].id };
+      const data = await lr.json();
+      if (!data.value?.length) throw new Error(`List "${listName}" not found`);
+      return { siteId: site.id, listId: data.value[0].id };
     }
 
-    async function postItem(siteId, listId, spFields, token) {
+    async function postItem(siteId, listId, fields, token) {
       const r = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: spFields }),
+        body: JSON.stringify({ fields }),
       });
       if (!r.ok) throw new Error(`Graph API ${r.status}: ${await r.text()}`);
       return r.json();
     }
 
-    // ── MSAL ──────────────────────────────────────────────────────────────────
+    // ── Constants ────────────────────────────────────────────────────────────
 
-    const SCOPES = ['https://graph.microsoft.com/Sites.ReadWrite.All', 'User.Read'];
+    const SCOPES      = ['https://graph.microsoft.com/Sites.ReadWrite.All', 'User.Read'];
+    const S_COLOR     = { pending:'#aab0be', extracting:'#b45309', ready:'#1a56db', submitting:'#b45309', done:'#1a7a50', error:'#b91c1c', skipped:'#aab0be' };
+    const S_LABEL     = { pending:'Pending', extracting:'Extracting…', ready:'Ready', submitting:'Submitting…', done:'Done', error:'Error', skipped:'Skipped' };
+    const CFG_KEY     = 'loomex-ir-cfg';
 
-    // ── Status helpers ────────────────────────────────────────────────────────
-
-    const STATUS_COLOR = {
-      pending: '#aab0be', extracting: '#b45309', ready: '#1a56db',
-      submitting: '#b45309', done: '#1a7a50', error: '#b91c1c', skipped: '#aab0be',
-    };
-    const STATUS_LABEL = {
-      pending: 'Pending', extracting: 'Extracting…', ready: 'Ready',
-      submitting: 'Submitting…', done: 'Done', error: 'Error', skipped: 'Skipped',
-    };
-
-    // ── Main app ──────────────────────────────────────────────────────────────
+    // ── App ──────────────────────────────────────────────────────────────────
 
     function App() {
-      const stored = JSON.parse(localStorage.getItem('ir-importer-cfg') || '{}');
+      const saved = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
       const [cfg, setCfgRaw] = useState({
-        siteUrl:  stored.siteUrl  || '',
-        listName: stored.listName || 'Incident Reports',
-        clientId: stored.clientId || '',
-        tenantId: stored.tenantId || '',
+        siteUrl:  saved.siteUrl  || '',
+        listName: saved.listName || 'Incident Reports',
+        clientId: saved.clientId || '',
+        tenantId: saved.tenantId || '',
       });
-      const setCfg = (updater) => {
-        setCfgRaw(prev => {
-          const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
-          localStorage.setItem('ir-importer-cfg', JSON.stringify(next));
-          return next;
-        });
-      };
+      const setCfg = u => setCfgRaw(p => {
+        const n = typeof u === 'function' ? u(p) : { ...p, ...u };
+        localStorage.setItem(CFG_KEY, JSON.stringify(n));
+        return n;
+      });
 
-      const isConfigured = cfg.siteUrl && cfg.clientId && cfg.tenantId;
-      const [cfgOpen, setCfgOpen] = useState(!isConfigured);
-      const [msalInst, setMsalInst] = useState(null);
-      const [account, setAccount]   = useState(null);
-      const [authErr, setAuthErr]   = useState('');
-      const [queue, setQueue]       = useState([]);
-      const [activeId, setActiveId] = useState(null);
+      const configured = cfg.siteUrl && cfg.clientId && cfg.tenantId;
+      const [cfgOpen,   setCfgOpen]   = useState(!configured);
+      const [msalInst,  setMsalInst]  = useState(null);
+      const [account,   setAccount]   = useState(null);
+      const [authErr,   setAuthErr]   = useState('');
+      const [queue,     setQueue]     = useState([]);
+      const [activeId,  setActiveId]  = useState(null);
+      const [drag,      setDrag]      = useState(false);
       const fileRef = useRef();
 
-      const upd = (id, patch) =>
-        setQueue(q => q.map(i => i.id === id ? { ...i, ...patch } : i));
+      const upd = (id, patch) => setQueue(q => q.map(i => i.id === id ? { ...i, ...patch } : i));
 
       const initMsal = async () => {
         if (!cfg.clientId || !cfg.tenantId) { setAuthErr('Client ID and Tenant ID required'); return; }
-        if (!window.msal) { setAuthErr('MSAL still loading — try again in a moment'); return; }
         try {
-          const inst = new window.msal.PublicClientApplication({
+          const inst = new msal.PublicClientApplication({
             auth: {
               clientId: cfg.clientId,
               authority: `https://login.microsoftonline.com/${cfg.tenantId}`,
               redirectUri: window.location.origin + window.location.pathname,
             },
-            cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false },
+            cache: { cacheLocation: 'localStorage' },
           });
           await inst.initialize();
           setMsalInst(inst);
@@ -263,17 +237,11 @@
         } catch (e) { setAuthErr(e.message); }
       };
 
-      const signIn = async () => {
-        try {
-          const r = await msalInst.loginPopup({ scopes: SCOPES });
-          setAccount(r.account); setAuthErr('');
-        } catch (e) { setAuthErr(e.message); }
+      const signIn  = async () => {
+        try { const r = await msalInst.loginPopup({ scopes: SCOPES }); setAccount(r.account); setAuthErr(''); }
+        catch (e) { setAuthErr(e.message); }
       };
-
-      const signOut = () => {
-        if (msalInst && account) msalInst.logoutPopup({ account });
-        setAccount(null);
-      };
+      const signOut = () => { msalInst?.logoutPopup({ account }); setAccount(null); };
 
       const getToken = async () => {
         try { return (await msalInst.acquireTokenSilent({ scopes: SCOPES, account })).accessToken; }
@@ -284,11 +252,12 @@
         upd(id, { status: 'extracting' });
         try {
           let text = '';
-          if (file.name.toLowerCase().endsWith('.docx')) {
-            const r = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+          const name = file.name.toLowerCase();
+          if (name.endsWith('.docx')) {
+            const r = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
             text = r.value;
-          } else if (file.name.toLowerCase().endsWith('.pdf')) {
-            const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+          } else if (name.endsWith('.pdf')) {
+            const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
             const pages = [];
             for (let p = 1; p <= pdf.numPages; p++) {
               const pg = await pdf.getPage(p);
@@ -296,12 +265,12 @@
               pages.push(c.items.map(i => i.str).join(' '));
             }
             text = pages.join('\n\n');
-          } else throw new Error('Only .docx and .pdf supported');
+          } else throw new Error('Only .docx and .pdf are supported');
           upd(id, { status: 'ready', rawText: text, form: extract(text) });
         } catch (e) { upd(id, { status: 'error', error: e.message }); }
       };
 
-      const addFiles = (files) => {
+      const addFiles = files => {
         const items = Array.from(files).map(file => ({
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           name: file.name, file, status: 'pending', rawText: '', form: {}, error: '',
@@ -311,7 +280,7 @@
         setActiveId(id => id || items[0]?.id);
       };
 
-      const submitItem = async (id) => {
+      const submitItem = async id => {
         const item = queue.find(i => i.id === id);
         if (!item) return;
         upd(id, { status: 'submitting', error: '' });
@@ -331,7 +300,7 @@
         } catch (e) { upd(id, { status: 'error', error: e.message }); }
       };
 
-      const skipItem = (id) => {
+      const skipItem = id => {
         upd(id, { status: 'skipped' });
         const next = queue.find(i => i.id !== id && ['ready','extracting'].includes(i.status));
         if (next) setActiveId(next.id);
@@ -340,216 +309,216 @@
       const setField = (id, key, val) =>
         setQueue(q => q.map(i => i.id === id ? { ...i, form: { ...i.form, [key]: val } } : i));
 
-      const clearQueue = () => { setQueue([]); setActiveId(null); };
-
-      const active     = queue.find(i => i.id === activeId);
-      const grouped    = GROUPS.map(g => ({ group: g, fields: FIELDS.filter(f => f.group === g) }));
-      const doneCount  = queue.filter(i => i.status === 'done').length;
-      const [drag, setDrag] = useState(false);
-
-      // ── Field input ──────────────────────────────────────────────────────
+      const active    = queue.find(i => i.id === activeId);
+      const grouped   = GROUPS.map(g => ({ group: g, fields: FIELDS.filter(f => f.group === g) }));
+      const doneCount = queue.filter(i => i.status === 'done').length;
 
       const FieldInput = ({ item, f }) => {
         const val = item?.form?.[f.key] ?? '';
         const set = v => setField(item.id, f.key, v);
-        if (f.type === 'textarea') return html`
-          <textarea rows=${f.key.includes('Summary') || f.key.includes('Actions') ? 5 : 3}
-            value=${val} onInput=${e => set(e.target.value)} />`;
-        if (f.type === 'select') return html`
-          <select value=${val} onChange=${e => set(e.target.value)}>
+        if (f.type === 'textarea') return (
+          <textarea rows={f.key.includes('Summary') || f.key.includes('Actions') ? 5 : 3}
+            value={val} onChange={e => set(e.target.value)} />
+        );
+        if (f.type === 'select') return (
+          <select value={val} onChange={e => set(e.target.value)}>
             <option value="">— select —</option>
-            ${f.options.map(o => html`<option key=${o} value=${o}>${o}</option>`)}
-          </select>`;
-        if (f.type === 'bool') return html`
-          <div class="radio-group">
-            ${['true','false'].map(v => html`
-              <label key=${v}>
-                <input type="radio" name=${item.id + '-' + f.key} value=${v}
-                  checked=${val === v} onChange=${() => set(v)} />
-                ${v === 'true' ? 'Yes' : 'No'}
-              </label>`)}
-          </div>`;
-        return html`<input type=${f.type || 'text'} value=${val} onInput=${e => set(e.target.value)} />`;
+            {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        );
+        if (f.type === 'bool') return (
+          <div className="radio-row">
+            {['true','false'].map(v => (
+              <label key={v}>
+                <input type="radio" name={`${item.id}-${f.key}`} value={v}
+                  checked={val === v} onChange={() => set(v)} />
+                {v === 'true' ? 'Yes' : 'No'}
+              </label>
+            ))}
+          </div>
+        );
+        return <input type={f.type || 'text'} value={val} onChange={e => set(e.target.value)} />;
       };
 
-      // ── Render ───────────────────────────────────────────────────────────
-
-      return html`
+      return (
         <div>
-          <!-- Top bar -->
-          <div class="topbar">
-            <div class="topbar-logo"></div>
+          <div className="topbar">
+            <div className="topbar-logo" />
             <div>
-              <div class="topbar-title">Incident Report Importer</div>
-              <div class="topbar-sub">Queue • Review • Import to SharePoint</div>
+              <div className="topbar-title">Incident Report Importer</div>
+              <div className="topbar-sub">Queue · Review · Import to SharePoint</div>
             </div>
-            <div class="topbar-user">
-              ${account
-                ? html`Signed in as <strong>${account.username}</strong>
-                    <button class="ghost" style="color:#8888aa;margin-left:8px" onClick=${signOut}>Sign out</button>`
-                : html`Not signed in`}
+            <div className="topbar-user">
+              {account
+                ? <><strong>{account.username}</strong><button className="ghost" onClick={signOut}>Sign out</button></>
+                : <span>Not signed in</span>}
             </div>
           </div>
 
-          <!-- Config -->
-          <div class="card">
-            <div class="card-header collapse-toggle" onClick=${() => setCfgOpen(o => !o)}>
-              <span class="card-header-title">Configuration</span>
-              <span style="font-size:11px;color:#aab0be">${cfgOpen ? '▲' : '▼'}</span>
+          {/* Config */}
+          <div className="card">
+            <div className="card-header" onClick={() => setCfgOpen(o => !o)}>
+              <span className="card-header-title">Configuration</span>
+              <span style={{fontSize:11,color:'#aab0be'}}>{cfgOpen ? '▲' : '▼'}</span>
             </div>
-            ${cfgOpen && html`
-              <div class="card-body">
-                <div class="grid-4" style="margin-bottom:12px">
+            {cfgOpen && (
+              <div className="card-body">
+                <div className="grid-4">
                   <div>
-                    <label class="field-label">SharePoint site URL</label>
+                    <label className="field-label">SharePoint site URL</label>
                     <input type="text" placeholder="https://org.sharepoint.com/sites/loomi"
-                      value=${cfg.siteUrl} onInput=${e => setCfg(c => ({ ...c, siteUrl: e.target.value }))} />
+                      value={cfg.siteUrl} onChange={e => setCfg(c => ({ ...c, siteUrl: e.target.value }))} />
                   </div>
                   <div>
-                    <label class="field-label">List name</label>
-                    <input type="text" value=${cfg.listName}
-                      onInput=${e => setCfg(c => ({ ...c, listName: e.target.value }))} />
+                    <label className="field-label">List name</label>
+                    <input type="text" value={cfg.listName}
+                      onChange={e => setCfg(c => ({ ...c, listName: e.target.value }))} />
                   </div>
                   <div>
-                    <label class="field-label">Azure AD client ID</label>
+                    <label className="field-label">Azure AD client ID</label>
                     <input type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                      value=${cfg.clientId} onInput=${e => setCfg(c => ({ ...c, clientId: e.target.value }))} />
+                      value={cfg.clientId} onChange={e => setCfg(c => ({ ...c, clientId: e.target.value }))} />
                   </div>
                   <div>
-                    <label class="field-label">Tenant ID</label>
+                    <label className="field-label">Tenant ID</label>
                     <input type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                      value=${cfg.tenantId} onInput=${e => setCfg(c => ({ ...c, tenantId: e.target.value }))} />
+                      value={cfg.tenantId} onChange={e => setCfg(c => ({ ...c, tenantId: e.target.value }))} />
                   </div>
                 </div>
-                <div style="display:flex;gap:10px;align-items:center">
-                  ${!msalInst && html`<button class="primary" onClick=${initMsal}>Initialize auth</button>`}
-                  ${msalInst && !account && html`<button class="primary" onClick=${signIn}>Sign in with Microsoft →</button>`}
-                  ${msalInst && account && html`<button onClick=${signOut}>Sign out</button>`}
-                  ${authErr && html`<span style="font-size:12px;color:#b91c1c">${authErr}</span>`}
-                  ${msalInst && !account && html`<span style="font-size:11px;color:#aab0be;margin-left:4px">Config is saved — just sign in each session</span>`}
+                <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                  {!msalInst && <button className="primary" onClick={initMsal}>Initialize auth</button>}
+                  {msalInst && !account && <button className="primary" onClick={signIn}>Sign in with Microsoft →</button>}
+                  {msalInst && account && <button onClick={signOut}>Sign out</button>}
+                  {authErr && <span style={{fontSize:12,color:'#b91c1c'}}>{authErr}</span>}
+                  {msalInst && !account && <span className="auth-note">Config is saved — just sign in each session</span>}
                 </div>
-              </div>`}
+              </div>
+            )}
           </div>
 
-          <!-- Main layout -->
-          <div class="layout">
-
-            <!-- Queue sidebar -->
+          <div className="main-layout">
+            {/* Sidebar */}
             <div>
-              <div class=${'dropzone' + (drag ? ' drag' : '')}
-                onClick=${() => fileRef.current.click()}
-                onDragOver=${e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave=${() => setDrag(false)}
-                onDrop=${e => { e.preventDefault(); setDrag(false); addFiles(e.dataTransfer.files); }}>
-                <p>Drop files or click to add</p>
-                <small>.docx and .pdf · multiple at once</small>
+              <div
+                className={`dropzone${drag ? ' drag' : ''}`}
+                onClick={() => fileRef.current.click()}
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); addFiles(e.dataTransfer.files); }}
+              >
+                <p style={{fontSize:13,color:'#7a8499',margin:0}}>Drop files or click to add</p>
+                <small style={{fontSize:11,color:'#aab0be',display:'block',marginTop:4}}>.docx and .pdf · multiple at once</small>
               </div>
-              <input ref=${fileRef} type="file" accept=".docx,.pdf" multiple
-                style="display:none" onChange=${e => addFiles(e.target.files)} />
+              <input ref={fileRef} type="file" accept=".docx,.pdf" multiple
+                style={{display:'none'}} onChange={e => addFiles(e.target.files)} />
 
-              ${queue.length > 0 && html`
-                <div class="card">
-                  <div class="card-header">
-                    <span class="card-header-title">Queue</span>
-                    <div style="display:flex;align-items:center;gap:8px">
-                      <span class="queue-progress">${doneCount}/${queue.length}</span>
-                      <span class="clear-link" onClick=${clearQueue}>Clear</span>
+              {queue.length > 0 && (
+                <div className="card">
+                  <div className="card-header" style={{cursor:'default'}}>
+                    <span className="card-header-title">Queue</span>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:11,color:'#7a8499'}}>{doneCount}/{queue.length}</span>
+                      <span className="clear-btn" onClick={() => { setQueue([]); setActiveId(null); }}>Clear</span>
                     </div>
                   </div>
-                  ${queue.map((item, idx) => html`
-                    <div key=${item.id} class=${'queue-item' + (activeId === item.id ? ' active' : '')}
-                      onClick=${() => setActiveId(item.id)}>
-                      <div style="min-width:0">
-                        <div class="queue-item-name">${item.name}</div>
-                        ${item.error && html`<div class="queue-item-err">${item.error}</div>`}
+                  {queue.map(item => (
+                    <div key={item.id} className={`queue-item${activeId === item.id ? ' active' : ''}`}
+                      onClick={() => setActiveId(item.id)}>
+                      <div style={{minWidth:0}}>
+                        <div className="q-name">{item.name}</div>
+                        {item.error && <div className="q-err">{item.error}</div>}
                       </div>
-                      <span style=${'font-size:11px;white-space:nowrap;color:' + STATUS_COLOR[item.status]}>
-                        ${STATUS_LABEL[item.status]}
+                      <span style={{fontSize:11,color:S_COLOR[item.status],whiteSpace:'nowrap',flexShrink:0}}>
+                        {S_LABEL[item.status]}
                       </span>
-                    </div>`)}
-                </div>`}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <!-- Review panel -->
+            {/* Review panel */}
             <div>
-              ${!active && queue.length === 0 && html`
-                <div class="card">
-                  <div class="empty-state">Upload reports to get started</div>
-                </div>`}
+              {!active && queue.length === 0 && (
+                <div className="card"><div className="empty-state">Upload reports to get started</div></div>
+              )}
 
-              ${active && html`
-                <div class="review-layout">
-
-                  <!-- Raw text -->
-                  <div class="card sticky">
-                    <div class="card-header">
-                      <span class="card-header-title">Extracted text</span>
-                      <span style="font-size:11px;color:#aab0be">${(active.rawText?.length || 0).toLocaleString()} chars</span>
+              {active && (
+                <div className="review-layout">
+                  {/* Raw text */}
+                  <div className="card sticky">
+                    <div className="card-header" style={{cursor:'default'}}>
+                      <span className="card-header-title">Extracted text</span>
+                      <span style={{fontSize:11,color:'#aab0be'}}>{(active.rawText?.length || 0).toLocaleString()} chars</span>
                     </div>
-                    ${active.status === 'extracting'
-                      ? html`<div class="extracting-state">Extracting…</div>`
-                      : html`<pre class="raw-text">${active.rawText}</pre>`}
+                    {active.status === 'extracting'
+                      ? <div className="center-msg">Extracting…</div>
+                      : <pre className="raw-pre">{active.rawText}</pre>}
                   </div>
 
-                  <!-- Form -->
+                  {/* Form */}
                   <div>
-                    ${active.status === 'done'
-                      ? html`
-                        <div class="card">
-                          <div class="done-panel">
-                            <p>✓ Submitted to SharePoint</p>
-                            ${queue.some(i => ['ready','extracting','pending'].includes(i.status))
-                              ? html`<button class="primary" onClick=${() => {
-                                  const next = queue.find(i => ['ready','extracting','pending'].includes(i.status));
-                                  if (next) setActiveId(next.id);
-                                }}>Next report →</button>`
-                              : html`<p style="font-size:13px;color:#1a7a50">All ${queue.length} reports submitted</p>`}
-                          </div>
-                        </div>`
-                      : html`
-                        ${grouped.map(({ group, fields }) => html`
-                          <div key=${group} class="card">
-                            <div class="card-header">
-                              <span class="card-header-title">${group}</span>
-                              ${['LOOMI Reference','System'].includes(group)
-                                && html`<span class="badge badge-warning">Set manually</span>`}
+                    {active.status === 'done' ? (
+                      <div className="card">
+                        <div className="done-panel">
+                          <div className="done-msg">✓ Submitted to SharePoint</div>
+                          {queue.some(i => ['ready','extracting','pending'].includes(i.status))
+                            ? <button className="primary" onClick={() => {
+                                const next = queue.find(i => ['ready','extracting','pending'].includes(i.status));
+                                if (next) setActiveId(next.id);
+                              }}>Next report →</button>
+                            : <div style={{fontSize:13,color:'#1a7a50'}}>All {queue.length} reports submitted</div>}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {grouped.map(({ group, fields }) => (
+                          <div key={group} className="card">
+                            <div className="card-header" style={{cursor:'default'}}>
+                              <span className="card-header-title">{group}</span>
+                              {['LOOMI Reference','System'].includes(group) &&
+                                <span className="badge-warn">Set manually</span>}
                             </div>
-                            <div class="card-body">
-                              <div class="form-grid">
-                                ${fields.map(f => html`
-                                  <div key=${f.key} class=${'field-row' + (f.type === 'textarea' ? ' span-2' : '')}>
-                                    <label class="field-label">
-                                      ${f.label}
-                                      ${f.manual && html`<span class="manual-badge">MANUAL</span>`}
+                            <div className="card-body">
+                              <div className="grid-2">
+                                {fields.map(f => (
+                                  <div key={f.key} className={`field-row${f.type === 'textarea' ? ' span-2' : ''}`}>
+                                    <label className="field-label">
+                                      {f.label}
+                                      {f.manual && <span className="manual-badge">MANUAL</span>}
                                     </label>
-                                    <${FieldInput} item=${active} f=${f} />
-                                  </div>`)}
+                                    <FieldInput item={active} f={f} />
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          </div>`)}
+                          </div>
+                        ))}
 
-                        ${active.error && html`
-                          <div class="notice notice-error">${active.error}</div>`}
+                        {active.error && <div className="notice-error">{active.error}</div>}
 
-                        <div class="action-bar">
-                          <button class="primary"
-                            onClick=${() => submitItem(active.id)}
-                            disabled=${['submitting','extracting'].includes(active.status) || !account}>
-                            ${active.status === 'submitting' ? 'Submitting…' : 'Submit to SharePoint →'}
+                        <div className="action-bar">
+                          <button className="primary"
+                            onClick={() => submitItem(active.id)}
+                            disabled={['submitting','extracting'].includes(active.status) || !account}>
+                            {active.status === 'submitting' ? 'Submitting…' : 'Submit to SharePoint →'}
                           </button>
-                          <button onClick=${() => skipItem(active.id)}>Skip</button>
-                          ${!account && html`<span class="sign-in-notice">Sign in to submit</span>`}
-                          <span class="spacer"></span>
-                          <span class="progress-note">${doneCount} of ${queue.length} submitted</span>
-                        </div>`}
+                          <button onClick={() => skipItem(active.id)}>Skip</button>
+                          {!account && <span className="sign-warn">Sign in first</span>}
+                          <span className="progress-note">{doneCount} of {queue.length} submitted</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>`}
+                </div>
+              )}
             </div>
           </div>
-        </div>`;
+        </div>
+      );
     }
 
-    createRoot(document.getElementById('root')).render(html`<${App} />`);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
