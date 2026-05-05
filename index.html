@@ -214,7 +214,7 @@
     </div>
 
     <div class="tools-list">
-      <div class="section-label">EOC Tools</div>
+      <div class="section-label">Site Tools</div>
 
       <a class="tool-card" href="https://tools.loomex.ca/status">
         <div class="tool-icon icon-green">&#128506;</div>
@@ -271,13 +271,22 @@
       </a>
 
       <a class="tool-card" href="https://www.nan.ca/wp-content/uploads/2025/09/JEMS-Service-Level-Evacuation-Standards-2024-1.pdf" target="_blank">
-  <div class="tool-icon icon-green">&#128196;</div>
-  <div class="tool-info">
-    <h3>JEMS Standards</h3>
-    <p>2024 (current) version of the JEMS agreement.</p>
-  </div>
-  <span class="tool-arrow">&#8250;</span>
-</a>
+        <div class="tool-icon icon-green">&#128196;</div>
+        <div class="tool-info">
+          <h3>JEMS Standards</h3>
+          <p>2024 (current) version of the JEMS agreement.</p>
+        </div>
+        <span class="tool-arrow">&#8250;</span>
+      </a>
+
+      <a class="tool-card" href="https://tools.loomex.ca/incident-report-import.html">
+        <div class="tool-icon icon-green">&#128229;</div>
+        <div class="tool-info">
+          <h3>Incident Report Importer</h3>
+          <p>Extract and import external incident reports from Word or PDF into SharePoint. Queue multiple files and review each before submitting.</p>
+        </div>
+        <span class="tool-arrow">&#8250;</span>
+      </a>
 
       <div class="section-label" style="margin-top: 8px;">Contractor Forms</div>
 
@@ -360,6 +369,7 @@
         </div>
         <span class="tool-arrow">&#8250;</span>
       </a>
+
 
     </div>
 
@@ -610,6 +620,7 @@ document.addEventListener('keydown', function(e) {
     closeModal('loginModal');
   }
 });
+
 // ── PWA: Service Worker ───────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
@@ -674,7 +685,6 @@ document.addEventListener('keydown', function(e) {
       }, 2500);
     });
   }
-
 </script>
 
 </body>
