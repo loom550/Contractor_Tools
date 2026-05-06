@@ -968,6 +968,7 @@
   }
 
   function calcApprovedTotal() {
+    if (!submission.formData.rows || submission.formData.rows.length === 0) return parseFloat(submission.formData.total || 0);
     return (submission.formData.rows || []).reduce((s, r, i) => {
       if (rowDecisions[i]?.approved === false) return s;
       const d = rowDecisions[i];
@@ -1283,7 +1284,7 @@
       const res = await fetch(`${WORKER_URL}/expense-approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, adminName, adminNotes: document.getElementById('adminNotes').value.trim(), adminSignatureBase64, approvedExcelBase64, approvedPDFBase64, approvedPDFSPBase64, rowDecisions })
+        body: JSON.stringify({ token, adminName, totalApproved: calcApprovedTotal(), adminNotes: document.getElementById('adminNotes').value.trim(), adminSignatureBase64, approvedExcelBase64, approvedPDFBase64, approvedPDFSPBase64, decisions: rowDecisions })
       });
 
       const result = await res.json();
