@@ -648,12 +648,46 @@
     if (revisionToken) {
       revisionMode = true;
       try {
-        const res = await fetch(`${WORKER_URL}/expense-revision-get?token=${encodeURIComponent(revisionToken)}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Not found');
+        // Prefer the new endpoint that returns rows + receipts + rejected indices.
+        // Fall back to the legacy /expense-revision-get if the worker isn't updated yet.
+        let res = await fetch(`${WORKER_URL}/expense-revision-context?token=${encodeURIComponent(revisionToken)}`);
+        let data;
+        if (res.ok) {
+          data = await res.json();
+        } else if (res.status === 404 || res.status === 405) {
+          // Worker may not have the new endpoint yet — fall back. The legacy endpoint
+          // doesn't return formData/receiptFiles, so we'll need to do a second lookup.
+          res = await fetch(`${WORKER_URL}/expense-revision-get?token=${encodeURIComponent(revisionToken)}`);
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Not found');
+          }
+          const legacy = await res.json();
+          // Build the same shape as /expense-revision-context by fetching parent submission
+          const parentRes = await fetch(`${WORKER_URL}/expense-submission?token=${encodeURIComponent(legacy.originalToken)}`);
+          if (!parentRes.ok) throw new Error('Could not load original submission');
+          const parent = await parentRes.json();
+          data = {
+            originalToken: legacy.originalToken,
+            reason: legacy.reason,
+            rejectedBy: legacy.rejectedBy,
+            rejectedAt: legacy.rejectedAt,
+            revisionType: 'full',
+            rejectedRowIndices: null,
+            rejectionReasons: null,
+            reportNumber: parent.reportNumber || '',
+            revisionNumber: 1,
+            formData: parent.formData,
+            receiptFilenames: parent.receiptFilenames || [],
+            receiptFiles: parent.receiptFiles || [],
+          };
+        } else {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Not found');
+        }
         await prefillRevision(data);
       } catch(e) {
-        showStatus(`Could not load revision: ${e.message}. Please use the link from your email or contact eocstaffing@loomex.ca.`, 'error');
+        showStatus(`Could not load revision: ${e.message}. Please use the link from your email or contact eocadmin@loomex.ca.`, 'error');
       }
     } else {
       await loadExpenseConfig();
@@ -665,36 +699,51 @@
   async function prefillRevision(data) {
     const fd = data.formData;
 
-    // Show banner
+    // Partial revision: only the rejected rows are editable. Approved rows already moved
+    // to Finance and the contractor doesn't see them at all on this resubmit.
+    const isPartial = data.revisionType === 'partial' && Array.isArray(data.rejectedRowIndices) && data.rejectedRowIndices.length > 0;
+    const rejectedRowIndices = isPartial ? data.rejectedRowIndices : null;
+    const rejectionReasons = data.rejectionReasons || {};
+
+    // Show banner — copy varies by revision type
     document.getElementById('revisionBanner').style.display = 'block';
-    document.getElementById('revisionReason').textContent = data.reason;
+
+    if (isPartial) {
+      const count = rejectedRowIndices.length;
+      document.getElementById('revisionReason').innerHTML =
+        `<strong>Partial revision:</strong> ${count} item${count > 1 ? 's were' : ' was'} not approved on your original submission. Only the flagged item${count > 1 ? 's' : ''} appear${count > 1 ? '' : 's'} below for you to correct and resubmit. Items that were approved have already been forwarded to Finance and don't need re-submission.`;
+    } else {
+      document.getElementById('revisionReason').textContent = data.reason || '';
+    }
+
     const d = new Date(data.rejectedAt);
+    const dateStr = isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('revisionMeta').textContent =
-      `Sent back by ${data.rejectedBy} on ${d.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}  |  Report # ${data.reportNumber}-R${data.revisionNumber}`;
+      `Sent back by ${data.rejectedBy || 'EOC Admin'}${dateStr ? ' on ' + dateStr : ''}  |  Report # ${data.reportNumber}-R${data.revisionNumber}`;
 
     // Update header
-    document.querySelector('.header-left h1').textContent = 'Expense Report Revision';
+    document.querySelector('.header-left h1').textContent = isPartial ? 'Resubmit Flagged Items' : 'Expense Report Revision';
     document.querySelector('.header-badge').textContent = `R${data.revisionNumber}`;
     document.querySelector('.header-badge').style.background = '#E8A317';
 
     // Update submit button
-    document.getElementById('submitBtn').textContent = 'Resubmit Expense Report';
+    document.getElementById('submitBtn').textContent = isPartial ? 'Resubmit Flagged Items' : 'Resubmit Expense Report';
 
     // Pre-fill and lock contractor info
     const nameEl  = document.getElementById('contractorName');
     const emailEl = document.getElementById('contractorEmail');
-    nameEl.value  = fd.contractorName;  nameEl.disabled  = true;
-    emailEl.value = fd.contractorEmail; emailEl.disabled = true;
+    nameEl.value  = fd.contractorName || '';  nameEl.disabled  = true;
+    emailEl.value = fd.contractorEmail || ''; emailEl.disabled = true;
 
     // Load activation config, then select the right activation + site
     await loadExpenseConfig();
     const actSel  = document.getElementById('activation');
     const siteSel = document.getElementById('site');
-    actSel.value = fd.activation;
+    actSel.value = fd.activation || '';
     handleActivationChange();
     // Wait a tick for site options to populate
     await new Promise(r => setTimeout(r, 0));
-    siteSel.value = fd.site;
+    siteSel.value = fd.site || '';
     handleSiteChange();
     actSel.disabled  = true;
     siteSel.disabled = true;
@@ -704,19 +753,46 @@
     document.getElementById('periodEnd').value    = fd.periodEnd    || '';
     document.getElementById('generalNotes').value = fd.generalNotes || '';
 
-    // Clear default rows, add pre-filled rows
+    // Clear default rows, add pre-filled rows.
+    // For partial revisions, only the flagged rows are added (filtered by rejectedRowIndices).
     document.getElementById('expenseRows').innerHTML = '';
     rowCount = 0;
     const receiptFilenames = data.receiptFilenames || [];
+    const allRows = fd.rows || [];
 
-    (fd.rows || []).forEach((row, ri) => {
-      // Find existing receipts for this row (Item{n}- prefix)
+    const rowsToRender = isPartial
+      ? rejectedRowIndices
+          .filter(idx => idx >= 0 && idx < allRows.length)
+          .map(idx => ({ row: allRows[idx], originalIndex: idx }))
+      : allRows.map((row, idx) => ({ row, originalIndex: idx }));
+
+    rowsToRender.forEach(({ row, originalIndex }) => {
+      // Match receipts by the parent's original 1-based row number (Item{n}- prefix).
       const rowExisting = receiptFilenames.filter(fn => {
         const m = fn.match(/^Item(\d+)-/);
-        return m && parseInt(m[1]) === ri + 1;
+        return m && parseInt(m[1]) === originalIndex + 1;
       }).map(fn => ({ filename: fn, kept: true }));
 
       addRow(row, rowExisting);
+
+      // For partial revisions, render the per-row rejection reason inline above the fields
+      // so the contractor sees exactly why this row needs to be re-submitted.
+      if (isPartial && rejectionReasons[originalIndex]) {
+        const newRowId = rowCount; // addRow incremented this
+        const rowEl = document.getElementById(`row-${newRowId}`);
+        if (rowEl) {
+          const reasonBox = document.createElement('div');
+          reasonBox.style.cssText = 'background:#fff8e1;border-bottom:1px solid #f5d88a;padding:10px 16px;font-size:12px;color:#7a5200;line-height:1.5;';
+          reasonBox.innerHTML = `<strong style="text-transform:uppercase;letter-spacing:0.5px;font-size:11px;">Reason for rejection:</strong> ${rejectionReasons[originalIndex]}`;
+          // Insert after the row-header so it sits between header and fields
+          const header = rowEl.querySelector('.row-header');
+          if (header && header.nextSibling) {
+            rowEl.insertBefore(reasonBox, header.nextSibling);
+          } else {
+            rowEl.appendChild(reasonBox);
+          }
+        }
+      }
     });
 
     handlePeriodChange();
