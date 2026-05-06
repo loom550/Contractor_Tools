@@ -918,17 +918,13 @@
     filenames.forEach(filename => {
       const ext = filename.split('.').pop().toLowerCase();
       const url = `${WORKER_URL}/expense-receipt?token=${encodeURIComponent(token)}&filename=${encodeURIComponent(filename)}`;
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-        const img = document.createElement('img');
-        img.src = url;
-        img.className = 'receipt-thumb';
-        img.title = filename;
-        img.onclick = () => openLightbox(url);
-        img.onerror = () => img.replaceWith(makeReceiptLink(url, ext));
-        area.appendChild(img);
-      } else {
-        area.appendChild(makeReceiptLink(url, ext));
-      }
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'receipt-thumb';
+      img.title = filename;
+      img.onclick = () => openLightbox(url);
+      img.onerror = () => img.replaceWith(makeReceiptLink(url, ext));
+      area.appendChild(img);
     });
   }
 
