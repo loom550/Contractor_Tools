@@ -841,7 +841,7 @@
       tbody.appendChild(tr);
 
       // Detail row: receipts + decision controls
-      const rowReceipts = receiptFilenames.filter(f => { const m = f.match(/^Item(\d+)-/); return m && parseInt(m[1]) === i + 1; });
+      const rowReceipts = (submission.receiptFiles || []).filter(rf => rf.rowIndex === i).map(rf => rf.filename);
       const tr2 = document.createElement('tr');
       tr2.className = 'detail-row';
       tr2.id = `drow-${i}`;
